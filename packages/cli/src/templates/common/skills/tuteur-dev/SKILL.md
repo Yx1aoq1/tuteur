@@ -1,5 +1,5 @@
 ---
-name: dev
+name: tuteur-dev
 description: Implement the current Tuteur workflow step.
 ---
 

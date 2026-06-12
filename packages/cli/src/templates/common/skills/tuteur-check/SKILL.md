@@ -1,5 +1,5 @@
 ---
-name: check
+name: tuteur-check
 description: Check and verify the current Tuteur workflow step.
 ---
 

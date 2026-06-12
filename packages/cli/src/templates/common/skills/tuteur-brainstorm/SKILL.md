@@ -1,5 +1,5 @@
 ---
-name: brainstorm
+name: tuteur-brainstorm
 description: Draft the initial task PRD for a Tuteur workflow.
 ---
 

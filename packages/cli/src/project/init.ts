@@ -96,22 +96,22 @@ export async function initProject(options: InitProjectOptions): Promise<InitProj
           id: 'planning',
           name: 'Planning',
           steps: [
-            { id: 'brainstorm', skillRef: 'brainstorm', required: true },
-            { id: 'grill-me', skillRef: 'grill-me', required: true },
+            { id: 'brainstorm', skillRef: 'tuteur-brainstorm', required: true },
+            { id: 'grill-me', skillRef: 'tuteur-grill-me', required: true },
           ],
         },
         {
           id: 'execute',
           name: 'Execute',
           steps: [
-            { id: 'dev', skillRef: 'dev', required: true },
-            { id: 'check', skillRef: 'check', required: true },
+            { id: 'dev', skillRef: 'tuteur-dev', required: true },
+            { id: 'check', skillRef: 'tuteur-check', required: true },
           ],
         },
         {
           id: 'finish',
           name: 'Finish',
-          steps: [{ id: 'finish', skillRef: 'finish', required: true }],
+          steps: [{ id: 'finish', skillRef: 'tuteur-finish-work', required: true }],
         },
       ],
     },

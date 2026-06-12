@@ -1,5 +1,5 @@
 ---
-name: grill-me
+name: tuteur-grill-me
 description: Tighten requirements and produce planning artifacts for Tuteur.
 ---
 

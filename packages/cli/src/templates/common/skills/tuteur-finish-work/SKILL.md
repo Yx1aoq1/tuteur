@@ -1,5 +1,5 @@
 ---
-name: finish
+name: tuteur-finish-work
 description: Finish and summarize a Tuteur workflow.
 ---
 
