@@ -1,4 +1,5 @@
 import { getDashboardSummary, type TaskFilterMode } from '../dashboard/summary';
+import { PRODUCT_DISPLAY_NAME } from '../product';
 
 interface HomePageProps {
   searchParams?: Promise<{
@@ -15,7 +16,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <header className="mb-6 flex items-center justify-between gap-6 max-[640px]:flex-col max-[640px]:items-start">
         <div>
           <p className="mb-1.5 text-[13px] font-semibold uppercase text-[#626b71]">Local dashboard</p>
-          <h1 className="text-4xl font-bold">Tuteur</h1>
+          <h1 className="text-4xl font-bold">{PRODUCT_DISPLAY_NAME}</h1>
         </div>
         <span className="rounded-full border border-[#c9d3cc] bg-[#eef5f0] px-2.5 py-1.5 text-[13px] font-semibold text-[#27513a]">
           {summary.status}

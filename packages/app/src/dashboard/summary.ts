@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { DASHBOARD_PROJECT_ROOT_ENV, PRODUCT_DISPLAY_NAME, PROJECT_DIR_NAME } from '../product';
 
 interface LocalUser {
   name: string;
@@ -14,14 +15,14 @@ interface TaskRecord {
 export type TaskFilterMode = 'mine' | 'all';
 
 export async function getDashboardSummary(requestedTaskFilter: TaskFilterMode = 'mine') {
-  const projectRoot = process.env.TUTEUR_PROJECT_ROOT ?? process.cwd();
-  const tuteurRoot = resolve(projectRoot, '.tuteur');
-  const currentUser = readLocalUser(tuteurRoot);
+  const projectRoot = process.env[DASHBOARD_PROJECT_ROOT_ENV] ?? process.cwd();
+  const projectDir = resolve(projectRoot, PROJECT_DIR_NAME);
+  const currentUser = readLocalUser(projectDir);
   const taskFilter = currentUser && requestedTaskFilter === 'mine' ? 'mine' : 'all';
-  const taskCounts = countTasks(tuteurRoot, currentUser, taskFilter);
+  const taskCounts = countTasks(projectDir, currentUser, taskFilter);
 
   return {
-    product: 'Tuteur',
+    product: PRODUCT_DISPLAY_NAME,
     status: 'scaffold',
     currentUser,
     taskFilter,
@@ -30,8 +31,8 @@ export async function getDashboardSummary(requestedTaskFilter: TaskFilterMode = 
   };
 }
 
-function readLocalUser(tuteurRoot: string): LocalUser | null {
-  const userPath = resolve(tuteurRoot, '.user');
+function readLocalUser(projectDir: string): LocalUser | null {
+  const userPath = resolve(projectDir, '.user');
   if (!existsSync(userPath)) {
     return null;
   }
@@ -51,8 +52,8 @@ function readLocalUser(tuteurRoot: string): LocalUser | null {
   }
 }
 
-function countTasks(tuteurRoot: string, currentUser: LocalUser | null, taskFilter: TaskFilterMode) {
-  const tasksRoot = resolve(tuteurRoot, 'tasks');
+function countTasks(projectDir: string, currentUser: LocalUser | null, taskFilter: TaskFilterMode) {
+  const tasksRoot = resolve(projectDir, 'tasks');
   if (!existsSync(tasksRoot)) {
     return {
       total: 0,
