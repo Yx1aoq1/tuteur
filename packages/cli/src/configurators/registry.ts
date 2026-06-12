@@ -7,6 +7,7 @@ import type {
 import { configureClaude } from './claude.js';
 import { configureCodex } from './codex.js';
 import { configureGemini } from './gemini.js';
+import { getSlashCommandPrefix } from '../constants/product.js';
 
 export const AGENT_PLATFORMS = defineAgentPlatforms({
   codex: {
@@ -31,7 +32,7 @@ export const AGENT_PLATFORMS = defineAgentPlatforms({
     defaultChecked: true,
     skillLinkDir: '.claude/skills',
     templateContext: {
-      cmdRefPrefix: '/tuteur:',
+      cmdRefPrefix: getSlashCommandPrefix(),
       userActionLabel: 'Slash commands',
       cliFlag: 'claude',
     },
@@ -45,7 +46,7 @@ export const AGENT_PLATFORMS = defineAgentPlatforms({
     defaultChecked: false,
     skillLinkDir: null,
     templateContext: {
-      cmdRefPrefix: '/tuteur:',
+      cmdRefPrefix: getSlashCommandPrefix(),
       userActionLabel: 'Slash commands',
       cliFlag: 'gemini',
     },

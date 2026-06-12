@@ -2,7 +2,12 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Command } from 'commander';
-import { getCliContext } from '../context.js';
+import {
+  DASHBOARD_PACKAGE_NAME,
+  DASHBOARD_PROJECT_ROOT_ENV,
+  PRODUCT_DISPLAY_NAME,
+  PROJECT_DIR_NAME,
+} from '../constants/product.js';
 
 const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_PORT = 47321;
@@ -28,8 +33,10 @@ export default function registerDashboardCommand(program: Command): void {
 }
 
 function startDashboard(): void {
-  const context = getCliContext();
-  const runtimeDir = resolve(context.projectRoot, '.tuteur/runtime');
+  const projectRoot = process.cwd();
+  assertProjectInitialized(projectRoot);
+
+  const runtimeDir = resolve(projectRoot, PROJECT_DIR_NAME, 'runtime');
   const statePath = resolve(runtimeDir, 'dashboard.json');
   mkdirSync(runtimeDir, { recursive: true });
 
@@ -41,13 +48,13 @@ function startDashboard(): void {
 
   const child = spawn(
     'pnpm',
-    ['--filter', '@tuteur/app', 'exec', 'next', 'dev', '--hostname', DEFAULT_HOST, '--port', String(DEFAULT_PORT)],
+    ['--filter', DASHBOARD_PACKAGE_NAME, 'exec', 'next', 'dev', '--hostname', DEFAULT_HOST, '--port', String(DEFAULT_PORT)],
     {
-      cwd: context.workspaceRoot,
+      cwd: projectRoot,
       detached: true,
       env: {
         ...process.env,
-        TUTEUR_PROJECT_ROOT: context.projectRoot,
+        [DASHBOARD_PROJECT_ROOT_ENV]: projectRoot,
       },
       stdio: 'ignore',
     },
@@ -63,7 +70,7 @@ function startDashboard(): void {
         host: DEFAULT_HOST,
         port: DEFAULT_PORT,
         url,
-        projectRoot: context.projectRoot,
+        projectRoot,
         startedAt: new Date().toISOString(),
       },
       null,
@@ -75,8 +82,10 @@ function startDashboard(): void {
 }
 
 function stopDashboard(): void {
-  const context = getCliContext();
-  const statePath = resolve(context.projectRoot, '.tuteur/runtime/dashboard.json');
+  const projectRoot = process.cwd();
+  assertProjectInitialized(projectRoot);
+
+  const statePath = resolve(projectRoot, PROJECT_DIR_NAME, 'runtime/dashboard.json');
   const currentState = readDashboardState(statePath);
 
   if (!currentState) {
@@ -101,6 +110,12 @@ function readDashboardState(statePath: string): DashboardState | null {
 
 function defaultDashboardUrl(): string {
   return `http://${DEFAULT_HOST}:${DEFAULT_PORT}`;
+}
+
+function assertProjectInitialized(projectRoot: string): void {
+  if (!existsSync(resolve(projectRoot, PROJECT_DIR_NAME))) {
+    throw new Error(`${PRODUCT_DISPLAY_NAME} is not initialized in this project. Run ttur init first.`);
+  }
 }
 
 function isProcessAlive(pid: number): boolean {

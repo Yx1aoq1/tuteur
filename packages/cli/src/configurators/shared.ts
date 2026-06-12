@@ -1,6 +1,7 @@
 import { copyFileSync, existsSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { getBundledSkillName, PRODUCT_DISPLAY_NAME } from '../constants/product.js';
 import { ensureDir } from '../utils/fs.js';
 import type { TemplateContext } from '../types/agent.js';
 
@@ -39,9 +40,13 @@ export function resolveWorkflowSkills(context: TemplateContext): ResolvedSkillTe
     .filter(entry => entry.isDirectory())
     .map(entry => {
       const skillPath = resolve(skillsRoot, entry.name, 'SKILL.md');
+      const skillName = getBundledSkillName(entry.name);
       return {
-        name: entry.name,
-        content: renderTemplate(readFileSync(skillPath, 'utf8'), context),
+        name: skillName,
+        content: renderTemplate(readFileSync(skillPath, 'utf8'), {
+          ...context,
+          skillName,
+        }),
       };
     });
 }
@@ -127,8 +132,10 @@ export function copyTemplateTreeIfMissing(input: {
   return writtenPaths;
 }
 
-function renderTemplate(content: string, context: TemplateContext): string {
+function renderTemplate(content: string, context: TemplateContext & { skillName: string }): string {
   return content
+    .replaceAll('{{PRODUCT_NAME}}', PRODUCT_DISPLAY_NAME)
+    .replaceAll('{{SKILL_NAME}}', context.skillName)
     .replaceAll('{{CMD_REF_PREFIX}}', context.cmdRefPrefix)
     .replaceAll('{{USER_ACTION_LABEL}}', context.userActionLabel)
     .replaceAll('{{CLI_FLAG}}', context.cliFlag);

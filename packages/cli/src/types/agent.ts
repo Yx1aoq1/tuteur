@@ -1,7 +1,7 @@
 export type SkillAdapterMode = 'symlink' | 'copy';
 
 export interface TemplateContext<TAgentTool extends string = string> {
-  cmdRefPrefix: '$' | '/tuteur:';
+  cmdRefPrefix: string;
   userActionLabel: 'Skills' | 'Slash commands';
   cliFlag: TAgentTool;
 }

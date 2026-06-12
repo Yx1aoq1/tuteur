@@ -5,7 +5,9 @@ import {
   type AgentTool,
   type SkillAdapterMode,
 } from '../configurators/index.js';
+import { PRODUCT_DISPLAY_NAME, PROJECT_DIR_NAME } from '../constants/product.js';
 import { ensureDir, writeJsonIfMissing, writeText, writeTextIfMissing } from '../utils/fs.js';
+import { getInstalledWorkflowSkillTemplates, recordCurrentTemplateHashes } from './managed-templates.js';
 
 export interface InitProjectOptions {
   projectRoot: string;
@@ -28,17 +30,17 @@ export interface ProjectUser {
 
 export async function initProject(options: InitProjectOptions): Promise<InitProjectResult> {
   const createdPaths: string[] = [];
-  const tuteurRoot = resolve(options.projectRoot, '.tuteur');
+  const projectDir = resolve(options.projectRoot, PROJECT_DIR_NAME);
 
-  ensureDir(tuteurRoot, createdPaths);
-  ensureDir(resolve(tuteurRoot, 'spec'), createdPaths);
-  ensureDir(resolve(tuteurRoot, 'workflows'), createdPaths);
-  ensureDir(resolve(tuteurRoot, 'tasks'), createdPaths);
-  ensureDir(resolve(tuteurRoot, 'runtime'), createdPaths);
-  ensureDir(resolve(tuteurRoot, 'workspace'), createdPaths);
+  ensureDir(projectDir, createdPaths);
+  ensureDir(resolve(projectDir, 'spec'), createdPaths);
+  ensureDir(resolve(projectDir, 'workflows'), createdPaths);
+  ensureDir(resolve(projectDir, 'tasks'), createdPaths);
+  ensureDir(resolve(projectDir, 'runtime'), createdPaths);
+  ensureDir(resolve(projectDir, 'workspace'), createdPaths);
 
   writeTextIfMissing(
-    resolve(tuteurRoot, '.gitignore'),
+    resolve(projectDir, '.gitignore'),
     [
       '# User identity and local runtime state',
       '.user',
@@ -54,7 +56,7 @@ export async function initProject(options: InitProjectOptions): Promise<InitProj
   );
 
   writeJsonIfMissing(
-    resolve(tuteurRoot, 'config.json'),
+    resolve(projectDir, 'config.json'),
     {
       version: '0.1.0',
       defaultWorkflow: 'default',
@@ -73,7 +75,7 @@ export async function initProject(options: InitProjectOptions): Promise<InitProj
   );
 
   writeJsonIfMissing(
-    resolve(tuteurRoot, 'context.json'),
+    resolve(projectDir, 'context.json'),
     {
       default: {
         required: [],
@@ -86,7 +88,7 @@ export async function initProject(options: InitProjectOptions): Promise<InitProj
   );
 
   writeJsonIfMissing(
-    resolve(tuteurRoot, 'workflows/default.workflow.json'),
+    resolve(projectDir, 'workflows/default.workflow.json'),
     {
       id: 'default',
       name: 'Default Coding Workflow',
@@ -96,22 +98,22 @@ export async function initProject(options: InitProjectOptions): Promise<InitProj
           id: 'planning',
           name: 'Planning',
           steps: [
-            { id: 'brainstorm', skillRef: 'tuteur-brainstorm', required: true },
-            { id: 'grill-me', skillRef: 'tuteur-grill-me', required: true },
+            { id: 'brainstorm', skillRef: 'brainstorm', required: true },
+            { id: 'grill-me', skillRef: 'grill-me', required: true },
           ],
         },
         {
           id: 'execute',
           name: 'Execute',
           steps: [
-            { id: 'dev', skillRef: 'tuteur-dev', required: true },
-            { id: 'check', skillRef: 'tuteur-check', required: true },
+            { id: 'dev', skillRef: 'dev', required: true },
+            { id: 'check', skillRef: 'check', required: true },
           ],
         },
         {
           id: 'finish',
           name: 'Finish',
-          steps: [{ id: 'finish', skillRef: 'tuteur-finish-work', required: true }],
+          steps: [{ id: 'finish', skillRef: 'finish', required: true }],
         },
       ],
     },
@@ -123,7 +125,7 @@ export async function initProject(options: InitProjectOptions): Promise<InitProj
     createdPaths,
   });
 
-  const currentUser = options.user ? writeProjectUser(tuteurRoot, options.user, createdPaths) : null;
+  const currentUser = options.user ? writeProjectUser(projectDir, options.user, createdPaths) : null;
 
   const installedAgents: AgentTool[] = [];
   for (const agent of options.agents ?? []) {
@@ -138,6 +140,8 @@ export async function initProject(options: InitProjectOptions): Promise<InitProj
     }
   }
 
+  recordCurrentTemplateHashes(options.projectRoot, getInstalledWorkflowSkillTemplates(options.projectRoot), createdPaths);
+
   return {
     projectRoot: options.projectRoot,
     createdPaths,
@@ -146,7 +150,7 @@ export async function initProject(options: InitProjectOptions): Promise<InitProj
   };
 }
 
-function writeProjectUser(tuteurRoot: string, name: string, createdPaths: string[]): ProjectUser {
+function writeProjectUser(projectDir: string, name: string, createdPaths: string[]): ProjectUser {
   const currentUser = {
     name: name.trim(),
     slug: slugifyUserName(name),
@@ -154,7 +158,7 @@ function writeProjectUser(tuteurRoot: string, name: string, createdPaths: string
   const now = new Date().toISOString();
 
   writeText(
-    resolve(tuteurRoot, '.user'),
+    resolve(projectDir, '.user'),
     `${JSON.stringify(
       {
         ...currentUser,
@@ -166,11 +170,11 @@ function writeProjectUser(tuteurRoot: string, name: string, createdPaths: string
     createdPaths,
   );
 
-  const userWorkspace = resolve(tuteurRoot, 'workspace', currentUser.slug);
+  const userWorkspace = resolve(projectDir, 'workspace', currentUser.slug);
   ensureDir(userWorkspace, createdPaths);
   writeTextIfMissing(
     resolve(userWorkspace, 'index.md'),
-    `# ${currentUser.name}\n\nLocal Tuteur workspace.\n`,
+    `# ${currentUser.name}\n\nLocal ${PRODUCT_DISPLAY_NAME} workspace.\n`,
     createdPaths,
   );
 

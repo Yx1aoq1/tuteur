@@ -2,14 +2,14 @@ import { execSync } from 'node:child_process';
 import { stdin as input, stdout as output } from 'node:process';
 import { checkbox, input as textInput, select } from '@inquirer/prompts';
 import type { Command } from 'commander';
+import { PRODUCT_DISPLAY_NAME } from '../constants/product.js';
 import {
   getInitAgentChoices,
   type AgentPlatformConfig,
   type AgentTool,
   type SkillAdapterMode,
 } from '../configurators/index.js';
-import { getCliContext } from '../context.js';
-import { initProject } from '../project/init.js';
+import { initProject } from '../installation/init.js';
 
 interface InitCommandOptions {
   yes?: boolean;
@@ -19,7 +19,7 @@ interface InitCommandOptions {
 export default function registerInitCommand(program: Command): void {
   program
     .command('init')
-    .description('Initialize Tuteur in the current project')
+    .description(`Initialize ${PRODUCT_DISPLAY_NAME} in the current project`)
     .option('-y, --yes', 'Use default agent selections')
     .option('-u, --user <name>', 'Initialize local user identity for task ownership')
     .action(runInitCommand);
@@ -39,16 +39,16 @@ async function runInitCommand(options: InitCommandOptions): Promise<void> {
     return;
   }
 
-  const context = getCliContext();
+  const projectRoot = process.cwd();
 
   const result = await initProject({
-    projectRoot: context.projectRoot,
+    projectRoot,
     agents: initSelection.agents,
     skillAdapterMode: initSelection.skillAdapterMode,
     user: initSelection.user,
   });
 
-  console.log(`Initialized Tuteur at ${result.projectRoot}`);
+  console.log(`Initialized ${PRODUCT_DISPLAY_NAME} at ${result.projectRoot}`);
   console.log('Skills installed: .agent/skill');
   console.log(`Selected agents: ${result.installedAgents.join(', ')}`);
   console.log(`Agent skill adapter: ${initSelection.skillAdapterMode}`);

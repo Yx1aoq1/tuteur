@@ -1,6 +1,6 @@
 ---
-name: tuteur-grill-me
-description: Tighten requirements and produce planning artifacts for Tuteur.
+name: {{SKILL_NAME}}
+description: Tighten requirements and produce planning artifacts for {{PRODUCT_NAME}}.
 ---
 
 # Grill Me
