@@ -16,7 +16,7 @@ interface DashboardState {
   startedAt?: string;
 }
 
-export function registerDashboardCommand(program: Command): void {
+export default function registerDashboardCommand(program: Command): void {
   const dashboard = program
     .command('dashboard')
     .alias('dashbord')

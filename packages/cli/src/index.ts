@@ -1,4 +1,5 @@
 #!/usr/bin/env node
 import { createCliProgram } from './program.js';
 
-createCliProgram().parse();
+const program = await createCliProgram();
+await program.parseAsync();

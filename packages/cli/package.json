@@ -1,13 +1,24 @@
 {
   "name": "@tuteur/cli",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
+  "main": "./dist/index.js",
   "bin": {
-    "tuteur": "./src/index.ts"
+    "ttur": "./bin/index.js"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
+    "build": "pnpm clean && tsc -p tsconfig.build.json && pnpm copy:assets",
+    "clean": "node scripts/clean.mjs",
+    "copy:assets": "node scripts/copy-assets.mjs",
     "dev": "tsx src/index.ts",
+    "prepack": "pnpm build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

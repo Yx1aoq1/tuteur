@@ -16,7 +16,7 @@ interface InitCommandOptions {
   user?: string;
 }
 
-export function registerInitCommand(program: Command): void {
+export default function registerInitCommand(program: Command): void {
   program
     .command('init')
     .description('Initialize Tuteur in the current project')

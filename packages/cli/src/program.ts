@@ -1,14 +1,16 @@
+import { createRequire } from 'node:module';
 import { Command } from 'commander';
-import { registerDashboardCommand } from './commands/dashboard.js';
-import { registerInitCommand } from './commands/init.js';
+import { registerCommands } from './commands/index.js';
 
-export function createCliProgram(): Command {
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json') as { version: string };
+
+export async function createCliProgram(): Promise<Command> {
   const program = new Command();
 
-  program.name('tuteur').description('Local-first workflow harness for AI coding agents').version('0.0.0');
+  program.name('ttur').description('Local-first workflow harness for AI coding agents').version(packageJson.version);
 
-  registerInitCommand(program);
-  registerDashboardCommand(program);
+  await registerCommands(program);
 
   return program;
 }
