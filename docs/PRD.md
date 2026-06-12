@@ -1,475 +1,314 @@
-# Tuteur 产品需求文档
+# Tuteur 产品需求文档(PRD)
+
+> 本文是需求分析文档,回答 **做什么 / 为什么 / 边界在哪 / MVP 验收口径**,不写具体实现。
+> 实现规格(数据结构、命令、API、门禁算法等)见 [`docs/design/`](./design/INDEX.md)。两者分工:PRD 定义需求与边界,design 定义如何落地。
+
+---
 
 ## 1. 产品概述
 
-Tuteur 是一个本地优先的 CLI 工具和可视化控制台，用于编排、执行、观察和审计 AI coding agent 的工作流。
+Tuteur 是一个**本地优先**的 CLI 工具和可视化控制台,用于编排、执行、观察和审计 AI coding agent 的工作流。
 
-它面向 Codex、Claude Code、Gemini CLI 等 AI 编码工具，目标不是替代这些 agent，而是在它们之上提供一个更强约束的 harness 层：由 Tuteur 管理任务状态、工作流阶段、阶段产物、执行记录和流转条件；由具体 agent 负责完成某个阶段内的实际工作。
+它面向 Codex、Claude Code、Gemini CLI 等 AI 编码工具。目标不是替代这些 agent,而是在它们之上提供一个**更强约束的 harness 层**:由 Tuteur 管理任务状态、工作流阶段、阶段产物、执行记录和流转条件;由具体 agent 负责完成某个阶段内的实际工作。
 
-核心想法是：不要只用 Markdown 告诉 AI “应该怎么做”，而是用结构化 workflow 定义任务生命周期，让 harness 判断当前阶段是否完成、产物是否齐全、是否允许进入下一步。
+核心主张:**不要只用 Markdown 告诉 AI「应该怎么做」,而是用结构化工作流定义任务生命周期,让系统判定当前阶段是否完成、产物是否齐全、是否允许进入下一步。** Markdown(skill)只回答「这一步怎么做」,Tuteur 回答「这一步算不算做完了、准不准往下走」。
 
-## 2. 背景
+---
 
-Trellis 这类工具证明了 AI 编码工作需要任务化、阶段化和产物化。它通过 `.trellis/tasks`、`prd.md`、`implement.jsonl`、`check.jsonl`、skill、hook 和 workflow 文档，让 agent 更容易围绕一个明确任务工作。
+## 2. 背景与动机
 
-但在实际使用中，仍然存在一个关键问题：当工作流主要由 Markdown 描述时，规范对 agent 来说偏弱。AI 可能跳过阶段、忘记调用 skill、没有生成必要产物、没有执行检查，或者在需求还不清楚时直接进入实现。
+类似 Trellis 的工具证明了 AI 编码工作需要任务化、阶段化和产物化:把工作围绕一个明确任务组织,配上规范、上下文和阶段流程,agent 的产出会更可控。
 
-Tuteur 试图把这部分变成更强的系统约束：
+但当工作流主要由 Markdown 描述时,约束对 agent 仍然偏弱:AI 可能跳过阶段、忘记调用 skill、没有生成必要产物、没有执行检查,或在需求还不清楚时直接进入实现。
 
-- 工作流由 JSON 或 YAML 定义。
-- 每个阶段由一组必须按顺序完成的 step 组成。
-- 每个 step 可以引用用户现有的 agent skill，并定义必需产物、检查命令和人工确认条件。
-- 任务状态由 harness 控制，而不是完全依赖对话上下文。
-- UI 可以看到每个任务走到哪一步、产物有哪些、哪次 agent run 成功或失败。
-- skill 仍由具体 agent 生态管理，Tuteur 只负责发现、引用和编排，不在 `.tuteur/` 内定义 skill。
+Tuteur 要把这部分变成更强的系统约束:工作流由结构化定义驱动,任务状态由系统控制而非完全依赖对话上下文,流转由产物与检查条件门禁,执行过程被记录和可视化。
+
+---
 
 ## 3. 问题陈述
 
-AI coding agent 能力很强，但在多阶段产品研发任务中仍然不够可控。
+高频使用 AI coding agent 的开发者面临:
 
-当前主要痛点：
+- 用 Markdown 描述工作流时,AI 经常只部分遵守,流程会「静默失守」。
+- 很难一眼看到项目下每个任务的状态、所处阶段、缺什么产物。
+- PRD、设计、调研、检查结果、实现总结分散在不同文件与聊天上下文中。
+- 不同 agent 的命令系统、hook、skill、上下文注入方式差异大,难以统一编排。
+- 每次 agent 执行后的日志、产物、实际读到的上下文缺少一致的审计记录。
+- 复杂任务给 agent 堆过多上下文,导致注意力分散;而简单任务又被迫走完整流程。
+- 多个任务并行时,改动互相干扰,缺少隔离手段。
 
-- 用 Markdown 描述工作流时，AI 经常只部分遵守。
-- 用户很难一眼看到项目下每个任务的状态。
-- PRD、设计文档、调研记录、测试用例、review 结果、实现总结分散在不同文件和聊天上下文中。
-- 不同 agent 的命令系统、hook、skill、上下文注入方式差异很大。
-- 任务整体状态、当前 workflow 阶段和 step 完成情况缺少统一视图。
-- agent 每次执行后的日志、产物和失败原因缺少一致的审计记录。
+---
 
 ## 4. 目标用户
-
-主要用户：
 
 - 高频使用 AI coding agent 的个人开发者。
 - 正在尝试 agent 驱动开发流程的小型工程团队。
 - 希望把 PRD、设计、实现、验证流程标准化的技术负责人或产品型工程师。
 
-早期用户大概率已经使用过 Codex、Claude Code、Gemini CLI、Cursor、Trellis 等工具，并且感受到“提示词流程”不够稳定的问题。
+早期用户大概率已使用过 Codex、Claude Code、Gemini CLI、Cursor、Trellis 等工具,并感受到「提示词流程」不够稳定的问题。
+
+---
 
 ## 5. 产品目标
 
-Tuteur 需要做到：
+Tuteur 需要做到:
 
-- 提供简单 CLI，用于初始化项目、创建任务、运行工作流、查看状态和归档任务。
-- 提供本地可视化 UI，展示任务、阶段、产物、日志和 agent run。
-- 使用结构化 workflow 作为工作流唯一事实源。
-- 发现当前项目下 agent 已有的 skill，并在 workflow step 中引用这些 skill。
-- 跟踪每个 step 要求的产物、检查命令和人工确认条件。
-- 当必需产物或检查条件缺失时，阻止任务进入下一阶段。
-- MVP 至少支持一个 AI coding agent，后续通过 adapter 扩展到更多 agent。
-- 将任务状态和产物存储在项目仓库内，便于查看、迁移和版本管理。
-- 支持本地用户初始化，并在 UI 中按当前用户过滤自己创建或分配给自己的任务。
+- 用结构化工作流作为任务流转的唯一事实源,由系统判定阶段完成与流转,而非依赖 agent 自觉。
+- 提供简单 CLI,供用户与 agent 共同调用:初始化、创建任务、推进流程、查看状态、归档。
+- 提供本地可视化控制台,展示任务、阶段、产物、上下文、日志和执行记录,并能**实时**反映本地变化。
+- 发现并复用项目/本地已有的 agent skill,在工作流中引用,而不重新定义 skill。
+- 跟踪每一步要求的产物、检查条件和人工确认,缺失时阻止流转。
+- 记录每次 agent 执行的日志、产物,以及「计划注入」与「实际注入」的上下文差异,便于审计。
+- 支持多任务并行推进且互不干扰。
+- 把任务状态与产物存储在项目仓库内,便于查看、迁移和版本管理;同时提供本地/全局两级管理。
+- 通过统一的适配机制接入多种 AI coding agent,而非为每个工具硬编码。
 
-## 6. MVP 非目标
+---
 
-第一版不解决以下问题：
+## 6. 工具边界
 
-- 云同步。
-- 多用户权限系统。
-- 服务端账号体系。MVP 的用户隔离只是本地 developer identity 和任务过滤，不做访问控制。
-- 企业级审计和合规。
-- 替代 Jira、Linear、GitHub Issues 等任务系统。
-- 深度支持所有 AI coding agent。
-- 任意复杂分支的完整可视化工作流编辑器。
-- 在 `.tuteur/` 中定义或编辑 agent skill。
-- 复杂 artifact schema 校验。
-- 托管 SaaS 控制台。
+明确 Tuteur 的职责范围,是本产品定义的核心。
 
-## 7. 核心概念
+### 6.1 Tuteur 负责(harness 层)
 
-### 7.1 Project
+- **流程定义与流转判定**:用结构化工作流描述任务生命周期;判定每一步能否完成、任务能否进入下一阶段。
+- **门禁**:基于必需产物、检查命令、人工确认决定是否放行。
+- **状态管理**:维护任务状态与工作流进度,作为事实源。
+- **产物与上下文追踪**:记录每步产物、计划与实际注入的上下文、执行日志。
+- **观察与审计**:可视化任务、阶段、产物、上下文差异、执行记录,并实时更新。
+- **agent 适配与编排**:统一发现 skill、注入上下文、启动执行、捕获结果;支持多 agent。
+- **并行隔离**:支持任务级隔离工作,使多任务并行互不干扰。
 
-被 Tuteur 初始化过的代码仓库。项目根目录下包含 `.tuteur/`，用于保存 workflow 定义、任务记录、运行时状态和本地配置。
+### 6.2 Tuteur 不负责(交给 agent / 用户)
 
-`.tuteur/` 不保存 skill 本体。Tuteur 默认 skill 本体放在 `.agent/skill/`；具体 agent 目录只作为适配层，例如 Claude 可选择 `.claude/skills/*` 软链到 `.agent/skill/*`，也可以直接复制生成。
+- **不替代 agent 执行**:实际写代码、写文档、跑命令由具体 agent 完成。
+- **不定义 skill 内容**:skill「怎么做」由各 agent 生态维护,Tuteur 只发现、引用、编排,不在自身目录内定义 skill 本体。
+- **不替 agent 决定走哪条分支**:涉及语义判断的分支,由 agent 产出可见的分类结果,系统据此路由;agent 不直接控制流转。
 
-每个开发者可以在本机初始化一个本地用户身份。该身份写入 `.tuteur/.user`，并被 `.tuteur/.gitignore` 忽略，不进入共享仓库事实源。共享任务仍通过 `task.json` 中的 `creator`、`assignee` 等字段表达归属。
+### 6.3 与 agent 的分工原则
 
-### 7.2 Task
+> agent 在一步之内把活干完;Tuteur 判定这一步算不算做完、准不准往下走。
 
-一个可追踪的工作单元。每个任务绑定一个 workflow，并记录状态、当前 workflow 进度、产物、运行记录和元数据。
+由此引出一条贯穿全局的不变量:**一次 agent 执行成功 ≠ 一步完成**。完成只能由系统门禁判定。
 
-MVP 只内置三个任务状态：
+### 6.4 MVP 不做(范围外)
 
-- `planning`：任务已创建，正在明确需求、计划和上下文。
-- `in_progress`：任务已进入执行流程，正在按 workflow 推进。
-- `completed`：任务绑定的 workflow 已全部完成。
+- 云同步、托管 SaaS 控制台。
+- 多用户权限系统与服务端账号体系(本地身份与任务过滤不等于访问控制)。
+- 企业级审计与合规。
+- 替代 Jira、Linear、GitHub Issues 等通用任务系统。
+- 任意复杂、无约束的通用流程编排(画布刻意限制为两类节点,见 §7.3)。
+- 复杂产物 schema 校验。
 
-`archived` 不是任务状态。归档只是把已完成任务移入 archive 目录，或记录 `archivedAt`。
+---
 
-### 7.3 Workflow
+## 7. 核心概念(需求语言)
 
-结构化的工作流定义，描述任务会经过哪些 phase、每个 phase 包含哪些 step、每个 step 引用哪个 skill、需要哪些产物和检查条件。
+### 7.1 Scope:全局与项目两级
 
-Phase 建议字段：
+Tuteur 区分两级管理范围:
 
-- `id`
-- `name`
-- `description`
-- `steps`
+- **项目级**:某个被初始化过的代码仓库内的工作区,是**任务的事实源**;属于团队协作环境,按当前用户过滤任务。
+- **全局级**:当前开发者本机的统一管理区,存放跨项目的配置、已知项目清单和可复用模板;属于单人环境,不做用户过滤。**全局级不保存任务**,任务永远属于某个项目。
 
-Step 建议字段：
+全局级让单个开发者在一个控制台里管理多个项目,并集中管理并行工作。
 
-- `id`
-- `skillRef`
-- `required`
-- `requiredArtifacts`
-- `checks`
-- `approvalRequired`
+### 7.2 Project 与多项目管理
 
-当当前 phase 的所有 required step 都完成后，Tuteur 自动推进到下一个 phase，不需要额外命令。
+被 Tuteur 初始化过的代码仓库即一个 Project。控制台需要支持**管理多个项目**:登记项目、在项目间切换、识别一个路径是否已初始化;对未初始化的路径,允许从控制台发起初始化。
 
-### 7.4 Skill
+### 7.3 Workflow:节点图工作流
 
-可复用的 agent 能力。Skill 由具体 agent 生态定义和维护，Tuteur 不重新定义 skill 格式。
+工作流是任务生命周期的结构化定义,采用**节点图**形式,只包含两类节点:
 
-Tuteur 可以扫描当前项目中已有的 skill，供 workflow 通过 `skillRef` 引用。Skill 内部描述“应该怎么做”，Tuteur 只负责保证 workflow 中要求经过的 step 不能被跳过。
+- **技能节点(skill 节点)**:执行一个被引用的 skill;单一前驱、单一后继。
+- **分支节点(decision 节点)**:根据一个信号在多个后继中选择路径;用于按任务规模/类型裁剪流程。
 
-### 7.5 Artifact
+这种「只有技能节点和分支节点、技能节点单入单出」的约束,使工作流既能表达分支,又远比通用流程编排器简单,便于用户理解和可视化编辑。
 
-工作流 step 产生的文件。MVP 只支持文件型 artifact。
+**主体流程**由节点上的**阶段标签(phase)**表达(如 规划 → 执行 → 收尾),回答「当前处于哪个大阶段」,并驱动任务状态;节点图本身回答「具体在做哪一步」。两者一粗一细、互补。
 
-`requiredArtifacts` 的路径相对当前 task 目录。默认任务产物参考 Trellis 的任务目录组织方式，并按 UI 展示需要区分 Markdown 和 JSON：
+### 7.4 分支判定
 
-- `prd.md`：需求说明，记录目标、范围、用户故事、约束和验收口径。
-- `design.md`：实现设计，记录方案、影响范围、数据流、接口变化和风险。Trellis 当前常见等价文件是 `info.md`，Tuteur 默认使用更明确的 `design.md` 命名。
-- `checklist.json`：功能验收清单，用结构化 JSON 表达测试点、验收项、状态和责任方，方便 UI 展示和勾选。
-- `implement.json`：实现阶段上下文清单。它不是实现结果，而是列出 dev/implement step 必须优先阅读的 spec、research、design 等文件。
-- `check.json`：检查阶段上下文清单。它列出 check step 必须优先阅读的 spec、research、checklist 等文件。
-- `research/*.md`：调研产物，按主题拆分。
-- `check-result.json`：检查结果摘要，用结构化 JSON 记录测试、lint、typecheck 和人工验收项的结果。
+分支节点的信号来自三类来源,但系统始终是流转的控制方:
 
-文档类内容优先使用 Markdown，便于 agent 阅读和用户编辑。需要 UI 展示、筛选、勾选、统计或校验的内容优先使用 JSON。
+- **确定性信号**:由任务字段或检查结果直接判定(如优先级、检查是否通过)。
+- **语义信号(agent 分类)**:对于「大型还是小型任务」「需要开发还是仅调研」这类需要模型判断的分支,由一个轻量分类步骤让 agent 产出**可见、可审计的分类结果**,系统据此路由。agent 不直接选路。
+- **人工信号**:由用户在控制台选择路径。
 
-Tuteur 参考 Trellis 的 implement/check 上下文清单概念，但默认不使用 JSONL。不同阶段或 step 的 agent 注入上下文应使用不同 JSON 文件，例如 `implement.json` 和 `check.json`，避免把所有上下文混进一个总文件。
+需求价值:借助分类分支,小任务可跳过重流程、裁剪上下文,避免给 agent 堆过多内容导致注意力分散。
 
-`tuteur complete <step>` 会检查这些文件是否存在。MVP 不提供 artifact 登记命令，也不做复杂 schema 校验。
+### 7.5 Skill
 
-### 7.6 Spec 与上下文管理
+可复用的 agent 能力,由各 agent 生态定义和维护。Tuteur 需要能**发现**本地存在的 skill —— 既包括项目内的,也包括全局/本机各 agent(如 Codex、Claude、Gemini)的 —— 并标注来源,供工作流引用。Tuteur 不重新定义 skill 格式,也不在自身目录内保存 skill 本体。
 
-Tuteur 需要像 Trellis 一样维护项目规范和长期上下文。它不只关心当前任务产物，也要让用户明确管理“会话开始时 hook 默认加载哪些规范”和“每次 agent run 实际读到了哪些上下文”。
+### 7.6 Artifact
 
-项目规范放在 `.tuteur/spec/` 下，例如：
+工作流步骤产出的文件(如需求说明、设计文档、检查清单、检查结果、调研记录)。**产物按需**:某一步是否要求产物由工作流声明,可以为空;声明了才纳入门禁。文档类内容优先 Markdown,需要展示/筛选/统计的内容优先结构化数据。
 
-```text
-.tuteur/spec/
-  frontend.md
-  backend.md
-  testing.md
-  product.md
-```
+### 7.7 上下文管理
 
-MVP 的上下文管理规则：
+Tuteur 需要管理「会话开始时默认注入哪些规范与上下文」,并记录「每次执行实际注入/读取了哪些」。控制台需展示**计划注入**与**实际注入**之间的差异,帮助用户发现 hook 未生效或上下文缺失。
 
-- `.tuteur/spec/` 存放项目级规范、约定、经验和长期上下文。
-- `.tuteur/context.json` 存放 hook/session-start 的默认注入配置。
-- 用户可以在 UI 中启用、禁用或调整某个 spec 是否默认注入。
-- 用户可以标记某些 spec 为必读，要求 agent 会话开始时默认加载。
-- 用户可以按 agent、workflow 或 phase 配置不同的默认注入集合。
-- Tuteur 需要记录每次 agent run 实际注入或读取过哪些 spec、task artifact 和 research 文件。
-- UI 需要能展示“计划注入的上下文”和“本次 run 实际注入的上下文”之间的差异，帮助用户发现 hook 未生效或上下文缺失。
+### 7.8 门禁与 Approval
 
-`.tuteur/context.json` 示例：
-
-```json
-{
-  "default": {
-    "required": [".tuteur/spec/product.md", ".tuteur/spec/testing.md"],
-    "optional": [".tuteur/spec/frontend.md", ".tuteur/spec/backend.md"],
-    "disabled": []
-  },
-  "agents": {
-    "dev": {
-      "required": [".tuteur/spec/frontend.md"]
-    },
-    "check": {
-      "required": [".tuteur/spec/testing.md"]
-    }
-  }
-}
-```
-
-### 7.7 Check
-
-Step 可以定义检查命令。MVP 只支持 command check，并只看退出码：
-
-- 退出码为 0：通过。
-- 退出码非 0：失败。
-
-检查失败时，`tuteur complete <step>` 必须失败，并显示失败命令和输出摘要。
-
-### 7.8 Approval
-
-人工确认由 UI 完成，不提供 CLI approval 命令。
-
-当某个 step 需要人工确认时，`tuteur complete <step>` 只读取确认状态。如果确认尚未完成，命令失败并提示等待 UI approval。
+每一步的完成需满足:必需产物齐全、检查命令通过、需要的人工确认已完成。任一不满足则阻止该步完成与流转。人工确认由控制台完成,系统只读取确认状态。
 
 ### 7.9 Run
 
-某个 agent 对某个阶段或 skill 的一次执行尝试。Run 需要记录 agent、命令、开始时间、结束时间、状态、日志、生成产物和失败原因。
+一次 agent 对某一步的执行尝试,需记录执行的 agent、命令、起止时间、状态、日志、产物,以及计划与实际注入的上下文。Run 成功不等于该步完成。
 
-## 8. MVP 功能范围
+### 7.10 User:身份、名册与个人工作区
 
-### 8.1 CLI
+- **本地身份**:当前开发者在本机的身份,作为控制台默认过滤依据,属本地状态。
+- **成员名册**:项目已知成员清单,供任务归属引用与友好显示。
+- **个人工作区**:每个用户的本地内容(草稿、笔记、私有上下文)。
 
-第一版需要支持：
+项目级按身份过滤「我的任务」;全局级不过滤。Tuteur 只做本地协作过滤,不做访问控制。
 
-```bash
-tuteur init
-tuteur init -u "yan"
-tuteur task create "任务标题"
-tuteur task list
-tuteur task list --mine
-tuteur task status <task>
-tuteur complete <step>
-tuteur task archive <task>
-tuteur ui
-```
+### 7.11 任务并行与归档
 
-可选增强命令：
+- **并行**:支持任务在**独立隔离的工作树**中推进(可选),使多任务并行时改动互不干扰;隔离工作集中管理,便于控制台统一观察。
+- **归档**:归档是把已完成任务的整个目录迁入归档区并确认其状态的整理动作,**不依赖任何特定产物**;归档不是一种任务状态。
 
-```bash
-tuteur workflow validate
-tuteur skill list
-tuteur run list <task>
-```
+---
 
-### 8.2 本地目录结构
+## 8. MVP 功能需求
 
-建议结构：
+按能力域列出**需求目标**(可验证),区分「核心闭环(必须)」与「完整体验(应当)」。
 
-```text
-.tuteur/
-  .gitignore
-  .user
-  config.json
-  context.json
-  spec/
-    product.md
-    testing.md
-  workflows/
-    default.workflow.json
-  tasks/
-    2026-06-11-example-task/
-      task.json
-      state.json
-      prd.md
-      design.md
-      checklist.json
-      implement.json
-      check.json
-      check-result.json
-      research/
-      runs/
-        001.json
-        001.log
-  runtime/
-  workspace/
-    yan/
-      index.md
-```
+### 8.1 初始化(核心)
 
-`.tuteur/.user`、`.tuteur/runtime/` 和 `.tuteur/workspace/` 是本地状态，默认不提交。`config.json`、`context.json`、`workflows/`、`spec/` 和 `tasks/` 是共享项目状态。
+- 用户可在任意代码仓库初始化项目,也可初始化本机全局环境。
+- 初始化时可选择要适配的一个或多个 agent 工具、skill 的落地方式、本地身份。
+- 初始化的选择逻辑在 CLI 交互与控制台表单之间**统一**:同一套选项产出同一结果,控制台发起的初始化与命令行等价。
+- 全局初始化只建立全局配置、项目清单与可复用模板,不在本机污染各 agent 的全局目录。
 
-### 8.3 默认工作流
+### 8.2 任务管理(核心)
 
-第一版默认 workflow 保持简单，并用 step 串起已有 skill：
+- 用户可创建任务、查看任务列表(支持「我的/全部」与状态过滤)、查看任务状态、归档任务。
+- 任务状态至少包含:规划中、进行中、已完成。
+- 创建任务时可选启用隔离工作树以支持并行(应当)。
+- 归档将任务整体迁入归档区并确认完成状态,不要求特定产物,并清理其隔离工作树(若有)。
 
-1. Planning：`brainstorm` -> `grill-me`
-2. Execute：`dev` -> `check`
-3. Finish：`finish`
+### 8.3 工作流与门禁(核心)
 
-每个 step 可以定义必需产物、检查命令和人工确认条件。例如：`brainstorm` 不能在 `prd.md` 缺失时完成；`grill-me` 不能在 planning 阶段完整产物缺失时完成。
+- 系统以节点图工作流为唯一事实源,计算任务当前所处节点与主体阶段。
+- 提供统一的「推进一步」入口:在满足必需产物、检查命令、人工确认的前提下放行,否则明确拒绝并指出缺失项。
+- 当一步完成后,系统自动沿流程流转;分支节点由系统自动求值选路,对 agent 透明。
+- 当主体阶段推进时,任务状态相应更新。
 
-Planning 阶段需要把任务上下文准备充分：
+### 8.4 分支(完整体验)
 
-- `brainstorm` 产出初始 `prd.md`。
-- `grill-me` 追问并压实计划，最终补齐 `prd.md`、`design.md`、`checklist.json`、`implement.json` 和 `check.json`。
+- 工作流支持分支节点,按确定性信号或 agent 分类结果路由。
+- agent 分类结果是可见、可审计的产物,控制台能展示「因何走了这条路」。
+- 借助分类分支,简单任务可走精简路径、裁剪上下文。
 
-默认 workflow 不把 `design`、`checklist`、`context`、`confirm-plan` 拆成独立 step。它们是 planning 阶段应完成的产物和校验条件，而不是默认流程里的额外动作。
+### 8.5 上下文流转(核心)
 
-`tuteur complete <step>` 是 agent 推进 workflow 的统一入口。它会读取 workflow 定义并执行校验：
+- 用户可配置会话开始时默认注入的规范与上下文,并可启用/禁用、标记必读、按步骤差异化配置。
+- 每次执行记录计划注入与实际注入的上下文;控制台展示两者差异以暴露注入失效。
 
-- `<step>` 必须属于当前 phase。
-- 必需 artifact 必须存在。
-- command check 必须返回 0。
-- 需要人工确认的 step 必须已在 UI 中确认。
-- 校验通过后记录 step completed。
-- 当前 phase 的所有 required step completed 后，自动进入下一 phase。
-- Planning phase 完成并进入 Execute phase 时，任务状态从 `planning` 更新为 `in_progress`。
-- 整个 workflow 完成后，任务状态更新为 `completed`。
+### 8.6 Skill 发现与引用(核心)
 
-### 8.4 可视化 UI
+- 系统能发现项目内与本机各 agent 的 skill,并标注来源(哪个 agent、项目还是全局)。
+- 工作流可引用这些 skill;引用不存在的 skill 应能在校验期被发现。
 
-UI 首要目标是清晰，不是装饰。
+### 8.7 Agent 执行与记录(核心)
 
-初始页面：
+- 系统能通过适配机制启动至少一个 agent 完成某一步,并捕获日志与执行元数据。
+- 工作流的每一步可指派特定 agent 执行(应当);可声明以隔离子上下文方式执行,避免主上下文被污染(应当)。
+- 每次执行都有可查的日志、产物清单与上下文记录。
 
-- 任务列表：按状态分组展示任务。
-- 用户过滤：读取 `.tuteur/.user`；初始化过用户时默认显示 `My tasks`，只展示 `creator` 或 `assignee` 匹配当前用户的任务；用户可以切换到 `All tasks`。
-- 任务详情：展示当前 phase、step 完成情况、产物列表和 run 记录。
-- 工作流视图：展示任务当前处于哪个阶段。
-- 产物查看器：查看 `prd.md`、`design.md`、`research/*.md` 等 Markdown 文档，以及 `checklist.json`、`check-result.json` 等结构化结果。
-- Spec 与上下文管理：查看 `.tuteur/spec/`，配置 hook/session-start 默认注入哪些规范，查看每次 run 实际注入或读取过的上下文文件。
-- 执行日志：查看 agent run 的命令、输出、错误和结果。
-- Approval 面板：人工确认计划产物或其他需要确认的 checkpoint。
+### 8.8 多 agent 适配(核心 / 完整)
 
-### 8.5 Agent Adapter
+- MVP 至少完整支持一个 agent(主线 Codex);通过统一适配机制可扩展到 Claude Code、Gemini CLI 等。
+- 新增一个 agent 的接入主要是声明其元数据 + 提供少量平台特定配置,而非重写编排逻辑。
 
-MVP 只支持一个 agent，建议优先选择 Codex 或 Claude Code。
+### 8.9 可视化控制台(核心 / 完整)
 
-Adapter 需要负责：
+控制台首要目标是清晰与可观察。需求目标:
 
-- 启动一次 agent run。
-- 把当前 task、phase、step、skill 和 artifact 上下文传给 agent。
-- 根据 `.tuteur/context.json` 和当前 workflow 信息准备会话开始时默认注入的 spec/context。
-- 捕获执行日志。
-- 判断执行成功或失败。
-- 写入 run 元数据，包括计划注入和实际注入/读取的 spec、task artifact、research 文件列表。
-- 提醒 agent 使用 `tuteur complete <step>` 尝试完成当前 step。
+- **多项目看板**:登记项目、切换项目、识别路径是否已初始化、对未初始化路径发起初始化(完整)。
+- **全局配置界面**:管理跨项目默认配置(完整)。
+- **任务看板与详情**:按状态分组展示任务;详情展示当前阶段、步骤进度、产物、关联分支/工作树、执行记录(核心)。
+- **工作流画布**:以节点图展示工作流,支持编辑(仅技能节点与分支节点,布局简化);运行态高亮当前节点、已完成节点与分支实际走向(完整)。
+- **产物查看**:查看 Markdown 文档与结构化结果(完整)。
+- **上下文与规范管理**:查看规范、配置默认注入、查看每次执行的实际注入(完整)。
+- **执行日志**:查看命令、输出、结果,以及计划与实际上下文差异(核心)。
+- **Approval 面板**:完成需人工确认的检查点(完整)。
+- **实时更新**:agent 在本地的修改(产物、状态、执行记录)应能实时反映到控制台,无需手动刷新(完整)。
 
-## 9. Workflow JSON 示例
+### 8.10 用户与协作过滤(核心)
 
-```json
-{
-  "id": "default",
-  "name": "Default Coding Workflow",
-  "version": "0.1.0",
-  "phases": [
-    {
-      "id": "planning",
-      "name": "Planning",
-      "steps": [
-        {
-          "id": "brainstorm",
-          "skillRef": "brainstorm",
-          "required": true,
-          "requiredArtifacts": ["prd.md"]
-        },
-        {
-          "id": "grill-me",
-          "skillRef": "grill-me",
-          "required": true,
-          "requiredArtifacts": ["prd.md", "design.md", "checklist.json", "implement.json", "check.json"]
-        }
-      ]
-    },
-    {
-      "id": "execute",
-      "name": "Execute",
-      "steps": [
-        {
-          "id": "dev",
-          "skillRef": "dev",
-          "required": true
-        },
-        {
-          "id": "check",
-          "skillRef": "check",
-          "required": true,
-          "requiredArtifacts": ["check-result.json"],
-          "checks": [
-            {
-              "id": "tests",
-              "type": "command",
-              "command": "npm test"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "finish",
-      "name": "Finish",
-      "steps": [
-        {
-          "id": "finish",
-          "skillRef": "finish",
-          "required": true
-        }
-      ]
-    }
-  ]
-}
-```
+- 用户可初始化本地身份;控制台默认展示「我的任务」,可切换「全部」。
+- 项目级按身份过滤,全局级不过滤。
+- 任务记录归属信息(创建者、负责人),供过滤与展示。
+
+---
+
+## 9. MVP 非目标
+
+见 §6.4。补充强调:第一版不追求任意复杂工作流编辑器、不做产物深度 schema 校验、不做云端协同与权限控制。
+
+---
 
 ## 10. UX 原则
 
-- 第一屏展示真实任务，不做营销页。
-- 用户随时知道当前活跃任务、所在 phase 和下一个 step。
-- 缺失产物必须明显可见，并能直接定位。
-- agent 日志不需要用户手动翻多个文件。
-- 编辑 workflow 应该比编辑长篇 Markdown 指令更安全。
-- 产品保持 local-first 和 repo-native。
+- 第一屏展示真实任务,不做营销页。
+- 用户随时知道当前活跃任务、所处主体阶段和下一步。
+- 缺失产物、未过门禁、等待确认必须明显可见,并能直接定位。
+- agent 日志与上下文不需要用户手动翻多个文件。
+- 编辑结构化工作流应比编辑长篇 Markdown 指令更安全。
+- 控制台对本地变化实时响应。
+- 产品保持本地优先、仓库原生。
 
-## 11. 成功标准
+---
 
-MVP 完成的判断标准：
+## 11. 成功标准(验收口径)
 
-- 用户可以在任意代码仓库执行 `tuteur init`。
-- 用户可以通过 `tuteur init -u <name>` 初始化本地身份，并在 UI 中切换 `My tasks` / `All tasks`。
-- 用户可以创建任务，并在 UI 中看到任务。
-- 一个任务可以走完 Planning、Execute、Finish 三个 phase。
-- Planning phase 至少能产出 `prd.md`、`design.md`、`checklist.json`、`implement.json` 和 `check.json`。
-- 用户可以在 UI 中管理 `.tuteur/spec/` 和 `.tuteur/context.json`，并看到每次 run 实际注入或读取过的上下文。
-- 缺失必需产物、检查失败或等待人工确认时，系统能阻止 step 完成和 phase 流转。
-- 至少一个 agent 可以通过 harness 被调用。
-- 每次 agent run 都有日志和元数据。
-- UI 能准确展示任务状态、当前 phase、step 完成情况、产物、approval 和执行结果。
+MVP 完成的判断标准:
+
+- 用户可在任意代码仓库初始化 Tuteur,也可初始化本机全局环境;控制台与 CLI 的初始化结果一致。
+- 用户可创建任务,并在控制台看到任务;可在「我的/全部」之间切换。
+- 一个任务可在节点图工作流下走完规划、执行、收尾的主体阶段。
+- 工作流支持至少一处由 agent 分类结果驱动的分支,小任务可走精简路径,且分支走向在控制台可见。
+- 规划阶段能产出预期的计划类产物(如需求说明、设计、检查清单等)。
+- 缺失必需产物、检查失败或等待人工确认时,系统能阻止该步完成与流转,并指出原因。
+- 至少一个 agent 可通过适配机制被调用并完成某一步;每次执行都有日志与元数据。
+- 控制台能展示计划注入与实际注入的上下文差异。
+- 用户可管理规范与默认注入配置。
+- 用户可启用隔离工作树并行推进多个任务,彼此互不干扰。
+- agent 对本地的修改能实时反映到控制台。
+- 用户可发现并在工作流中引用本地/项目的 skill。
+- 归档可将已完成任务迁入归档区并确认状态,不依赖特定产物。
+
+---
 
 ## 12. 开放问题
 
-- 第一个 agent 应优先支持 Codex 还是 Claude Code？
-- Workflow 定义只支持 JSON，还是同时支持 YAML？
-- Skill 发现范围应该默认包含哪些 agent 目录？
-- 是否需要兼容 Trellis 的 `.trellis/tasks`，还是保持独立结构？
-- UI 第一版用本地 Web 页面，还是先做 Terminal UI？
+- 工作流定义是否在 JSON 之外再支持 YAML(倾向:MVP 仅其一,另一种后置)。
+- 人工分支(用户在控制台选路)是否进入 MVP(倾向:先做确定性与 agent 分类两类)。
+- 隔离工作树是否需要更细的生命周期策略(自动合并、冲突处理)。
+- 实际注入上下文的采集精度(近似 vs 精确到 agent 真正读取的文件)。
+- 控制台对产物是只读还是允许编辑。
+- 多 agent 中,子 agent 隔离在不支持该能力的平台上的降级表现。
 
-## 13. 路线图
+---
 
-### Milestone 1：本地骨架
+## 13. 命名
 
-- 创建 `.tuteur/` 项目结构。
-- 添加默认 workflow schema。
-- 实现 task create/list/status 和 `complete <step>` 命令。
-- 实现 workflow 和 task 文件校验。
+当前工作名:**Tuteur**。CLI 命令名 `ttur`,项目数据目录 `.tuteur/`。
 
-### Milestone 2：可视化任务面板
+选择原因:语义接近「给生长中的东西提供支撑」,有「引导、支撑、约束但不替代」的含义,适合作为 CLI 与控制台的共同品牌。最终命名前仍需检查 npm 包名、仓库名、域名与商标风险。
 
-- 启动本地 Web UI。
-- 按状态展示任务列表。
-- 展示任务详情、产物、当前 phase、step 状态和 run 历史。
-- 支持在 UI 中完成 approval。
-- 支持查看和调整 `.tuteur/spec/`、`.tuteur/context.json` 的默认注入配置。
+---
 
-### Milestone 3：第一个 Agent Adapter
+## 14. 关联文档
 
-- 支持一个 agent。
-- 通过 adapter 执行一个 workflow step。
-- 捕获日志、run 元数据和本次实际注入/读取的上下文文件列表。
-- 用必需产物、检查命令和 approval 控制 step 完成和 phase 流转。
-
-### Milestone 4：Skill 发现
-
-- 扫描当前项目下 agent 已有的 skill。
-- 在 UI 中展示 workflow 引用的 skill 是否存在。
-- 支持 workflow step 通过 `skillRef` 绑定外部 skill。
-
-### Milestone 5：Workflow 编辑
-
-- 可视化展示 workflow graph。
-- 校验阶段流转规则。
-- 支持在 UI 中编辑基础阶段配置。
-
-## 14. 命名
-
-当前工作名：Tuteur。
-
-选择原因：
-
-- 语义上接近 Trellis，都是给生长中的东西提供支撑。
-- 不直接使用 workflow、agent、harness 等工程化词汇。
-- 适合作为 CLI 和可视化产品的共同品牌。
-- 有“引导、支撑、约束但不替代”的感觉。
-
-最终命名前仍需要检查 npm 包名、GitHub 组织/仓库名、域名和商标风险。
+- 实现总览与导航:[`docs/design/INDEX.md`](./design/INDEX.md)
+- 数据与领域模型(事实源):[`docs/design/core.md`](./design/core.md)
+- CLI 与初始化、适配:[`docs/design/cli.md`](./design/cli.md)
+- Harness:工作流、门禁、上下文、agent 执行:[`docs/design/harness.md`](./design/harness.md)
+- 可视化控制台:[`docs/design/web.md`](./design/web.md)
+- 架构选型与边界:[`docs/ARCHITECTURE.md`](./ARCHITECTURE.md)
