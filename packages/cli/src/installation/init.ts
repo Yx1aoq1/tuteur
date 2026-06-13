@@ -42,10 +42,10 @@ export async function initProject(options: InitProjectOptions): Promise<InitProj
   writeTextIfMissing(
     resolve(projectDir, '.gitignore'),
     [
-      '# User identity and local runtime state',
-      '.user',
+      '# Developer identity and local runtime state',
+      '# (workspace/ is committed — its subdirs are the project member roster)',
+      '.developer',
       'runtime/',
-      'workspace/',
       '',
       '# Temporary files',
       '*.tmp',
@@ -157,8 +157,9 @@ function writeProjectUser(projectDir: string, name: string, createdPaths: string
   };
   const now = new Date().toISOString();
 
+  // Local developer identity (gitignored; mirrors Trellis `.developer`).
   writeText(
-    resolve(projectDir, '.user'),
+    resolve(projectDir, '.developer'),
     `${JSON.stringify(
       {
         ...currentUser,
@@ -170,6 +171,8 @@ function writeProjectUser(projectDir: string, name: string, createdPaths: string
     createdPaths,
   );
 
+  // Committed workspace dir — its presence registers this developer in the
+  // project roster (the set of workspace/<slug>/ dirs is the member list).
   const userWorkspace = resolve(projectDir, 'workspace', currentUser.slug);
   ensureDir(userWorkspace, createdPaths);
   writeTextIfMissing(

@@ -32,7 +32,7 @@ export async function getDashboardSummary(requestedTaskFilter: TaskFilterMode = 
 }
 
 function readLocalUser(projectDir: string): LocalUser | null {
-  const userPath = resolve(projectDir, '.user');
+  const userPath = resolve(projectDir, '.developer');
   if (!existsSync(userPath)) {
     return null;
   }
