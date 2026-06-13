@@ -1,22 +1,25 @@
 # Tuteur 设计文档索引
 
 > 这是 `docs/design/` 的入口。**先读本页,再按需跳转。**
-> 背景见 [../PRD.md](../PRD.md)、[../ARCHITECTURE.md](../ARCHITECTURE.md);本目录是实施规格级的分域细化。
+> 背景见 [../PRD.md](../PRD.md);本目录是实施规格级的分域细化。
 > 主线:**唯一逻辑层 `@tuteur/core` + 唯一入口 `ttur` + hook 薄转发 + 双层(全局/项目)+ InitConfig 统一初始化 + 注册表/per-agent configurator/通用层 + 节点图 workflow(skill/decision 两类节点)+ 分支信号(agent 产信号、harness 路由)。**
-> 参考实现:Trellis(`mindfold-ai/Trellis`)—— configurator 三层、归档移目录、身份 gitignore、per-agent flag;**反向教训**:其禁止 home 运行,我们做全局时设了安全边界(core §2.3)。
+> 参考实现:Trellis(`mindfold-ai/Trellis`)—— **数据注册表纯数据(`AI_TOOLS` 无函数)+ 行为表分离 + hook 是模板文件拷贝(无适配器)**、归档移目录、身份 gitignore、per-agent flag、当前任务指针,CLI 仅 init/uninstall/update(无 skill 命令);**反向教训**:其禁止 home 运行,我们做全局时设了安全边界(core §2.3)。
+> **2026-06-13 评审**:run 模式 / worktree 并行 / 节点级 agent / 子 agent 隔离移出 MVP;新增 events.jsonl、`ttur task start`、complete 接力输出与 `--json`、归档 cancelled 与按月分桶。
 
 ---
 
-## 1. 文档地图(5 份)
+## 1. 文档地图(6 份)
 
 | 文档 | 讲什么 | 何时读 |
 | --- | --- | --- |
-| [core.md](./core.md) | **事实源**:`@tuteur/core`、双层数据格式、用户模型、**节点图 workflow/state**、InitConfig、归档、**skill 发现**、数据契约 | 读写 `.tuteur/`、类型、门禁、全局/项目、用户、初始化、归档、契约时 |
-| [cli.md](./cli.md) | `ttur` 命令(`complete <node>`/`hook`/`skill list`/`--global`)、注册表+per-agent configurator+通用层、模板更新 | 改命令、加 agent 平台、做 hook 入口、skill 发现时 |
-| [harness.md](./harness.md) | 节点图门禁、**分支信号三类来源**、上下文流转、hook 薄转发、**节点级 agent + 子 agent**、用户扩展 | 做门禁、分支、写 hook、定注入、派子 agent 时 |
-| [web.md](./web.md) | 多项目+全局 dashboard、**workflow 画布编辑**、页面、API、web 触发 init | 做 UI、画布、加 API 时 |
+| [core.md](./core.md) | **事实源**:`@tuteur/core`、双层数据格式、用户模型、**节点图 workflow/state**、events、InitConfig、归档、**skill 发现**、数据契约 | 读写 `.tuteur/`、类型、门禁、全局/项目、用户、初始化、归档、契约时 |
+| [cli.md](./cli.md) | `ttur` 命令(`complete <node>`/`task start`/`hook`/`--global`/`--json`)、数据注册表+per-agent configurator+通用层(hook 走模板树)、模板更新 | 改命令、加 agent 平台、做 hook 入口、skill 发现时 |
+| [harness.md](./harness.md) | 节点图门禁、**分支信号三类来源**、上下文流转、hook 三阶段注入、**当前任务定位 + 子 agent 约定**、用户扩展 | 做门禁、分支、写 hook、定注入、定位任务时 |
+| [knowledge.md](./knowledge.md) | **知识库**:全局/项目同构 `knowledge/`(karpathy LLM Wiki 三层)、条目 schema、ingest/query/lint、注入接入(`context.json` 分层) | 做知识库、上下文注入内容、`tuteur-knowledge` skill、注入编排时 |
+| [web.md](./web.md) | 多项目+全局 dashboard、**workflow 画布编辑**、事件时间线、知识库管理+注入编排器、页面、API、web 触发 init | 做 UI、画布、注入管理、加 API 时 |
 
-**依赖方向**:cli / harness / web 都引用 **core**。数据 schema、双层模型、节点图、用户模型、InitConfig、归档、skill 发现、数据契约只在 core 定义一次,其余引用不重写。
+
+**依赖方向**:cli / harness / web / knowledge 都引用 **core**。数据 schema、双层模型、节点图、用户模型、InitConfig、归档、skill 发现、数据契约只在 core 定义一次,其余引用不重写。知识库目录模型/条目 schema/维护操作在 **knowledge.md** 定义一次,core 只承载 `knowledge/` 目录与 `context.json`/`resolvePlannedContext` 数据。
 
 ---
 
@@ -26,49 +29,53 @@
 | --- | --- | --- |
 | 流程用 CLI、session 用 py 不统一 | hook 退化为薄转发 → `ttur hook <event>`,逻辑全在 core | harness §0/§6、cli §8.4 |
 | 读本地数据未抽公共 util | `@tuteur/core` 唯一读写层,cli/app/hook 共用 | core 全文 |
-| 用户数据无管理 | `.user`+`members.json`+`workspace/<user>/`;项目过滤、全局不过滤 | core §3 |
+| 用户数据无管理 | `.developer`(本地身份)+ `workspace/<slug>/`(提交,子目录即名册);项目过滤、全局不过滤 | core §3 |
 | web 页面没对齐 | 多项目看板+全局配置+项目过滤+web 触发 init | web §2/§3 |
-| agent 接入无统一流程 | **注册表 + per-agent configurator + shared 通用层**(Trellis 风格) | cli §8 |
+| agent 接入无统一流程 | **数据注册表(纯数据)+ per-agent configurator + shared 通用层;hook 走模板树** | cli §8 |
 | 无数据契约 | 四方数据通道契约(机制,产物按需,不绑每步) | core §7 |
 | web/cli 交互不统一 | **InitConfig** 统一模型,flag/交互/web 表单同源,serializeToCommand | core §8、cli §4.1 |
 | 归档绑产物、逻辑不清 | 归档=改状态+移整个目录到 `tasks/archive/`,**不绑产物** | core §9 |
 | `--agents`/`skill-mode` 命名 | per-agent flag(`--codex`)+ `skills`(`--copy`) | cli §4.1 |
 | 数据结构不满意 | 按全局/项目分层逐文件重定义 + web 用途标注 | core §2/§4 |
 | workflow 需画布+分支 | 节点图(skill/decision)+ 画布编辑;分支=agent 产 decision.json、harness 路由 | core §4.3、harness §2.5、web §3.3 |
-| 读不到本地 skill | `discoverSkills`:configurator+shared 扫项目+全局各 agent,带 source tag | core §5.1、cli §8.6 |
-| 工程化:节点 agent/子 agent | 节点级 `agent` 指派 + `subagent.isolate` 隔离上下文 | harness §7 |
+| 读不到本地 skill | `discoverSkills`(core 能力):扫项目+全局各 agent home,带 source tag,供 web 画布;不暴露 CLI 命令 | core §5.1、cli §8.6 |
+| 工程化:子 agent | 由主 agent 自主派发;预置角色定义 + skill 调度协议(pull-based prelude) | harness §7.2 |
 | 去掉 phases 怎么看主体流程 | phase 保留为**节点标签**(粗粒度阶段)+ 节点图(细粒度) | harness §1 |
 | web 不实时 | chokidar watch `.tuteur/` + SSE 推送局部刷新 | web §4.2 |
-| 多任务并行 | opt-in worktree,集中 `~/.tuteur/worktrees/<project>/<taskId>` | core §9.1 |
+| 多任务并行 | 已后置;worktree 方案确认并存档(主仓库事实源 + sparse-checkout) | core §9.1 |
+| 执行质量可观察 | `events.jsonl` 记验收尝试/跳步/注入;阈值告警 + P2 统计页 | core §4.4 |
 
 ---
 
 ## 3. 实现状态矩阵
 
-> **当前只实现初始化与模板管理骨架。** 驱动闭环的核心(core 包、task/complete/hook、门禁、adapter、UI 视图、多项目)全部待实现。标 `[待实现]` 为推荐方案,可调但应守契约。
+> **当前只实现初始化与模板管理骨架。** 驱动闭环的核心(core 包、task/complete/hook、门禁、events、UI 视图、多项目)全部待实现。标 `[待实现]` 为推荐方案,可调但应守契约。
 
 | 能力 | 状态 | 落点 |
 | --- | --- | --- |
 | `ttur init` / `dashboard` / `update` / `uninstall` | ✅ 已实现 | cli §4 |
-| configurator(Codex/Gemini 空、Claude 仅 skill) | ⚠️ 待补全为注册表+per-agent+通用层 | cli §8 |
+| 数据注册表(AGENT_PLATFORMS)+ per-agent configurator(拷模板树+skill)+ shared 通用层 | ✅ 已实现(hook 脚本正文待填,见 §6) | cli §8 |
 | dashboard 用户识别+任务计数(单项目) | ✅ 已实现(待并入 core) | web §3 |
 | **`@tuteur/core` 包** | ❌ 未建 | core 全文 |
 | 双层(全局/项目)模型 + projects 注册表 | ❌ 未实现 | core §2 |
 | InitConfig 统一初始化(flag/交互/web 同源) | ❌ 未实现 | core §8 |
-| `ttur task`(含归档移目录) / `complete` / `hook` | ❌ 未实现 | cli §5、core §9 |
+| `ttur task`(含 start/归档分桶)/ `complete`(接力输出/--json/--skip)/ `hook` | ❌ 未实现 | cli §5、core §9 |
 | workflow 节点图 + 分支信号(decision/classify) | ❌ 未实现 | core §4.3、harness §2.5 |
 | 节点门禁 completeNode + advanceWorkflow(沿边+decision) | ❌ 未实现 | harness §2/§3 |
-| skill 发现(跨 agent + 项目/全局,带 tag) | ❌ 未实现 | core §5.1、cli §8.6 |
-| 节点级 agent 指派 + 子 agent 隔离 | ❌ 未实现 | harness §7 |
+| `events.jsonl`(验收/注入/跳过)+ 阈值告警 | ❌ 未实现 | core §4.4 |
+| 当前任务定位(task start/指针/兜底) | ❌ 未实现 | harness §7.1 |
+| skill 发现(项目 + 各 agent home,带 tag) | ❌ 未实现 | core §5.1、cli §8.6 |
 | workflow 画布编辑(skill/decision 节点) | ❌ 未实现 | web §3.3 |
 | 实时更新(chokidar watch + SSE) | ❌ 未实现 | web §4.2 |
-| worktree 多任务并行(opt-in,全局集中) | ❌ 未实现 | core §9.1 |
-| 上下文流转 planned/actual + 回写 | ❌ 未实现 | harness §4 |
+| worktree 多任务并行 | ⏸ 已后置(方案存档) | core §9.1 |
+| 上下文流转 planned + session_start 事件回写 | ❌ 未实现 | harness §4 |
+| 知识库 `knowledge/`(目录+条目 schema+ingest/query/lint)+ `tuteur-knowledge` skill | ❌ 未实现(skill 占位已建) | knowledge.md |
+| 知识库 web 管理页(全局+项目两区,md 渲染)+ `ttur knowledge graph/index/lint`(分 scope)+ 图谱视图 | ❌ 未实现 | knowledge.md §9/§10、web §3 |
+| context.json 分两层(default/node,项目共享不分用户)+ resolvePlannedContext 合并 | ❌ 未实现 | knowledge.md §7、core §4 |
 | hook 薄转发 + `ttur hook` 注入 | ❌ 未实现(现全占位) | harness §6 |
 | skill 正文(5 个 SKILL.md 全 TODO) | ❌ 未实现 | harness §5 |
-| Codex adapter + run 记录 | ❌ 未实现 | harness §7 |
 | 多项目 dashboard + 全局配置 + web 触发 init | ❌ 未实现 | web §2-§6 |
-| members / approval 读写 | ❌ 未实现 | core §3、web §6 |
+| listDevelopers(读 workspace/)/ approval 读写 | ❌ 未实现 | core §3、web §6 |
 
 ---
 
@@ -78,22 +85,25 @@
 | --- | --- | --- |
 | Scope | 全局(`~/.tuteur`)或项目(`<repo>/.tuteur`)根;全局不过滤用户,项目过滤 | core §2 |
 | @tuteur/core | 唯一碰盘 + 门禁 + 类型层,cli/app/hook 共用 | core §1/§5/§6 |
-| 节点图 workflow | skill 节点(单入单出)+ decision 节点(单入多出);出边内嵌 next/branches | core §4.3 |
-| 节点门禁 | `completeNode` 判 artifact/check/approval;decision 自动求值推进 | harness §2/§3 |
+| 节点图 workflow | skill 节点(单出,入度不限)+ decision 节点(单入多出,必含 default);出边内嵌 next/branches;无环 | core §4.3 |
+| 节点门禁 | `completeNode` 判 artifact/check/approval;失败不改 state(停留重试);decision 自动求值推进 | harness §2/§3 |
 | 分支信号 | 确定性 / agent 分类(decision.json)/ 人工;**agent 产信号不选路** | harness §2.5 |
-| skill 发现 | `discoverSkills` 扫项目+全局各 agent,带 agent/source tag | core §5.1 |
-| 上下文流转 | context.json → plannedContext → hook 注入 → actualContext → run 回写 | harness §4 |
-| Hook 薄转发 | py 脚本只 `exec ttur hook <event>`,逻辑在 core | harness §6 |
-| Agent 接入 | 注册表(数据)+ per-agent configurator(行为)+ shared(生成) | cli §8 |
+| events | 每任务 `events.jsonl`(提交进 git):验收尝试/会话注入/跳过;告警与统计数据源 | core §4.4 |
+| 当前任务 | `--task` > `runtime/current-task.json` 指针(`task start` 写)> 唯一未完成任务兜底 | harness §7.1 |
+| skill 发现 | `discoverSkills` 扫项目目录 + 各 agent home 目录,带 agent/source tag | core §5.1 |
+| 上下文流转 | knowledge → context.json(分层) → plannedContext → hook 注入 → session_start 事件(injected) | harness §4、knowledge.md §7 |
+| 知识库 | 全局/项目同构 `knowledge/`(sources+wiki+index.md+log.md,karpathy 模式);agent 维护、`tuteur-knowledge` skill 定协议;注入按 id 注索引 | knowledge.md |
+| Hook 薄转发 | 声明文件里直接写 `ttur hook <event>` 命令(无 py/sh 脚本),逻辑在 core;Codex 需手动开 hook flag 并 `/hooks` 信任 | harness §6、cli §8.4 |
+| Agent 接入 | 数据注册表(纯静态数据)+ per-agent configurator(行为)+ shared(生成);hook 走 `templates/<id>/` 模板树;不含进程托管 | cli §8 |
 | InitConfig | flag/交互/web 表单同源产出,统一执行 + 序列化成命令 | core §8 |
-| 归档 | 改状态 + 移整个任务目录到 `tasks/archive/`,不绑产物 | core §9 |
+| 归档 | 移目录到 `tasks/archive/<YYYY-MM>/<id>/`,默认不改状态(可标 cancelled),不绑产物 | core §9 |
 | 数据契约 | 四方数据通道(机制,产物按需,不绑每步) | core §7 |
-| 用户模型 | `.user`+`members.json`+`workspace/<user>/` | core §3 |
-| 主体流程 vs 步骤 | phase 标签(粗:planning/execute/finish)+ 节点图(细) | harness §1 |
+| 用户模型 | `.developer`(本地身份,gitignore)+ `workspace/<slug>/`(提交,子目录即名册,无 members.json) | core §3 |
+| 主体流程 vs 步骤 | phase 标签(粗:planning/execute/finish;无标签不改 status)+ 节点图(细) | harness §1 |
 | 实时更新 | chokidar watch `.tuteur/` + SSE 推浏览器局部刷新 | web §4.2 |
-| worktree 并行 | opt-in,`~/.tuteur/worktrees/<project>/<taskId>`,任务级隔离 | core §9.1 |
+| worktree 并行 | 已后置;方案存档(主仓库事实源 + sparse-checkout 排除 .tuteur) | core §9.1 |
 
-最重要不变量:**run 成功 ≠ 节点完成**;完成只由 `completeNode` 判定。
+最重要不变量:**agent 自称完成 ≠ 节点完成**;完成只由 `completeNode` 判定,门禁永不自动放行(人工跳过显式留痕)。
 
 ---
 
@@ -101,23 +111,23 @@
 
 ```text
 P0(主闭环,先地基后闭环)
-  1. @tuteur/core:包+zod类型+双层 paths+store              core K1-K3
-  2. domain:completeNode/advanceWorkflow(节点图+decision 求值)+单测  core K4 / harness H2-H3/H9
+  1. @tuteur/core:包+zod类型+双层 paths+store(含 events/当前任务指针)   core K1-K3/K10/K11
+  2. domain:completeNode/advanceWorkflow(节点图+decision 求值+无环校验)+单测  core K4 / harness H2-H3/H9
   3. InitConfig + INIT_QUESTIONS + serializeToCommand          core K6 / cli C6
   4. cli/app 改依赖 core,删重复读盘与常量                    cli C1 / web W1
-  5. ttur task create/list/status/archive(归档移目录)        cli C2 / core §9
+  5. ttur task create/list/status/start/archive(归档分桶)     cli C2 / core §9 / harness H7
   6. 默认 workflow 改节点图(含 classify→route 分支)          harness H1
-  7. ttur complete <node>(调 core,退出码 0/2)              cli C3
-  8. ttur hook session-start + 转发脚本 + planned/actual      harness H4-H5 / cli C4
-  9. 注册表+per-agent configurator+hook 登记适配器            cli C5
+  7. ttur complete <node>(0/2、接力输出、--json、--skip)      cli C3 / harness H8
+  8. ttur hook session-start(五态)+ hook 声明文件(命令直配)+ 事件回写       harness H4-H5 / cli C4
+  9. 数据注册表+per-agent configurator+模板树承载 hook            cli C5
  10. 填实 5 个 SKILL.md + classify skill                      harness H6
  11. web 项目列表+任务看板+详情+web 触发 init                 web W2-W3
 
-P1:节点级 agent+子 agent(H7-H8)、skill 发现(K9/C10/W11)、workflow 画布(W10)、
-    实时更新 watch+SSE(W13)、worktree 并行(K11/C12/W14)、
-    Codex adapter+run(W4)、approval(H11/W6)、全局配置页(W5)、context 页(W7)、
+P1:skill 发现(K9/C10/W11)、workflow 画布(W10)、实时更新 watch+SSE(W13)、
+    事件时间线页(W4)、approval(H11/W6)、全局配置页(W5)、context 页(W7)、
     --global(C7)、standalone(W9)、skillRef 校验(H10)
-P2:人工分支、workflow validate、artifact 查看器、members、inject-workflow-state hook
+P2:人工分支、workflow validate、artifact 查看器、members、执行质量统计页、
+    inject-workflow-state / inject-subagent-context hook(H12)、worktree 并行(K12/C12/W14,方案存档)
 ```
 
 ---
@@ -128,23 +138,27 @@ P2:人工分支、workflow validate、artifact 查看器、members、inject-work
 | --- | --- | --- |
 | 全局根放 tasks | **已定:否**,全局只放 config+注册表+模板 | |
 | 加项目无 .tuteur 时 | **已定:做「初始化项目」按钮**,web 经非交互 init 触发 | |
-| agent 接入方式 | **已定:注册表+per-agent configurator+通用层**(Trellis 风格) | |
+| agent 接入方式 | **已定:数据注册表(纯数据)+per-agent configurator+通用层,hook 走模板树**(Trellis 风格) | |
 | `--agents`/`skill-mode` 命名 | **已定:per-agent flag(`--codex`)+ `--copy`** | |
-| 归档逻辑 | **已定:移目录+改状态,不绑产物** | |
-| workflow 模型 | **已定:统一节点图**(skill/decision 两类节点) | |
-| 画布编辑 MVP | **已定:可编辑画布**,仅 skill+分支节点、单入单出 | |
-| 分支判断机制 | **已定:agent 产 decision.json 信号,harness 路由** | |
-| 节点 agent / 子 agent | **已定:两者都进 MVP** | |
+| 归档逻辑 | **已定:移目录(`archive/<YYYY-MM>/` 分桶)+ 默认不改状态,未完成可标 cancelled,不绑产物,不做 git 操作** | |
+| workflow 模型 | **已定:统一节点图**(skill 单出/decision 必含 default/无环) | |
+| 画布编辑 MVP | **已定:可编辑画布**,仅 skill+分支节点 | |
+| 分支判断机制 | **已定:agent 产 decision.json 信号,harness 路由;signal 不可读则门禁失败** | |
+| 返工模型 | **已定:停留原节点重试,门禁失败不改 state;validate 拒绝回边** | |
+| 重试上限语义 | **已定:仅告警线(标黄),永不自动放行;人工 `--skip` 显式跳过留痕** | |
+| 执行模式 | **已定:交互模式唯一,run 模式移除**(Tuteur 不启动/托管 agent 进程) | |
+| 节点 agent / 子 agent 隔离 | **已撤销:随 run 模式后置**;子 agent 由主 agent 自主派发(harness §7.2) | |
+| 当前任务定位 | **已定:`task start` 指针 + 唯一未完成任务兜底 + `--task` 覆盖**(对齐 Trellis) | |
+| events.jsonl 是否进 git | **已定:提交**(换环境不丢任务可视内容) | |
+| CLI 输出 | **已定:全命令支持 `--json`**,成败统一结构化 | |
 | 实时更新机制 | **已定:文件监听(chokidar)+ SSE** | |
-| worktree 并行 | **已定:opt-in,集中放 `~/.tuteur/worktrees/<project>/<taskId>`** | |
-| phase 去留 | **已定:保留为节点标签**(主体阶段概览 + task.status) | |
-| 归档是否按 `archive/<YYYY-MM>/` 分桶 | 是(对齐 Trellis);MVP 可先平铺 `archive/<id>/` | ❓ |
+| worktree 并行 | **已后置:方案确认并存档**(core §9.1) | |
+| phase 去留 | **已定:保留为节点标签**(主体阶段概览 + task.status;无标签不改 status) | |
+| actualContext 采集精度 | **已定:session_start 事件 `injected` 清单近似** | |
+| `ttur run <step>` 进 MVP | **已定:不进**(随 run 模式移除) | |
 | 身份/配置文件格式 | 统一 JSON(web 读写一致),不引入 YAML | ❓ |
-| `ttur run <step>` 进 MVP | 进,仅 Codex 薄封装 | ❓ |
-| actualContext 采集精度 | MVP 用 hook emit 列表近似 | ❓ |
 | web 是否可编辑 artifact | 只读 + approval/context 编辑 | ❓ |
 | core 是否独立发包 | 内部私有包,随 cli/app 构建 | |
-| 子 agent 上下文 | 不进 MVP | |
 
 ---
 
