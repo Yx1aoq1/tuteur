@@ -118,6 +118,70 @@ export function copyCanonicalSkills(input: {
   });
 }
 
+const TEMPLATE_EXCLUDE_SUFFIXES = ['.ts', '.js', '.map'];
+const TEMPLATE_EXCLUDE_NAMES = ['.gitkeep'];
+
+function shouldSkipTemplateEntry(name: string): boolean {
+  return TEMPLATE_EXCLUDE_NAMES.includes(name) || TEMPLATE_EXCLUDE_SUFFIXES.some(suffix => name.endsWith(suffix));
+}
+
+/**
+ * Copy a platform's template tree (`templates/<templateId>/`) into the project's
+ * agent config dir. Build/index artifacts and `.gitkeep` markers are filtered out;
+ * `.json` declaration files (hooks.json / settings.json) get placeholder rendering.
+ * Existing files are left untouched (idempotent re-init).
+ */
+export function copyAgentTemplates(input: {
+  projectRoot: string;
+  templateId: string;
+  configDir: string;
+  templateContext: TemplateContext;
+  createdPaths: string[];
+}): string[] {
+  const sourceDir = resolve(templateRoot, input.templateId);
+  const targetDir = resolve(input.projectRoot, input.configDir);
+  const writtenPaths: string[] = [];
+  if (!existsSync(sourceDir)) {
+    return writtenPaths;
+  }
+
+  copyAgentTemplateDir(sourceDir, targetDir, input.templateContext, input.createdPaths, writtenPaths);
+  return writtenPaths;
+}
+
+function copyAgentTemplateDir(
+  source: string,
+  target: string,
+  context: TemplateContext,
+  createdPaths: string[],
+  writtenPaths: string[],
+): void {
+  for (const entry of readdirSync(source, { withFileTypes: true })) {
+    if (shouldSkipTemplateEntry(entry.name)) {
+      continue;
+    }
+
+    const from = resolve(source, entry.name);
+    const to = resolve(target, entry.name);
+
+    if (entry.isDirectory()) {
+      copyAgentTemplateDir(from, to, context, createdPaths, writtenPaths);
+      continue;
+    }
+
+    if (existsSync(to)) {
+      continue;
+    }
+
+    ensureDir(dirname(to), createdPaths, writtenPaths);
+    const raw = readFileSync(from, 'utf8');
+    const content = entry.name.endsWith('.json') ? resolvePlaceholders(raw, context) : raw;
+    writeFileSync(to, content, 'utf8');
+    createdPaths.push(to);
+    writtenPaths.push(to);
+  }
+}
+
 export function copyTemplateTreeIfMissing(input: {
   sourceDir: string;
   targetDir: string;
@@ -132,13 +196,16 @@ export function copyTemplateTreeIfMissing(input: {
   return writtenPaths;
 }
 
-function renderTemplate(content: string, context: TemplateContext & { skillName: string }): string {
+export function resolvePlaceholders(content: string, context: TemplateContext): string {
   return content
     .replaceAll('{{PRODUCT_NAME}}', PRODUCT_DISPLAY_NAME)
-    .replaceAll('{{SKILL_NAME}}', context.skillName)
     .replaceAll('{{CMD_REF_PREFIX}}', context.cmdRefPrefix)
     .replaceAll('{{USER_ACTION_LABEL}}', context.userActionLabel)
     .replaceAll('{{CLI_FLAG}}', context.cliFlag);
+}
+
+function renderTemplate(content: string, context: TemplateContext & { skillName: string }): string {
+  return resolvePlaceholders(content, context).replaceAll('{{SKILL_NAME}}', context.skillName);
 }
 
 function copyDirIfMissing(source: string, target: string, createdPaths: string[], writtenPaths: string[]): void {

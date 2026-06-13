@@ -126,7 +126,7 @@ async function resolveSkillAdapterMode(options: InitCommandOptions, agents: Agen
 
 function hasSkillAdapterTargets(agents: AgentTool[]): boolean {
   const selected = new Set(agents);
-  return getInitAgentChoices().some(choice => selected.has(choice.id) && Boolean(choice.skillLinkDir));
+  return getInitAgentChoices().some(choice => selected.has(choice.id) && Boolean(choice.skillTarget));
 }
 
 function toCheckboxChoice(choice: AgentPlatformConfig, defaults: AgentTool[]) {

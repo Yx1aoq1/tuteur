@@ -12,7 +12,9 @@ export interface AgentPlatformConfig<TAgentTool extends string = string> {
   configDir: string;
   cliFlag: TAgentTool;
   defaultChecked: boolean;
-  skillLinkDir: string | null;
+  skillTarget: string | null;
+  skillDirs: { project: string[]; global: string[] };
+  supportsAgentSkills?: boolean;
   templateContext: TemplateContext<TAgentTool>;
 }
 
@@ -27,9 +29,7 @@ export interface ConfigureAgentResult {
   writtenPaths: string[];
 }
 
-export interface AgentPlatformDefinition<TAgentTool extends string = string> extends AgentPlatformConfig<TAgentTool> {
-  configure: (
-    context: ConfigureAgentContext,
-    platform: AgentPlatformConfig<TAgentTool>,
-  ) => Promise<ConfigureAgentResult>;
-}
+export type PlatformConfigurator<TAgentTool extends string = string> = (
+  context: ConfigureAgentContext,
+  platform: AgentPlatformConfig<TAgentTool>,
+) => Promise<ConfigureAgentResult>;

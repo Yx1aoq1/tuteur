@@ -1,35 +1,42 @@
 import type { AgentPlatformConfig, ConfigureAgentContext, ConfigureAgentResult } from '../types/agent.js';
-import { copyCanonicalSkills, linkSkills } from './shared.js';
+import { copyAgentTemplates, copyCanonicalSkills, linkSkills } from './shared.js';
 
 export async function configureClaude(
   context: ConfigureAgentContext,
   platform: AgentPlatformConfig,
 ): Promise<ConfigureAgentResult> {
-  const writtenPaths = configureClaudeSkills(context, platform.skillLinkDir);
+  const writtenPaths = copyAgentTemplates({
+    projectRoot: context.projectRoot,
+    templateId: platform.id,
+    configDir: platform.configDir,
+    templateContext: platform.templateContext,
+    createdPaths: context.createdPaths,
+  });
 
-  // TODO: add Claude slash commands/hooks after the workflow command contract is stable.
+  writtenPaths.push(...configureClaudeSkills(context, platform.skillTarget));
+
   return {
     configured: true,
     writtenPaths,
   };
 }
 
-function configureClaudeSkills(context: ConfigureAgentContext, skillLinkDir: string | null): string[] {
-  if (!skillLinkDir) {
+function configureClaudeSkills(context: ConfigureAgentContext, skillTarget: string | null): string[] {
+  if (!skillTarget) {
     return [];
   }
 
   if (context.skillAdapterMode === 'copy') {
     return copyCanonicalSkills({
       projectRoot: context.projectRoot,
-      targetRoot: skillLinkDir,
+      targetRoot: skillTarget,
       createdPaths: context.createdPaths,
     });
   }
 
   return linkSkills({
     projectRoot: context.projectRoot,
-    linkRoot: skillLinkDir,
+    linkRoot: skillTarget,
     createdPaths: context.createdPaths,
   });
 }

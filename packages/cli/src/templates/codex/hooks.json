@@ -1,5 +1,12 @@
 {
   "hooks": {
-    "sessionStart": ".codex/hooks/session-start.py"
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          { "type": "command", "command": "ttur hook session-start" }
+        ]
+      }
+    ]
   }
 }

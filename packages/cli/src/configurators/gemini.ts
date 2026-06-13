@@ -1,9 +1,20 @@
-import type { ConfigureAgentContext, ConfigureAgentResult } from '../types/agent.js';
+import type { AgentPlatformConfig, ConfigureAgentContext, ConfigureAgentResult } from '../types/agent.js';
+import { copyAgentTemplates } from './shared.js';
 
-export async function configureGemini(_context: ConfigureAgentContext): Promise<ConfigureAgentResult> {
-  // TODO: confirm Gemini CLI project-level adapter needs beyond .agent/skill.
+export async function configureGemini(
+  context: ConfigureAgentContext,
+  platform: AgentPlatformConfig,
+): Promise<ConfigureAgentResult> {
+  const writtenPaths = copyAgentTemplates({
+    projectRoot: context.projectRoot,
+    templateId: platform.id,
+    configDir: platform.configDir,
+    templateContext: platform.templateContext,
+    createdPaths: context.createdPaths,
+  });
+
   return {
     configured: true,
-    writtenPaths: [],
+    writtenPaths,
   };
 }

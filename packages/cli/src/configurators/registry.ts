@@ -1,8 +1,8 @@
 import type {
   AgentPlatformConfig,
-  AgentPlatformDefinition,
   ConfigureAgentContext,
   ConfigureAgentResult,
+  PlatformConfigurator,
 } from '../types/agent.js';
 import { configureClaude } from './claude.js';
 import { configureCodex } from './codex.js';
@@ -16,13 +16,14 @@ export const AGENT_PLATFORMS = defineAgentPlatforms({
     configDir: '.codex',
     cliFlag: 'codex',
     defaultChecked: true,
-    skillLinkDir: null,
+    skillTarget: null,
+    supportsAgentSkills: true,
+    skillDirs: { project: ['.agent/skill', '.codex/skills'], global: ['.codex/skills'] },
     templateContext: {
       cmdRefPrefix: '$',
       userActionLabel: 'Skills',
       cliFlag: 'codex',
     },
-    configure: configureCodex,
   },
   claude: {
     id: 'claude',
@@ -30,13 +31,13 @@ export const AGENT_PLATFORMS = defineAgentPlatforms({
     configDir: '.claude',
     cliFlag: 'claude',
     defaultChecked: true,
-    skillLinkDir: '.claude/skills',
+    skillTarget: '.claude/skills',
+    skillDirs: { project: ['.claude/skills'], global: ['.claude/skills'] },
     templateContext: {
       cmdRefPrefix: getSlashCommandPrefix(),
       userActionLabel: 'Slash commands',
       cliFlag: 'claude',
     },
-    configure: configureClaude,
   },
   gemini: {
     id: 'gemini',
@@ -44,25 +45,31 @@ export const AGENT_PLATFORMS = defineAgentPlatforms({
     configDir: '.gemini',
     cliFlag: 'gemini',
     defaultChecked: false,
-    skillLinkDir: null,
+    skillTarget: null,
+    supportsAgentSkills: true,
+    skillDirs: { project: ['.agent/skill'], global: ['.gemini/skills'] },
     templateContext: {
       cmdRefPrefix: getSlashCommandPrefix(),
       userActionLabel: 'Slash commands',
       cliFlag: 'gemini',
     },
-    configure: configureGemini,
   },
 });
 
 export type AgentTool = keyof typeof AGENT_PLATFORMS;
-export type RegisteredAgentPlatformConfig = AgentPlatformConfig<AgentTool>;
+export type RegisteredAgentPlatformConfig = (typeof AGENT_PLATFORMS)[AgentTool];
+
+const PLATFORM_CONFIGURATORS: Record<AgentTool, PlatformConfigurator> = {
+  codex: configureCodex,
+  claude: configureClaude,
+  gemini: configureGemini,
+};
 
 export function configureAgentPlatform(
   platformId: AgentTool,
   context: ConfigureAgentContext,
 ): Promise<ConfigureAgentResult> {
-  const platform = AGENT_PLATFORMS[platformId];
-  return platform.configure(context, platform);
+  return PLATFORM_CONFIGURATORS[platformId](context, AGENT_PLATFORMS[platformId]);
 }
 
 export function getAgentPlatform(id: AgentTool): RegisteredAgentPlatformConfig {
@@ -73,10 +80,12 @@ export function getInitAgentChoices(): RegisteredAgentPlatformConfig[] {
   return Object.values(AGENT_PLATFORMS);
 }
 
-function defineAgentPlatforms<const TPlatforms extends Record<string, AgentPlatformDefinition<string>>>(platforms: {
-  [TAgentTool in keyof TPlatforms]: AgentPlatformDefinition<TAgentTool & string>;
+// Pins each entry's `id`/`cliFlag` to its registry key so `AgentTool` stays a
+// narrow union (and the key↔id↔cliFlag invariant is checked at compile time).
+function defineAgentPlatforms<const TPlatforms extends Record<string, AgentPlatformConfig<string>>>(platforms: {
+  [TAgentTool in keyof TPlatforms]: AgentPlatformConfig<TAgentTool & string>;
 }): {
-  [TAgentTool in keyof TPlatforms]: AgentPlatformDefinition<TAgentTool & string>;
+  [TAgentTool in keyof TPlatforms]: AgentPlatformConfig<TAgentTool & string>;
 } {
   return platforms;
 }
