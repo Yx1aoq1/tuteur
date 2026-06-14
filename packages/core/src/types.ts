@@ -1,0 +1,177 @@
+import { z } from 'zod';
+
+// ──────────────────────────────────────────────────────────────────────────
+// Task (tasks/<id>/task.json) — core.md §4.1
+// ──────────────────────────────────────────────────────────────────────────
+
+export const TaskStatusSchema = z.enum(['planning', 'in_progress', 'completed', 'cancelled']);
+export type TaskStatus = z.infer<typeof TaskStatusSchema>;
+
+export const TaskPrioritySchema = z.enum(['low', 'normal', 'high']);
+export type TaskPriority = z.infer<typeof TaskPrioritySchema>;
+
+export const TaskSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  workflow: z.string(),
+  status: TaskStatusSchema,
+  creator: z.string(),
+  assignee: z.string(),
+  priority: TaskPrioritySchema.default('normal'),
+  tags: z.array(z.string()).default([]),
+  createdAt: z.string(),
+  completedAt: z.string().nullable().default(null),
+  archivedAt: z.string().nullable().default(null),
+});
+export type Task = z.infer<typeof TaskSchema>;
+
+// ──────────────────────────────────────────────────────────────────────────
+// State (tasks/<id>/state.json) — core.md §4.2
+// ──────────────────────────────────────────────────────────────────────────
+
+export const DecisionRecordSchema = z.object({
+  branch: z.string(),
+  reason: z.string().optional(),
+  by: z.string().optional(),
+  at: z.string(),
+});
+export type DecisionRecord = z.infer<typeof DecisionRecordSchema>;
+
+// Human approval records live inside state (gate input), keyed by node id.
+export const ApprovalRecordSchema = z.object({ approvedAt: z.string(), by: z.string() });
+export const ApprovalsSchema = z.record(ApprovalRecordSchema).default({});
+export type Approvals = z.infer<typeof ApprovalsSchema>;
+
+export const StateSchema = z.object({
+  taskId: z.string(),
+  currentNode: z.string().nullable(),
+  completedNodes: z.array(z.string()).default([]),
+  decisions: z.record(DecisionRecordSchema).default({}),
+  approvals: ApprovalsSchema,
+  updatedAt: z.string(),
+});
+export type State = z.infer<typeof StateSchema>;
+
+// ──────────────────────────────────────────────────────────────────────────
+// Workflow (workflows/<id>.workflow.json) — core.md §4.3
+// Fixed phase containers + two node types (skill | switch).
+// ──────────────────────────────────────────────────────────────────────────
+
+export const GateSchema = z.object({
+  artifacts: z.array(z.string()).optional(),
+  checks: z.array(z.string()).optional(),
+  approval: z.boolean().optional(),
+});
+export type Gate = z.infer<typeof GateSchema>;
+
+export const SkillNodeSchema = z.object({
+  id: z.string(),
+  type: z.literal('skill'),
+  skill: z.string(),
+  next: z.string().nullable(),
+  phase: z.string().nullable().optional(),
+  gate: GateSchema.optional(),
+});
+export type SkillNode = z.infer<typeof SkillNodeSchema>;
+
+export const BranchSchema = z.object({
+  label: z.string(),
+  criteria: z.string().optional(),
+  next: z.string().nullable(),
+  default: z.boolean().optional(),
+});
+export type Branch = z.infer<typeof BranchSchema>;
+
+export const SwitchNodeSchema = z.object({
+  id: z.string(),
+  type: z.literal('switch'),
+  phase: z.string().nullable().optional(),
+  branches: z.array(BranchSchema).min(1),
+});
+export type SwitchNode = z.infer<typeof SwitchNodeSchema>;
+
+export const WorkflowNodeSchema = z.discriminatedUnion('type', [SkillNodeSchema, SwitchNodeSchema]);
+export type WorkflowNode = z.infer<typeof WorkflowNodeSchema>;
+
+export const PhaseSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  entry: z.string().optional(),
+});
+export type Phase = z.infer<typeof PhaseSchema>;
+
+export const WorkflowSchema = z.object({
+  id: z.string(),
+  name: z.string().optional(),
+  version: z.string().optional(),
+  entry: z.string(),
+  phases: z.array(PhaseSchema).default([]),
+  nodes: z.array(WorkflowNodeSchema).min(1),
+});
+export type Workflow = z.infer<typeof WorkflowSchema>;
+
+// ──────────────────────────────────────────────────────────────────────────
+// Events (tasks/<id>/events.jsonl) — core.md §4.4
+// ──────────────────────────────────────────────────────────────────────────
+
+export const TaskEventSchema = z.discriminatedUnion('type', [
+  z.object({
+    ts: z.string(),
+    type: z.literal('complete_attempt'),
+    node: z.string(),
+    ok: z.boolean(),
+    reason: z.string().optional(),
+  }),
+  z.object({
+    ts: z.string(),
+    type: z.literal('decision'),
+    node: z.string(),
+    branch: z.string(),
+    reason: z.string().optional(),
+    by: z.string().optional(),
+  }),
+  z.object({
+    ts: z.string(),
+    type: z.literal('rewind'),
+    node: z.string(),
+    by: z.string().optional(),
+    reason: z.string().optional(),
+  }),
+  z.object({
+    ts: z.string(),
+    type: z.literal('skip'),
+    node: z.string(),
+    by: z.string().optional(),
+    reason: z.string().optional(),
+  }),
+  z.object({ ts: z.string(), type: z.literal('approval'), node: z.string(), by: z.string().optional() }),
+  z.object({ ts: z.string(), type: z.literal('session_start'), injected: z.array(z.string()) }),
+]);
+export type TaskEvent = z.infer<typeof TaskEventSchema>;
+
+// ──────────────────────────────────────────────────────────────────────────
+// Context config (context.json) — core.md §4.5
+// ──────────────────────────────────────────────────────────────────────────
+
+const ContextSetSchema = z.object({
+  required: z.array(z.string()).default([]),
+  optional: z.array(z.string()).default([]),
+  disabled: z.array(z.string()).default([]),
+});
+
+export const ContextConfigSchema = z.object({
+  default: ContextSetSchema.default({ required: [], optional: [], disabled: [] }),
+  nodes: z.record(ContextSetSchema).default({}),
+});
+export type ContextConfig = z.infer<typeof ContextConfigSchema>;
+
+// ──────────────────────────────────────────────────────────────────────────
+// Local developer identity (.developer) — core.md §3
+// ──────────────────────────────────────────────────────────────────────────
+
+export const DeveloperSchema = z.object({
+  name: z.string(),
+  slug: z.string(),
+  initializedAt: z.string().optional(),
+});
+export type Developer = z.infer<typeof DeveloperSchema>;
