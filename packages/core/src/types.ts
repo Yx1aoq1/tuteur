@@ -57,8 +57,17 @@ export type State = z.infer<typeof StateSchema>;
 // Fixed phase containers + two node types (skill | switch).
 // ──────────────────────────────────────────────────────────────────────────
 
+// A gate artifact: a bare path (back-compat) or an object adding a display title
+// and a template knowledge-id reference. The gate only checks `path` (exists +
+// non-empty); title/template are for display and template injection — core §4.3.1.
+export const ArtifactSpecSchema = z.union([
+  z.string(),
+  z.object({ path: z.string(), title: z.string().optional(), template: z.string().optional() }),
+]);
+export type ArtifactSpec = z.infer<typeof ArtifactSpecSchema>;
+
 export const GateSchema = z.object({
-  artifacts: z.array(z.string()).optional(),
+  artifacts: z.array(ArtifactSpecSchema).optional(),
   checks: z.array(z.string()).optional(),
   approval: z.boolean().optional(),
 });
@@ -150,6 +159,23 @@ export const TaskEventSchema = z.discriminatedUnion('type', [
 export type TaskEvent = z.infer<typeof TaskEventSchema>;
 
 // ──────────────────────────────────────────────────────────────────────────
+// Checklist (tasks/<id>/checklist.json) — core.md §4.7
+// Structured acceptance items: validated, web-renderable, never a hard gate.
+// ──────────────────────────────────────────────────────────────────────────
+
+export const ChecklistItemSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  done: z.boolean().default(false),
+  // The node this item accepts (optional; lets web group by node).
+  node: z.string().optional(),
+});
+export type ChecklistItem = z.infer<typeof ChecklistItemSchema>;
+
+export const ChecklistSchema = z.object({ items: z.array(ChecklistItemSchema).default([]) });
+export type Checklist = z.infer<typeof ChecklistSchema>;
+
+// ──────────────────────────────────────────────────────────────────────────
 // Context config (context.json) — core.md §4.5
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -175,3 +201,19 @@ export const DeveloperSchema = z.object({
   initializedAt: z.string().optional(),
 });
 export type Developer = z.infer<typeof DeveloperSchema>;
+
+// ──────────────────────────────────────────────────────────────────────────
+// Global project registry (~/.tuteur/projects.json) — core.md §2.1
+// The global root is config + project registry + templates; it holds no tasks.
+// ──────────────────────────────────────────────────────────────────────────
+
+// A registered project in the global multi-project registry (web dashboard source).
+export const ProjectRefSchema = z.object({
+  path: z.string(),
+  name: z.string(),
+  addedAt: z.string(),
+});
+export type ProjectRef = z.infer<typeof ProjectRefSchema>;
+
+export const ProjectsRegistrySchema = z.object({ projects: z.array(ProjectRefSchema).default([]) });
+export type ProjectsRegistry = z.infer<typeof ProjectsRegistrySchema>;

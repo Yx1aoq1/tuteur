@@ -22,13 +22,18 @@ export {
 } from './constants.js';
 
 export {
+  ProjectsRegistrySchema,
   ApprovalRecordSchema,
   ContextConfigSchema,
+  ChecklistItemSchema,
   WorkflowNodeSchema,
+  ArtifactSpecSchema,
   DecisionRecordSchema,
   TaskPrioritySchema,
-  SwitchNodeSchema,
   TaskStatusSchema,
+  ChecklistSchema,
+  ProjectRefSchema,
+  SwitchNodeSchema,
   DeveloperSchema,
   TaskEventSchema,
   SkillNodeSchema,
@@ -41,12 +46,17 @@ export {
   GateSchema,
 } from './types.js';
 export type {
+  ProjectsRegistry,
   ContextConfig,
+  ChecklistItem,
   DecisionRecord,
   TaskPriority,
   WorkflowNode,
+  ArtifactSpec,
+  ProjectRef,
   TaskStatus,
   SwitchNode,
+  Checklist,
   Developer,
   Approvals,
   SkillNode,
@@ -61,11 +71,16 @@ export type {
 
 export {
   currentTaskPointerPath,
+  projectsRegistryPath,
+  knowledgeWikiPath,
   resolveProjectScope,
   resolveGlobalScope,
+  globalConfigPath,
   detectTuteur,
+  knowledgeDir,
   workflowsDir,
   workflowPath,
+  guidePath,
   archiveDir,
   runtimeDir,
   tasksDir,
@@ -78,8 +93,17 @@ export {
   writeCurrentTaskPointer,
   clearCurrentTaskPointer,
   readCurrentTaskPointer,
+  listKnowledgeFiles,
+  writeKnowledgeFile,
+  readKnowledgeSource,
   readContextConfig,
+  addChecklistItem,
+  setChecklistItem,
+  writeChecklist,
+  readChecklist,
   readDeveloper,
+  upsertProject,
+  readProjects,
   readWorkflow,
   appendEvent,
   isApproved,
@@ -91,17 +115,20 @@ export {
   writeTask,
   listTasks,
   readTask,
+  readGuide,
 } from './store.js';
-export type { ListTasksOptions } from './store.js';
+export type { ListTasksOptions, KnowledgeFile } from './store.js';
 
 export {
   countConsecutiveFailures,
+  checklistProgress,
   resolveCurrentTask,
   advanceWorkflow,
   archiveTask,
   deriveStatus,
   completeNode,
   initialState,
+  artifactPath,
   describeNext,
   approveNode,
   rewindTo,
@@ -112,13 +139,40 @@ export {
 } from './domain.js';
 export type { CompleteResult, CompleteOptions, ArchiveOptions, CurrentTask, NextStep } from './domain.js';
 
-export { resolvePlannedContext } from './context.js';
+export { validateWorkflow } from './validate.js';
+export type { ValidateContext, WorkflowIssue } from './validate.js';
 
-export { logicalSkillName, resolveSkillRef, discoverSkills } from './skills.js';
+export { resolvePlannedContext } from './context.js';
+export type { PlannedEntry } from './context.js';
+
+export {
+  rebuildKnowledgeIndexes,
+  buildKnowledgeIndexes,
+  deriveKnowledgeGraph,
+  listKnowledgePages,
+  readKnowledgeEntry,
+  deriveMergedGraph,
+  lintKnowledge,
+} from './knowledge.js';
+export type {
+  KnowledgeGraphEdge,
+  KnowledgeGraphNode,
+  KnowledgeIndexFile,
+  KnowledgeEntry,
+  KnowledgeGraph,
+  KnowledgeIssue,
+  KnowledgePage,
+  InjectMode,
+} from './knowledge.js';
+
+export { logicalSkillName, resolveSkillRef, discoverSkills, skillExists } from './skills.js';
 export type { DiscoveredSkill, ResolvedSkill } from './skills.js';
 
 export { renderSessionStart } from './hook.js';
 export type { SessionStartResult } from './hook.js';
+
+export { serializeToCommand, toSkillAdapterMode, INIT_QUESTIONS } from './init-config.js';
+export type { SkillInstallMode, InitQuestion, InitChoice, InitConfig } from './init-config.js';
 
 export {
   CANONICAL_SKILL_DIR,
@@ -143,6 +197,7 @@ export {
   writeJsonFileIfMissing,
   writeTextIfMissing,
   existsNonEmpty,
+  readGitStatus,
   writeJsonFile,
   readJsonFile,
   isDirectory,
@@ -153,3 +208,4 @@ export {
   slugify,
   nowIso,
 } from './utils/index.js';
+export type { GitStatus } from './utils/index.js';

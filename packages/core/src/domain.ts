@@ -4,6 +4,7 @@ import { type Scope, archiveDir, taskPath, taskDir } from './paths.js';
 import {
   clearCurrentTaskPointer,
   readCurrentTaskPointer,
+  readChecklist,
   readWorkflow,
   appendEvent,
   isApproved,
@@ -16,12 +17,17 @@ import {
   readTask,
 } from './store.js';
 import { existsNonEmpty, moveDir, nowIso } from './utils/index.js';
-import type { State, Task, TaskStatus, Workflow, WorkflowNode } from './types.js';
+import type { ArtifactSpec, State, Task, TaskStatus, Workflow, WorkflowNode } from './types.js';
 
 // ── Node helpers ─────────────────────────────────────────────────────────────
 
 export function nodeById(wf: Workflow, id: string): WorkflowNode | undefined {
   return wf.nodes.find(n => n.id === id);
+}
+
+/** The path a gate checks for an artifact spec (bare path, or the `path` field). */
+export function artifactPath(spec: ArtifactSpec): string {
+  return typeof spec === 'string' ? spec : spec.path;
 }
 
 /** A node's phase membership (the container it lives in); null = pre-phase triage. */
@@ -141,7 +147,8 @@ export function completeNode(scope: Scope, taskId: string, nodeId: string, opts:
     const gate = node.gate ?? {};
     const blocked: string[] = [];
 
-    for (const rel of gate.artifacts ?? []) {
+    for (const spec of gate.artifacts ?? []) {
+      const rel = artifactPath(spec);
       if (!existsNonEmpty(taskPath(scope, taskId, rel))) blocked.push(`missing or empty artifact: ${rel}`);
     }
     for (const cmd of gate.checks ?? []) {
@@ -290,6 +297,13 @@ export function countConsecutiveFailures(scope: Scope, taskId: string, node: str
 
 export function isStuck(scope: Scope, taskId: string, node: string, threshold = DEFAULT_STUCK_THRESHOLD): boolean {
   return countConsecutiveFailures(scope, taskId, node) >= threshold;
+}
+
+// ── Checklist progress (derived; web third tier + cross-task stats — §4.7) ─────
+
+export function checklistProgress(scope: Scope, taskId: string): { done: number; total: number } {
+  const { items } = readChecklist(scope, taskId);
+  return { done: items.filter(item => item.done).length, total: items.length };
 }
 
 // ── Next-step rendering (agent-facing relay) ──────────────────────────────────

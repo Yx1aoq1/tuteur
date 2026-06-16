@@ -79,6 +79,16 @@ export function resolveSkillRef(scope: Scope, skill: string): ResolvedSkill {
   throw new Error(`skill "${skill}" not found in project skill directories`);
 }
 
+/** Non-throwing form of {@link resolveSkillRef} for validation (harness §5). */
+export function skillExists(scope: Scope, skill: string): boolean {
+  try {
+    resolveSkillRef(scope, skill);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function readDescription(skillFile: string): string | undefined {
   try {
     const text = readFileSync(skillFile, 'utf8');

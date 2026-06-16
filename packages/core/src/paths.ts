@@ -74,6 +74,28 @@ export function runtimeDir(scope: Scope): string {
   return resolve(scope.tuteurDir, 'runtime');
 }
 
+export function guidePath(scope: Scope): string {
+  return resolve(scope.tuteurDir, 'guide.md');
+}
+
+export function knowledgeDir(scope: Scope): string {
+  return resolve(scope.tuteurDir, 'knowledge');
+}
+
+export function knowledgeWikiPath(scope: Scope, id: string): string {
+  return resolve(knowledgeDir(scope), 'wiki', `${id}.md`);
+}
+
 export function currentTaskPointerPath(scope: Scope): string {
   return resolve(runtimeDir(scope), 'current-task.json');
+}
+
+// ── Global root files (config + project registry — core.md §2.1) ─────────────
+
+export function globalConfigPath(scope: Scope): string {
+  return resolve(scope.tuteurDir, 'config.json');
+}
+
+export function projectsRegistryPath(scope: Scope): string {
+  return resolve(scope.tuteurDir, 'projects.json');
 }
