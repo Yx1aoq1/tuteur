@@ -3,8 +3,8 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { PHASE_ORDER } from './phase';
-import type { BoardCard, ChecklistItemView, Phase } from '@/types/dashboard';
+import { Layer, PhaseStepper } from './detail';
+import type { BoardCard, ChecklistItemView } from '@/types/dashboard';
 
 interface ViewDetailProps {
   card: BoardCard;
@@ -12,7 +12,7 @@ interface ViewDetailProps {
 }
 
 // 右侧 view detail:任务三层进度概览(主体阶段 / 节点门禁 / 验收清单)。常驻不可关闭。
-// 验收项可勾选(PUT checklist)、任务可归档(POST archive);写后 router.refresh + SSE 实时回灌。
+// 验收项可勾选(PUT checklist);仅「已完成」任务可归档(POST archive,默认不改状态);写后 router.refresh + SSE 实时回灌。
 export function ViewDetail({ card, project }: ViewDetailProps) {
   const t = useTranslations('viewDetail');
   const tCommon = useTranslations('common');
@@ -23,7 +23,7 @@ export function ViewDetail({ card, project }: ViewDetailProps) {
   const { done, total, items } = card.checklist;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const query = `?project=${encodeURIComponent(project)}`;
-  const markCancelled = card.column !== 'done';
+  const canArchive = card.column === 'done';
 
   const toggleItem = (item: ChecklistItemView) => {
     startTransition(async () => {
@@ -41,7 +41,7 @@ export function ViewDetail({ card, project }: ViewDetailProps) {
       await fetch(`/api/tasks/${encodeURIComponent(card.id)}/archive${query}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markCancelled }),
+        body: JSON.stringify({}), // 仅完成任务可归档,默认不改状态
       });
       setConfirmArchive(false);
       router.refresh();
@@ -58,7 +58,7 @@ export function ViewDetail({ card, project }: ViewDetailProps) {
         <h2 className="mt-0.5 mb-4 font-serif text-[20px] font-semibold leading-tight">{card.title}</h2>
 
         <Layer label={t('phaseLayer')}>
-          <Stepper current={card.phase} />
+          <PhaseStepper current={card.phase} completed={card.column === 'done'} />
         </Layer>
 
         <Layer label={t('gateLayer')}>
@@ -113,86 +113,39 @@ export function ViewDetail({ card, project }: ViewDetailProps) {
 
         <p className="mt-2 mb-3 text-[11px] text-ink-faint">{t('ownerLine', { owner: card.owner })}</p>
 
-        {confirmArchive ? (
-          <div className="rounded-[10px] border border-line-strong bg-paper p-3">
-            <p className="mb-2.5 text-[12px] text-ink-soft">
-              {markCancelled ? t('archiveCancelConfirm') : t('archiveDoneConfirm')}
-            </p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={pending}
-                onClick={archive}
-                className="cursor-pointer rounded-lg bg-terracotta px-3 py-1.5 text-[12px] font-semibold text-brand-ink disabled:opacity-50"
-              >
-                {pending ? t('archiving') : t('archive')}
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => setConfirmArchive(false)}
-                className="cursor-pointer rounded-lg border border-line-strong bg-paper px-3 py-1.5 text-[12px] font-semibold text-ink-soft"
-              >
-                {tCommon('cancel')}
-              </button>
+        {canArchive &&
+          (confirmArchive ? (
+            <div className="rounded-[10px] border border-line-strong bg-paper p-3">
+              <p className="mb-2.5 text-[12px] text-ink-soft">{t('archiveDoneConfirm')}</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={archive}
+                  className="cursor-pointer rounded-lg bg-terracotta px-3 py-1.5 text-[12px] font-semibold text-brand-ink disabled:opacity-50"
+                >
+                  {pending ? t('archiving') : t('archive')}
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => setConfirmArchive(false)}
+                  className="cursor-pointer rounded-lg border border-line-strong bg-paper px-3 py-1.5 text-[12px] font-semibold text-ink-soft"
+                >
+                  {tCommon('cancel')}
+                </button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setConfirmArchive(true)}
-            className="cursor-pointer rounded-lg border border-line-strong bg-paper px-3 py-1.5 text-[12px] font-semibold text-ink-soft hover:text-ink"
-          >
-            {t('archive')}
-          </button>
-        )}
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmArchive(true)}
+              className="cursor-pointer rounded-lg border border-line-strong bg-paper px-3 py-1.5 text-[12px] font-semibold text-ink-soft hover:text-ink"
+            >
+              {t('archive')}
+            </button>
+          ))}
       </div>
     </aside>
   );
-}
-
-function Layer({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-4">
-      <div className="mb-2 text-[11px] font-bold text-ink-faint">{label}</div>
-      {children}
-    </div>
-  );
-}
-
-function Stepper({ current }: { current: Phase | null }) {
-  const tPhase = useTranslations('phase');
-  const currentIdx = current ? PHASE_ORDER.indexOf(current) : -1;
-  return (
-    <div className="flex items-center gap-1">
-      {PHASE_ORDER.map((phase, i) => {
-        const state = currentIdx < 0 ? 'todo' : i < currentIdx ? 'done' : i === currentIdx ? 'active' : 'todo';
-        return (
-          <div key={phase} className="flex items-center gap-1">
-            {i > 0 && <span className="h-px w-3 bg-line-strong" />}
-            <span className={`flex items-center gap-1.5 text-[12px] font-semibold ${stepTextClass(state)}`}>
-              <span
-                className={`flex h-[18px] w-[18px] items-center justify-center rounded-full text-[10px] ${stepMarkClass(state)}`}
-              >
-                {state === 'done' ? '✓' : state === 'active' ? '●' : '○'}
-              </span>
-              {tPhase(phase)}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function stepTextClass(state: 'done' | 'active' | 'todo'): string {
-  if (state === 'done') return 'text-teal';
-  if (state === 'active') return 'text-mustard';
-  return 'text-ink-soft';
-}
-
-function stepMarkClass(state: 'done' | 'active' | 'todo'): string {
-  if (state === 'done') return 'bg-teal border-teal text-brand-ink border-[1.5px]';
-  if (state === 'active') return 'bg-mustard border-mustard text-brand-ink border-[1.5px]';
-  return 'bg-paper-sunken border-line-strong text-ink-faint border-[1.5px]';
 }

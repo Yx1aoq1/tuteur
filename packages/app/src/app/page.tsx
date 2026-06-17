@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { BoardView } from '@/components/board/BoardView';
 import { EmptyState } from '@/components/EmptyState';
-import { getBoard, getIdentity, resolveScopeForRequest } from '@/server/dashboard';
+import { getBoard, getArchivedBoard, getIdentity, resolveScopeForRequest } from '@/server/dashboard';
 
 interface BoardPageProps {
   searchParams: Promise<{ project?: string; scope?: string }>;
@@ -23,6 +23,7 @@ export default async function BoardPage({ searchParams }: BoardPageProps) {
 
   const identity = getIdentity();
   const board = getBoard(scope, identity);
+  const archived = getArchivedBoard(scope, identity);
 
-  return <BoardView board={board} hasIdentity={identity !== null} project={scope.root} />;
+  return <BoardView board={board} archived={archived} identityName={identity?.name ?? null} project={scope.root} />;
 }
