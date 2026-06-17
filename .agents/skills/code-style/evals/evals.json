@@ -1,0 +1,122 @@
+{
+  "skill_name": "code-style",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "请把 src/features/example/index.ts 的 export 统一风格：单行在前，多行在后；按 PascalCase、camelCase、UPPER_SNAKE_CASE 分组；组间留空行；并保持业务语义不变。",
+      "expected_output": "目标 barrel 文件的 export 被按层级与命名风格分组，空行规则正确，未引入语义改动。",
+      "files": [],
+      "expectations": [
+        "明确识别目标文件，并说明只调整 export 风格",
+        "单行 export 位于多行 export 之前",
+        "按 PascalCase、camelCase、UPPER_SNAKE_CASE 进行分组",
+        "单行与多行分区之间保留一个空行",
+        "除非明确要求，不新增或删除任何 export 成员"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "把这个 barrel 文件里每个 export 的成员都按长度从长到短排序，同时保留之前的分组和空行规则。",
+      "expected_output": "单行 export 内成员、多行 export 块内成员均按长度降序排列，既有分组/空行规则保持不变。",
+      "files": [],
+      "expectations": [
+        "单行 export 花括号内成员按长度降序排序",
+        "多行 export 块内成员按长度降序排序",
+        "现有分组边界保持不变",
+        "现有空行分隔保持不变",
+        "明确说明变更仅涉及风格，不涉及业务语义"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "按仓库 formatter 规则处理这个文件，但不要触发全仓库格式化；另外如果 rg 不存在要有 fallback。",
+      "expected_output": "只对目标文件执行格式化，使用包管理器无关策略，并提供 rg 缺失时的回退方案。",
+      "files": [],
+      "expectations": [
+        "优先采用文件级格式化而非全仓格式化",
+        "指令避免硬编码单一包管理器",
+        "在 rg 不可用时提供回退方案",
+        "说明会将 diff 范围限制在目标文件",
+        "建议的格式化命令具备跨项目可用性"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "请统一 src/features/example/index.ts 的 export：单行 export 在前，多行 export 在后；按 PascalCase、camelCase、UPPER_SNAKE_CASE 分组；组间保留空行；不改变运行时行为。",
+      "expected_output": "目标 barrel 文件按 export 层级和命名风格完成重排，空行分隔正确，且无语义变化。",
+      "files": [],
+      "expectations": [
+        "明确识别目标文件，并说明只调整 export 风格",
+        "单行 export 位于多行 export 之前",
+        "按 PascalCase、camelCase、UPPER_SNAKE_CASE 进行分组",
+        "单行与多行分区之间保留一个空行",
+        "除非明确要求，不新增或删除任何 export 成员"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "在保留现有分组与空行规则的前提下，将所有 export 成员按名称长度降序排序。",
+      "expected_output": "单行与多行 export 内部成员按长度降序排序，同时保持原有分组与间距规则。",
+      "files": [],
+      "expectations": [
+        "单行 export 花括号内成员按长度降序排序",
+        "多行 export 块内成员按长度降序排序",
+        "现有分组边界保持不变",
+        "现有空行分隔保持不变",
+        "明确说明变更仅涉及风格，不涉及业务语义"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "仅按仓库 formatter 规则格式化该文件，避免触发全仓格式化，并在 rg 不可用时提供回退方案。",
+      "expected_output": "格式化范围被限制在目标文件，命令不绑定单一包管理器，并包含 rg 回退策略。",
+      "files": [],
+      "expectations": [
+        "优先采用文件级格式化而非全仓格式化",
+        "指令避免硬编码单一包管理器",
+        "在 rg 不可用时提供回退方案",
+        "说明会将 diff 范围限制在目标文件",
+        "建议的格式化命令具备跨项目可用性"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "当 barrel 文件中有两个 export 成员长度相同，保持长度降序主规则，并定义稳定的同长度 tie-break 策略，且不改变语义。",
+      "expected_output": "export 保持长度降序，同长度场景采用可复现的稳定 tie-break 规则。",
+      "files": [],
+      "expectations": [
+        "保持“长度降序”为主排序规则",
+        "为同长度成员定义并应用确定性的 tie-break 策略",
+        "重复执行后顺序保持稳定",
+        "不丢失也不重复任何 export 成员",
+        "明确说明变更是风格层且不改变语义"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "目标文件仅包含单行 export。请按 code-style 规则处理，不要人为引入多行块或额外结构转换。",
+      "expected_output": "单行 export 按排序/分组规则完成规范化，且不会被强制改写成多行结构。",
+      "files": [],
+      "expectations": [
+        "在仅有单行 export 的情况下不强制转换为多行",
+        "单行 export 按命名风格规则完成排序与分组",
+        "仅在命名分组之间增加必要空行",
+        "不进行与 export 风格无关的结构改造",
+        "diff 仅包含目标文件内的风格调整"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "目标文件仅包含多行 export（含 export type 块）。请应用相关规则，同时保持可读性和最小 diff。",
+      "expected_output": "多行 export 块及其内部成员按规则完成规范化，块间分隔正确，且语义不变。",
+      "files": [],
+      "expectations": [
+        "多行 export 块按技能规则完成层级/分组排序（适用处）",
+        "每个多行 export 块内部成员按名称长度降序排序",
+        "多行块之间的空行分隔被正确保留或规范化",
+        "不修改与目标无关的代码",
+        "明确说明运行时行为保持不变"
+      ]
+    }
+  ]
+}
