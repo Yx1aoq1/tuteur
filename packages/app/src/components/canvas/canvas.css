@@ -1,0 +1,87 @@
+/*
+ * React Flow 基础样式的 Ink-stone 主题覆盖。只改铺底/连线/控件/连接点这些 RF 自带 chrome,
+ * 节点卡片本身是自定义 JSX(已用工具类)。色值一律引用 globals.css 的语义 token,亮暗自动跟随。
+ */
+
+.react-flow {
+  background: transparent;
+}
+
+/* 连线:默认实线取强描边线,switch 非默认分支走信息蓝虚线(layout.ts 给 className) */
+.react-flow__edge.tt-edge .react-flow__edge-path {
+  stroke: var(--line-strong);
+  stroke-width: 1.5px;
+}
+
+.react-flow__edge.tt-edge-branch .react-flow__edge-path {
+  stroke: var(--blue);
+  stroke-width: 1.5px;
+}
+
+.react-flow__arrowhead {
+  fill: var(--line-strong);
+}
+
+.react-flow__edge.tt-edge-branch .react-flow__arrowhead {
+  fill: var(--blue);
+}
+
+/* 分支标签:燕麦纸底 + 墨字,贴合主题 */
+.react-flow__edge-text {
+  fill: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.react-flow__edge-textbg {
+  fill: var(--paper);
+}
+
+/* 连接点:入口隐形(仍是有效落点,减少灰点噪声),出口点低调 teal、悬停增强便于抓取连线 */
+.react-flow__handle {
+  width: 7px;
+  height: 7px;
+  min-width: 7px;
+  min-height: 7px;
+  border: none;
+}
+
+.tt-handle-in {
+  background: transparent;
+}
+
+.tt-handle-out {
+  background: var(--teal);
+  opacity: 0.45;
+}
+
+.react-flow__node:hover .tt-handle-out,
+.tt-handle-out:hover {
+  opacity: 1;
+}
+
+.tt-handle-out:hover {
+  width: 10px;
+  height: 10px;
+}
+
+/* 控件条:纸卡质感 */
+.react-flow__controls {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+}
+
+.react-flow__controls-button {
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--paper-sunken);
+}
+
+.react-flow__controls-button svg {
+  fill: var(--ink-soft);
+}
