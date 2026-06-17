@@ -56,8 +56,27 @@ function readValidated<S extends z.ZodTypeAny>(path: string, schema: S, label: s
 
 // ── Tasks ──────────────────────────────────────────────────────────────────
 
+// 归档后任务目录会移入 archive/YYYY-MM/<id>/(task.ts archiveTask)。按 id 读取时优先 live 路径,
+// 缺失则回退遍历归档桶,让 web 等只读消费方能按 id 读到已归档任务的 task/state/checklist/events。
+// 写入始终用 live taskPath —— 不回退,杜绝往归档任务写盘。
+function taskReadPath(scope: Scope, id: string, rel: string): string {
+  const live = taskPath(scope, id, rel);
+  if (existsSync(live)) return live;
+
+  const archive = archiveDir(scope);
+  if (existsSync(archive)) {
+    for (const bucket of readdirSync(archive, { withFileTypes: true })) {
+      if (!bucket.isDirectory()) continue;
+      const candidate = resolve(archive, bucket.name, id, rel);
+      if (existsSync(candidate)) return candidate;
+    }
+  }
+
+  return live; // 都不存在:返回 live 路径,交由调用方按缺失处理(校验读抛错、可选读返回默认)
+}
+
 export function readTask(scope: Scope, id: string): Task {
-  return readValidated(taskPath(scope, id, 'task.json'), TaskSchema, 'task.json');
+  return readValidated(taskReadPath(scope, id, 'task.json'), TaskSchema, 'task.json');
 }
 
 export function writeTask(scope: Scope, task: Task): void {
@@ -101,7 +120,7 @@ export function listTasks(scope: Scope, options: ListTasksOptions = {}): Task[] 
 // ── State ──────────────────────────────────────────────────────────────────
 
 export function readState(scope: Scope, id: string): State {
-  return readValidated(taskPath(scope, id, 'state.json'), StateSchema, 'state.json');
+  return readValidated(taskReadPath(scope, id, 'state.json'), StateSchema, 'state.json');
 }
 
 export function writeState(scope: Scope, state: State): void {
@@ -114,6 +133,25 @@ export function readWorkflow(scope: Scope, id: string): Workflow {
   return readValidated(workflowPath(scope, id), WorkflowSchema, `workflow ${id}`);
 }
 
+/**
+ * Persist a workflow graph to `workflows/<id>.workflow.json`. Schema-validates
+ * before writing so a malformed edit (e.g. from the web canvas) never lands on
+ * disk; structural/reference checks (connectivity, cycles, skill refs) are the
+ * caller's job via {@link validateWorkflow}. core.md §4.3.
+ *
+ * @param scope the project scope to write into
+ * @param workflow the workflow to persist (its `id` picks the file name)
+ */
+export function writeWorkflow(scope: Scope, workflow: Workflow): void {
+  const parsed = WorkflowSchema.safeParse(workflow);
+  if (!parsed.success) {
+    throw new StoreError(
+      `workflow ${workflow.id} failed validation:\n  ${parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('\n  ')}`,
+    );
+  }
+  writeJsonFile(workflowPath(scope, parsed.data.id), parsed.data);
+}
+
 // ── Events (append-only, single-process; no lock — core.md §4.4) ─────────────
 
 export function appendEvent(scope: Scope, taskId: string, event: TaskEvent): void {
@@ -123,7 +161,7 @@ export function appendEvent(scope: Scope, taskId: string, event: TaskEvent): voi
 }
 
 export function readEvents(scope: Scope, taskId: string): TaskEvent[] {
-  const file = taskPath(scope, taskId, 'events.jsonl');
+  const file = taskReadPath(scope, taskId, 'events.jsonl');
   if (!existsSync(file)) return [];
   const events: TaskEvent[] = [];
   for (const line of readFileSync(file, 'utf8').split('\n')) {
@@ -155,7 +193,7 @@ export function isApproved(scope: Scope, taskId: string, node: string): boolean 
 // ── Checklist (tasks/<id>/checklist.json — structured acceptance, §4.7) ───────
 
 export function readChecklist(scope: Scope, taskId: string): Checklist {
-  const file = taskPath(scope, taskId, 'checklist.json');
+  const file = taskReadPath(scope, taskId, 'checklist.json');
   if (!existsSync(file)) return ChecklistSchema.parse({});
   return readValidated(file, ChecklistSchema, 'checklist.json');
 }

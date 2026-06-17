@@ -104,6 +104,7 @@ export {
   readDeveloper,
   upsertProject,
   readProjects,
+  writeWorkflow,
   readWorkflow,
   appendEvent,
   isApproved,
