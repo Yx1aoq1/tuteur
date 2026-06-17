@@ -32,7 +32,7 @@ function runHook(event: string): void {
     // Future events (inject-workflow-state / inject-subagent-context) are no-ops for now.
     process.exit(0);
   } catch (error) {
-    // Soft-fail: hooks must never block the session (Tuteur's hard gate is `ttur complete`).
+    // Soft-fail: hooks must never block the session (Tuteur's hard gate is `ttur next`).
     process.stderr.write(`tuteur hook error: ${(error as Error).message}\n`);
     process.exit(0);
   }
