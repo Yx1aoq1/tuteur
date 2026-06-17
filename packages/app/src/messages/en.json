@@ -1,0 +1,101 @@
+{
+  "common": {
+    "switch": "Switch",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "globalSettings": "Global settings (coming soon)"
+  },
+  "sidebar": {
+    "global": "Global",
+    "globalSub": "Cross-project config · knowledge",
+    "projects": "Projects",
+    "empty": "No projects yet — add one below",
+    "addProject": "+ Add project"
+  },
+  "topbar": {
+    "global": "Global",
+    "project": "Project",
+    "globalScope": "Global scope",
+    "unselected": "No project selected",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "language": "Language"
+  },
+  "views": {
+    "board": "Board",
+    "canvas": "Canvas",
+    "knowledge": "Knowledge",
+    "context": "Inject"
+  },
+  "board": {
+    "filterHint": "Board filters by local identity",
+    "mine": "Mine",
+    "all": "All",
+    "todo": "To do",
+    "doing": "In progress",
+    "done": "Done",
+    "empty": "No tasks"
+  },
+  "taskCard": {
+    "notStarted": "Not started",
+    "node": "Node",
+    "stuck": "✗ Stuck",
+    "done": "✓ Done",
+    "stuckFooter": "⚑ Stuck · acceptance keeps failing"
+  },
+  "viewDetail": {
+    "title": "view detail",
+    "detailEmpty": "No task to display",
+    "phaseLayer": "① Phase",
+    "gateLayer": "② Node gate",
+    "checklistLayer": "③ Checklist ({done}/{total})",
+    "noNode": "Not in any node yet",
+    "consecutiveFail": "Repeated failures",
+    "checklistEmpty": "No acceptance items",
+    "ownerLine": "Owner {owner} · full event timeline on the task page",
+    "archive": "Archive",
+    "archiveDoneConfirm": "Archive this task? It moves to the archive dir; status stays unchanged.",
+    "archiveCancelConfirm": "Task is unfinished — archiving marks it cancelled. Proceed?",
+    "archiving": "Archiving…"
+  },
+  "phase": {
+    "planning": "Plan",
+    "execute": "Execute",
+    "finish": "Finish"
+  },
+  "empty": {
+    "globalTitle": "Global",
+    "globalHint": "Global config and cross-project knowledge views are not implemented yet. Tasks always belong to a project.",
+    "unselectedTitle": "No project selected",
+    "unselectedHint": "Pick an initialized project on the left, or add a new one to see its board.",
+    "canvasTitle": "Workflow canvas",
+    "canvasHint": "Node-graph editor pending: three fixed phase containers + skill/switch nodes.",
+    "knowledgeTitle": "Knowledge",
+    "knowledgeHint": "Global/project entry management, body rendering and the relation graph are pending.",
+    "contextTitle": "Injection orchestrator",
+    "contextHint": "Configure which knowledge entries get injected per default/node, with live preview — pending."
+  },
+  "addProject": {
+    "title": "Add project",
+    "pathLabel": "Project root path",
+    "pathPlaceholder": "/absolute/path/to/your/repo",
+    "pick": "Choose…",
+    "pickUnsupported": "Native folder picker is unavailable on this platform — type the absolute path.",
+    "detect": "Detect & add",
+    "detecting": "Detecting…",
+    "needInit": "This directory is not initialized (no .tuteur/). Fill the options below to initialize.",
+    "invalidPath": "Path does not exist or is not a directory.",
+    "initTitle": "Initialize project",
+    "agents": "Agent tools to configure",
+    "skills": "How to create skill directories",
+    "skillLink": "Symlink to .agent/skill",
+    "skillCopy": "Copy into each agent dir",
+    "user": "Local task ownership user",
+    "userPlaceholder": "e.g. yan",
+    "runInit": "Run init",
+    "running": "Initializing…",
+    "initFailed": "Init failed (exit code {code}).",
+    "selectAgent": "Select at least one agent tool."
+  }
+}

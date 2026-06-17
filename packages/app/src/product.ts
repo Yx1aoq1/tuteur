@@ -1,18 +1,8 @@
-export const PRODUCT_DISPLAY_NAME = 'Tuteur';
-export const PRODUCT_SLUG = toDirectoryName(PRODUCT_DISPLAY_NAME);
-export const PROJECT_DIR_NAME = `.${PRODUCT_SLUG}`;
-export const DASHBOARD_PROJECT_ROOT_ENV = `${toEnvName(PRODUCT_SLUG)}_PROJECT_ROOT`;
-export const DASHBOARD_SERVICE_NAME = `${PRODUCT_SLUG}-dashboard`;
-
-function toDirectoryName(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[^\p{Letter}\p{Number}]+/gu, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-function toEnvName(value: string): string {
-  return toDirectoryName(value).replace(/-/g, '_').toUpperCase();
-}
+// 常量单一来源在 @tuteur/core;此处仅做具名再导出,供 app 内以 `@/product` 复用。
+export {
+  DASHBOARD_PROJECT_ROOT_ENV,
+  DASHBOARD_SERVICE_NAME,
+  PRODUCT_DISPLAY_NAME,
+  PROJECT_DIR_NAME,
+  PRODUCT_SLUG,
+} from '@tuteur/core';

@@ -1,0 +1,198 @@
+'use client';
+
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { PHASE_ORDER } from './phase';
+import type { BoardCard, ChecklistItemView, Phase } from '@/types/dashboard';
+
+interface ViewDetailProps {
+  card: BoardCard;
+  project: string;
+}
+
+// 右侧 view detail:任务三层进度概览(主体阶段 / 节点门禁 / 验收清单)。常驻不可关闭。
+// 验收项可勾选(PUT checklist)、任务可归档(POST archive);写后 router.refresh + SSE 实时回灌。
+export function ViewDetail({ card, project }: ViewDetailProps) {
+  const t = useTranslations('viewDetail');
+  const tCommon = useTranslations('common');
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [confirmArchive, setConfirmArchive] = useState(false);
+
+  const { done, total, items } = card.checklist;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const query = `?project=${encodeURIComponent(project)}`;
+  const markCancelled = card.column !== 'done';
+
+  const toggleItem = (item: ChecklistItemView) => {
+    startTransition(async () => {
+      await fetch(`/api/tasks/${encodeURIComponent(card.id)}/checklist${query}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId: item.id, done: !item.done }),
+      });
+      router.refresh();
+    });
+  };
+
+  const archive = () => {
+    startTransition(async () => {
+      await fetch(`/api/tasks/${encodeURIComponent(card.id)}/archive${query}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markCancelled }),
+      });
+      setConfirmArchive(false);
+      router.refresh();
+    });
+  };
+
+  return (
+    <aside className="flex w-[336px] shrink-0 flex-col overflow-y-auto border-l border-line-strong bg-[color-mix(in_srgb,var(--paper)_40%,transparent)]">
+      <div className="flex items-center px-4 pt-3.5 pb-2.5">
+        <span className="font-serif text-[15px] font-semibold">{t('title')}</span>
+      </div>
+
+      <div className="px-4 pb-[18px]">
+        <h2 className="mt-0.5 mb-4 font-serif text-[20px] font-semibold leading-tight">{card.title}</h2>
+
+        <Layer label={t('phaseLayer')}>
+          <Stepper current={card.phase} />
+        </Layer>
+
+        <Layer label={t('gateLayer')}>
+          {card.node ? (
+            <div
+              className={`flex items-center justify-between gap-2 rounded-[9px] border px-2.5 py-2.5 text-[12.5px] font-semibold ${
+                card.stuck
+                  ? 'border-terracotta/30 bg-terracotta-bg text-terracotta'
+                  : 'border-teal/30 bg-teal-bg text-teal'
+              }`}
+            >
+              <span>
+                {card.stuck ? '✗' : '✓'} {card.node}
+              </span>
+              {card.stuck && <span className="text-[11px] font-bold">{t('consecutiveFail')}</span>}
+            </div>
+          ) : (
+            <p className="text-[12.5px] text-ink-faint">{t('noNode')}</p>
+          )}
+        </Layer>
+
+        <Layer label={t('checklistLayer', { done, total })}>
+          <div className="mb-2.5 flex items-center gap-2.5">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full border border-line bg-paper-sunken">
+              <span className="block h-full bg-teal" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="text-[11px] font-semibold text-ink-soft">
+              {done}/{total}
+            </span>
+          </div>
+          {items.length === 0 ? (
+            <p className="text-[12px] text-ink-faint">{t('checklistEmpty')}</p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {items.map(item => (
+                <li key={item.id}>
+                  <label className="flex cursor-pointer items-start gap-2 text-[12.5px] leading-snug">
+                    <input
+                      type="checkbox"
+                      checked={item.done}
+                      disabled={pending}
+                      onChange={() => toggleItem(item)}
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[var(--teal)]"
+                    />
+                    <span className={item.done ? 'text-ink-faint line-through' : 'text-ink-soft'}>{item.text}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Layer>
+
+        <p className="mt-2 mb-3 text-[11px] text-ink-faint">{t('ownerLine', { owner: card.owner })}</p>
+
+        {confirmArchive ? (
+          <div className="rounded-[10px] border border-line-strong bg-paper p-3">
+            <p className="mb-2.5 text-[12px] text-ink-soft">
+              {markCancelled ? t('archiveCancelConfirm') : t('archiveDoneConfirm')}
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={pending}
+                onClick={archive}
+                className="cursor-pointer rounded-lg bg-terracotta px-3 py-1.5 text-[12px] font-semibold text-brand-ink disabled:opacity-50"
+              >
+                {pending ? t('archiving') : t('archive')}
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => setConfirmArchive(false)}
+                className="cursor-pointer rounded-lg border border-line-strong bg-paper px-3 py-1.5 text-[12px] font-semibold text-ink-soft"
+              >
+                {tCommon('cancel')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmArchive(true)}
+            className="cursor-pointer rounded-lg border border-line-strong bg-paper px-3 py-1.5 text-[12px] font-semibold text-ink-soft hover:text-ink"
+          >
+            {t('archive')}
+          </button>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+function Layer({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-4">
+      <div className="mb-2 text-[11px] font-bold text-ink-faint">{label}</div>
+      {children}
+    </div>
+  );
+}
+
+function Stepper({ current }: { current: Phase | null }) {
+  const tPhase = useTranslations('phase');
+  const currentIdx = current ? PHASE_ORDER.indexOf(current) : -1;
+  return (
+    <div className="flex items-center gap-1">
+      {PHASE_ORDER.map((phase, i) => {
+        const state = currentIdx < 0 ? 'todo' : i < currentIdx ? 'done' : i === currentIdx ? 'active' : 'todo';
+        return (
+          <div key={phase} className="flex items-center gap-1">
+            {i > 0 && <span className="h-px w-3 bg-line-strong" />}
+            <span className={`flex items-center gap-1.5 text-[12px] font-semibold ${stepTextClass(state)}`}>
+              <span
+                className={`flex h-[18px] w-[18px] items-center justify-center rounded-full text-[10px] ${stepMarkClass(state)}`}
+              >
+                {state === 'done' ? '✓' : state === 'active' ? '●' : '○'}
+              </span>
+              {tPhase(phase)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function stepTextClass(state: 'done' | 'active' | 'todo'): string {
+  if (state === 'done') return 'text-teal';
+  if (state === 'active') return 'text-mustard';
+  return 'text-ink-soft';
+}
+
+function stepMarkClass(state: 'done' | 'active' | 'todo'): string {
+  if (state === 'done') return 'bg-teal border-teal text-brand-ink border-[1.5px]';
+  if (state === 'active') return 'bg-mustard border-mustard text-brand-ink border-[1.5px]';
+  return 'bg-paper-sunken border-line-strong text-ink-faint border-[1.5px]';
+}
