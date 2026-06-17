@@ -10,7 +10,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@tuteur/core": "workspace:*",
+    "chokidar": "^5.0.0",
     "next": "^16.2.9",
+    "next-intl": "^4.13.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
