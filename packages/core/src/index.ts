@@ -119,28 +119,28 @@ export {
 } from './store.js';
 export type { ListTasksOptions, KnowledgeFile } from './store.js';
 
+export { countConsecutiveFailures, resolveCurrentTask, checklistProgress, archiveTask, isStuck } from './task.js';
+export type { ArchiveOptions, CurrentTask } from './task.js';
+
 export {
-  countConsecutiveFailures,
-  checklistProgress,
-  resolveCurrentTask,
-  advanceWorkflow,
-  archiveTask,
+  approveCurrentNode,
+  validateWorkflow,
   deriveStatus,
-  completeNode,
   initialState,
-  artifactPath,
-  describeNext,
-  approveNode,
+  nodeById,
   rewindTo,
   skipNode,
-  nodeById,
+  nextNode,
   phaseOf,
-  isStuck,
-} from './domain.js';
-export type { CompleteResult, CompleteOptions, ArchiveOptions, CurrentTask, NextStep } from './domain.js';
-
-export { validateWorkflow } from './validate.js';
-export type { ValidateContext, WorkflowIssue } from './validate.js';
+} from './workflow/index.js';
+export type {
+  ValidateContext,
+  WorkflowIssue,
+  BranchView,
+  NextOptions,
+  NextResult,
+  NextStep,
+} from './workflow/index.js';
 
 export { resolvePlannedContext } from './context.js';
 export type { PlannedEntry } from './context.js';

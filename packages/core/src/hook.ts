@@ -1,5 +1,6 @@
 import { resolvePlannedContext } from './context.js';
-import { nodeById, resolveCurrentTask } from './domain.js';
+import { resolveCurrentTask } from './task.js';
+import { nodeById } from './workflow/index.js';
 import { readGuide, readDeveloper, readState, readTask, readWorkflow } from './store.js';
 import { readGitStatus } from './utils/index.js';
 import type { PlannedEntry } from './context.js';
@@ -57,9 +58,9 @@ export function renderSessionStart(scope: Scope): SessionStartResult {
       for (const b of node.branches) {
         out.push(`    · ${b.label}${b.default ? ' (default)' : ''}${b.criteria ? ` — ${b.criteria}` : ''}`);
       }
-      out.push(`- Next-Action: \`ttur complete ${state.currentNode} --branch <label> --reason "..."\``);
+      out.push(`- Next-Action: \`ttur next --branch <label> --reason "..."\``);
     } else {
-      out.push(`- Next-Action: \`ttur complete ${state.currentNode}\``);
+      out.push(`- Next-Action: \`ttur next\``);
     }
   }
 

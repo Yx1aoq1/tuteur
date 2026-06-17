@@ -1,4 +1,4 @@
-import type { WorkflowNode, ArtifactSpec, Workflow } from './types.js';
+import type { WorkflowNode, ArtifactSpec, Workflow } from '../types.js';
 
 // One validation finding. `error` means the graph is structurally broken (block
 // creating tasks on it); `warning` surfaces a dangling reference that may resolve
