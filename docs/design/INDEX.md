@@ -11,7 +11,7 @@
 
 ---
 
-## 1. 文档地图(6 份)
+## 1. 文档地图(7 份)
 
 | 文档                           | 讲什么                                                                                                                                     | 何时读                                                             |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
@@ -20,8 +20,9 @@
 | [harness.md](./harness.md)     | 节点门禁(gate)、**switch 靠 agent 判断**、上下文流转、hook 三阶段注入、**当前任务定位 + 子 agent 约定**、用户扩展                          | 做门禁、分支、写 hook、定注入、定位任务时                          |
 | [knowledge.md](./knowledge.md) | **知识库**:全局/项目同构 `knowledge/`(karpathy LLM Wiki 三层)、条目 schema、ingest/query/lint、注入接入(`context.json` 分层)               | 做知识库、上下文注入内容、`tuteur-knowledge` skill、注入编排时     |
 | [web.md](./web.md)             | 多项目+全局 dashboard、**workflow 画布编辑**、事件时间线、知识库管理+注入编排器、页面、API、web 触发 init                                  | 做 UI、画布、注入管理、加 API 时                                   |
+| [design.md](./design.md)       | **web 视觉规范**:视觉主题(砚墨)、配色 token、字号、间距、组件样式、排版规则、双主题机制、备选主题存档                                      | 调样式、套主题、组件视觉契约、改 globals.css 时                    |
 
-**依赖方向**:cli / harness / web / knowledge 都引用 **core**。数据 schema、双层模型、阶段容器/节点图、用户模型、InitConfig、归档、skill 发现、数据契约只在 core 定义一次,其余引用不重写。知识库目录模型/条目 schema/维护操作在 **knowledge.md** 定义一次,core 只承载 `knowledge/` 目录与 `context.json`/`resolvePlannedContext` 数据。
+**依赖方向**:cli / harness / web / knowledge 都引用 **core**。design.md 是 **web.md 的视觉子规范**(功能/页面看 web,观感看 design)。数据 schema、双层模型、阶段容器/节点图、用户模型、InitConfig、归档、skill 发现、数据契约只在 core 定义一次,其余引用不重写。知识库目录模型/条目 schema/维护操作在 **knowledge.md** 定义一次,core 只承载 `knowledge/` 目录与 `context.json`/`resolvePlannedContext` 数据。视觉 token/字号/间距/组件契约只在 **design.md** + `globals.css` 定义一次,web.md 等只引用。
 
 ---
 
