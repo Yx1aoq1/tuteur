@@ -379,6 +379,7 @@ readCurrentTask(scope): string | null;   // runtime/current-task.json 指针(har
 discoverSkills(scope): DiscoveredSkill[];   // 在 skills.ts;扫项目目录 + 各 agent home 目录(§5.1)
 // 写
 writeTask(scope, task);   writeState(scope, state);   appendEvent(scope, taskId, event);
+writeWorkflow(scope, workflow);   // workflows/<id>.workflow.json;zod 校验后落盘(web 画布保存,§4.3)
 writeChecklist(scope, taskId, checklist);   setChecklistItem(scope, taskId, itemId, done);   // §4.7;ttur check 写入
 approveNode(scope, taskId, node, by);   archiveTask(scope, id, { markCancelled? });   // §9;approval 写 state.approvals + 事件,见 harness §2.6
 writeCurrentTask(scope, taskId);   clearCurrentTask(scope);   assignTask(scope, taskId, slug);   // §3.1 改派
