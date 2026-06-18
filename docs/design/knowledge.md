@@ -92,7 +92,7 @@ updated: 2026-06-13
 
 ## 5. 维护操作(由 `withy-knowledge` skill 驱动)
 
-三个操作对齐 karpathy,写进 skill 正文(当前为占位,harness §5 / cli 模板):
+三个操作对齐 karpathy,写进 `withy-knowledge` skill 正文(harness §5 / cli 模板):
 
 - **Ingest(纳入)**:用户把源放进 `sources/` 并示意处理 → agent 读源 → 与用户对齐要点 → 写/更新 `wiki/` 摘要与相关实体/概念页 → 更新 `index.md` → 追加 `log.md`。一个源可能触及 10–15 页。
 - **Query(查询)**:先读 `index.md` 定位 → 下钻相关页 → 带引用综合作答。**好的回答回填成新 wiki 页**(对比、分析、发现的关联),使探索像 ingest 一样复利,不消失在聊天里。

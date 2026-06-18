@@ -94,7 +94,7 @@ flowchart TD
   Q6 -- 是 --> R1
 
   I -- research --> R1[收尾: finish]
-  R1 --> R2[汇总结果、风险、验证与遗留项<br/>目标产物: final-summary.md]
+  R1 --> R2[确认实现与文档一致、沉淀经验入知识库<br/>口头汇总,无文件产物]
   R2 --> R3[withy next]
   R3 --> R4{next 为 null?}
   R4 -- 否 --> G
@@ -154,9 +154,9 @@ flowchart TD
 | `grill-me`      | 三份规划产物、用户澄清、项目规范    | 审查并回写 `prd.md`、`design.md`、`implement.md` | 三份规划产物 + approval                 | `design-template`                      |
 | `dev`           | 规划产物、上下文清单、代码库        | 生产代码、测试代码、必要迁移/文档                | **当前无 artifact/check gate**          | 通常不需要文档模板                     |
 | `check`         | git diff、设计与实施计划、测试命令  | `check-result.json`                              | **当前仅 `npm test`**                   | `check-result-template` 或 JSON schema |
-| `wrapup/finish` | 全部产物、验证结果、已知风险        | `final-summary.md`                               | **当前无 artifact gate**                | `final-summary-template`               |
+| `wrapup/finish` | 全部产物、`git diff`、验证结果       | 无文件产物(口头 recap + 知识库沉淀)             | **当前无 artifact gate**                | 无                                     |
 
-上表的“目标产物”来自现有 skill 占位文本和设计文档；除明确标注的当前硬门禁外，其他产物还没有被 workflow 强制要求。
+上表的“目标产物”来自现有 skill 正文和设计文档；除明确标注的当前硬门禁外，其他产物还没有被 workflow 强制要求。
 
 ---
 
@@ -216,11 +216,11 @@ workflow gate.artifacts/checks/approval
 
 当前核心状态机已经能承载流程，但“产物规范化”还没有闭环：
 
-1. 内置 `dev/check/finish/knowledge` 的 `SKILL.md` 仍是 TODO；`brainstorm/grill-me` 已落地。
+1. 五个 workflow skill(`brainstorm/grill-me/dev/check/finish`)与维护类 `withy-knowledge` 的 `SKILL.md` 正文均已落地。
 2. 默认 workflow 已门禁三份规划产物和 `npm test`；其余节点的目标产物尚未全部转成硬门禁。
 3. `ArtifactSpec.template` 和 `kind:template` 已有 schema/设计，但默认产物模板条目尚未落地并接入 workflow。
 4. `implement.md` 定为 agent 直写的 markdown 实施计划(web 只读、best-effort 解析复选框进度,core §4.7);`implement.json`、`check.json`、`check-result.json` 的正式 schema/职责边界仍需确定。
-5. research 分支直接进入 `finish`，但缺少独立调研产物定义；如果希望结果可复用，应明确 `research.md` 或统一由 `final-summary.md` 承载。
+5. research 分支直接进入 `finish`，但缺少独立调研产物定义;`finish` 本身不产出文件(只做一致性确认、知识库沉淀与归档),如果希望调研结果可复用,应明确 `research.md` 或将结论沉淀进知识库。
 
 建议按以下顺序完成，避免 skill、模板和 workflow 三处反复改名：
 
