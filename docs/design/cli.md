@@ -2,468 +2,223 @@
 
 > 适用范围:`packages/cli`(`@tuteur/cli`,可执行名 `ttur`)。
 > 定位:实施规格级。CLI 是用户与 agent 的稳定入口、确定性逻辑的调用方。**所有 `.tuteur/` 读写与门禁都委托 [@tuteur/core](./core.md),CLI 不自己碰盘。**
-> 数据 schema 见 [core.md §4](./core.md#4-类型与校验);双层模型见 [core.md §2](./core.md#2-双层模型全局-vs-项目)。
-> 先看 [INDEX.md](./INDEX.md) 的实现状态矩阵区分已实现/待实现。
+> 数据 schema 见 [core.md §4](./core.md);双层模型见 [core.md §2](./core.md);端到端串联见 [harness-flow.md](./harness-flow.md)。
 
 ---
 
 ## 1. 职责边界
 
-| CLI 负责                                | 委托给谁                         |
-| --------------------------------------- | -------------------------------- |
-| 命令解析、交互、参数校验                | ——                               |
-| 初始化项目/全局结构、装 skill、配 agent | configurator 引擎(§8)            |
-| 读写数据、计算 phase/step、门禁判定     | **@tuteur/core**(store + workflow + task) |
-| hook 事件入口(`ttur hook <event>`)      | core(context/state)              |
-| 模板更新冲突检测                        | installation/managed-templates   |
+| CLI 负责                                | 委托给谁                                  |
+| --------------------------------------- | ----------------------------------------- |
+| 命令解析、交互、参数校验、退出码映射    | ——                                        |
+| 初始化项目/全局结构、装 skill、配 agent | configurator 引擎(§6)                     |
+| 读写数据、计算 phase、门禁判定、推进    | **@tuteur/core**(store + workflow + task) |
+| 平台事件入口(`ttur hook <event>`)       | core(renderSessionStart/context)          |
+| 模板更新冲突检测                        | installation/managed-templates(§5)        |
 
-核心不变量:**agent 自称完成 ≠ 节点完成**,流程推进只由 core 门禁判定。agent 面向入口只保留 `ttur next`;CLI `complete <node>` 明确删除,不保留兼容入口。
-
----
-
-## 2. 包结构与入口
-
-```text
-packages/cli/src/
-  index.ts                # shebang 入口
-  program.ts              # commander 装配
-  harness/runtime.ts      # [已实现] CLI 侧公共:requireProjectScope/resolveTaskId/emit(JSON)/makeTaskId
-  commands/
-    index.ts              # 约定式动态加载器
-    init.ts               # [已实现] 初始化(项目 + `--global`,经 InitConfig 统一执行)
-    dashboard.ts          # [已实现] dashboard 进程管理
-    uninstall.ts update.ts# [已实现] 卸载 / 模板更新
-    task.ts               # [已实现] 任务命令族(create/list/status/start/assign/archive)
-    next.ts               # [待实现] 唯一推进入口(读取 currentNode 后校验 gate;替代并删除 complete.ts)
-    rewind.ts             # [已实现待调整] switch 回退(改为 --to <node>,调 core.rewindTo)
-    approve.ts            # [已实现待调整] 人工确认(改为无 node 参数,批准 currentNode)
-    hook.ts               # [已实现] 平台事件入口 session-start(§5.3)
-  configurators/
-    registry.ts           # [已实现] 行为表 PLATFORM_CONFIGURATORS + configureAgentPlatform 派发(数据从 @tuteur/core 引)
-    shared.ts             # [已实现] copyAgentTemplates/resolveWorkflowSkills/writeSkills/linkSkills/copyCanonicalSkills/占位符
-    codex.ts claude.ts gemini.ts  # [已实现] 每平台 configurator(拷模板树 + skill)
-    index.ts              # [已实现] 聚合 re-export(类型/数据从 core)
-  installation/
-    init.ts               # initProject():调 core 建结构 + 装 skill + 配 agent
-    managed-templates.ts  # 模板哈希追踪
-  templates/              # 写入用户仓库的模板源(见 harness.md §6)
-
-# 注:AGENT_PLATFORMS 数据 + agent 类型 + 公共 utils 已迁入 @tuteur/core(core §5.1、agents/、utils/)
-```
-
-### 2.1 约定式命令加载(已实现,保留)
-
-`commands/index.ts` 扫描目录,每个文件默认导出 `(program)=>void|Promise<void>`,按字母序注册。**加命令 = 放一个文件**,不改 `program.ts`。新增 `task.ts`/`next.ts`/`hook.ts` 即自动生效。`complete.ts` 应随 `next.ts` 落地后删除。
+核心不变量:**agent 自称完成 ≠ 节点完成**,流程推进只由 core 门禁判定。agent 面向的推进入口只有 `ttur next`(读取 `state.currentNode`,调用者不传节点);无 `complete` 命令。
 
 ---
 
-## 3. 命名常量
+## 2. 命令总览
 
-`constants/product.ts` 由产品名派生一切(`PRODUCT_DISPLAY_NAME`→`Tuteur`、`CLI_COMMAND_NAME`→`ttur`、`PROJECT_DIR_NAME`→`.tuteur`、`getBundledSkillName('dev')`→`tuteur-dev`、`getSlashCommandPrefix()`→`/tuteur:`)。**这些常量应迁入 core 或由 core 复导出,app 不再手抄**(消除 `app/product.ts` 重复,core.md K6)。
+约定式加载:`commands/` 下每个文件默认导出一个注册函数,按字母序自动挂载。**加命令 = 放一个文件**,不改 `program.ts`。
 
----
+| 命令               | 一句话                                     | 落地状态             |
+| ------------------ | ------------------------------------------ | -------------------- |
+| `ttur init`        | 初始化项目 / 全局根                        | ✅                   |
+| `ttur task …`      | 任务族:start(建或聚焦)/list/status/archive | ✅                   |
+| `ttur next`        | 唯一推进入口(门禁)                         | ✅                   |
+| `ttur approve`     | 批准当前节点(approval 门禁)                | ✅                   |
+| `ttur rewind`      | switch 判错回退                            | ✅                   |
+| `ttur hook …`      | 平台事件入口(session-start)                | ✅(仅 session-start) |
+| `ttur knowledge …` | 知识库 bookkeeping(分 scope)               | ✅                   |
+| `ttur dashboard …` | 控制台后台进程管理                         | ✅                   |
+| `ttur update`      | 升级 Tuteur 托管的 skill 模板              | ✅                   |
+| `ttur uninstall`   | 卸载项目 / 全局根                          | ✅                   |
 
-## 4. 已实现命令(保留,部分待扩展)
+**输出约定**:每个命令都支持两种输出。**缺省人读文本**(给人看);加全局 `--json` 输出单行结构化 JSON `{ ok, … }`(成败都结构化,供 agent/hook/skill 解析)。`--json` 注册在 program 上、所有子命令继承,由 skill 提示词与 hook 在 agent 侧固定带上。`hook` 例外——它输出的是注入正文(给 agent 读的上下文),不套 `{ok}` 信封、不受 `--json` 影响。
 
-### 4.1 `ttur init`
-
-参考 Trellis:**每个 agent 一个布尔 flag**(不用 `--agents codex,claude`);所有选择收敛成 [InitConfig](./core.md#8-initconfigcli-与-web-共用的初始化模型),三种输入(flag / 交互 / web 表单)同源产出,统一执行。
-
-```text
-ttur init [-y|--yes] [-u|--user <name>] [--global] [--copy]
-          [--codex] [--claude] [--gemini] ...      # 每个 agent 一个 flag(由注册表派生)
-```
-
-| 选项                                | 作用                                                                                                                         |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `--codex` / `--claude` / `--gemini` | 选中对应 agent;由 `AGENT_PLATFORMS` 注册表的 `cliFlag` 派生(§8)                                                              |
-| `-y, --yes`                         | 用注册表 `defaultChecked` 的 agent,跳过交互;隐含冲突时 skip                                                                  |
-| `-u, --user <name>`                 | 本地身份;缺省取 `git config user.name`(同 Trellis)                                                                           |
-| `--global`                          | **写 `~/.tuteur/` 全局根**;全局只装 workflow 模板+config+projects,**不配 agent、不建 workspace 名册**(core.md §2.3 安全边界) |
-| `--copy`                            | skill 写独立副本;缺省 `link`(软链共享)。取代冗长的 `--skill-mode`                                                            |
-
-显式 flag > `-y` 默认 > 交互(三路优先级同 Trellis)。所有选项都映射到 InitConfig 字段,因此 `ttur init --codex --claude -u yan` 与交互、与 web 表单等价 —— web「初始化项目」按钮即 `spawn` 序列化出的这条命令(web.md §2.4)。
-
-流程(项目模式):
-
-```text
-ttur init
-  → 收集 InitConfig(flag 解析 / 交互问 INIT_QUESTIONS / web 表单,三选一)
-  → initProject(config)
-      ├─ core 建 scope 目录(项目:tasks/workflows/knowledge/...;全局:config+projects+模板)
-      ├─ 写 config.json / context.json / 默认 workflow
-      ├─ installCanonicalWorkflowSkills() → .agent/skill/<name>(不覆盖)
-      │    # 装 templates/common/skills/* 全部:workflow 类(brainstorm/grill-me/dev/check/finish)
-      │    # + 维护类 tuteur-knowledge(知识库维护,knowledge.md;非 workflow 节点,不进默认 workflow)
-      ├─ 项目模式:写 .developer(本地身份)+ workspace/<slug>/(提交即登记进成员名册,core §3)
-      ├─ 对每个 agent:configureAgentPlatform(id, ctx)   # §8 派发到 configurators/<id>.ts
-      └─ recordCurrentTemplateHashes()
-```
-
-全局模式(`--global`)跳过 agent 配置与 workspace 名册 —— 只在 `~/.tuteur/` 落 config + projects 注册表 + workflow/knowledge 模板(core.md §2.1/§2.3)。
-
-**交互输入**:agent 多选用 `@inquirer/prompts` 的 checkbox(choices 由注册表 `defaultChecked` 派生);名字这类纯文本输入参考 Trellis 用 readline 避免闪烁。问题定义见 `INIT_QUESTIONS`(core.md §8),与 web 表单同源。
-
-### 4.2 `ttur dashboard start|stop`(已实现)
-
-dashboard 是**多项目管理器**,项目根不再由启动参数固定,而由 web 端选择(web.md §2)。当前实现:
-
-- `start` 门禁改为**全局根** `~/.tuteur` 存在(`resolveGlobalScope` + `isDirectory`),不再要求 cwd 是已初始化项目;缺失则报错引导先跑 `ttur init --global`。
-- runtime 状态写在**全局根** `~/.tuteur/runtime/dashboard.json`(经 `runtimeDir(resolveGlobalScope())`),与 cwd 解绑;`stop` 据此定位进程,任意目录均可执行。
-- `TUTEUR_PROJECT_ROOT` 仅在 cwd 本身是已初始化项目(`detectTuteur(cwd)`)时设置,作为「无选择时默认项目」兜底(web.md §2.3);否则不注入,前端从空项目列表开始添加。
-
-详见 web.md §7。standalone server 打包(脱离 monorepo 的 `pnpm --filter`)仍属后续(web.md W9)。
-
-### 4.3 `ttur update` / `uninstall`(已实现,保留)
-
-基于 `managed-templates` 哈希追踪,见 §7。`uninstall --global` 清理全局根 `~/.tuteur/`(已实现)。
+**退出码**:`0` 成功 / `1` 通用错误(参数错、找不到任务、无身份等)/ `2` **门禁失败**(`ttur next` 专用:缺产物、检查未过、缺 approval、switch 缺/非法 branch)。`hook` 恒返回 `0`(软失败,绝不阻断会话)。
 
 ---
 
-## 5. 运行时命令
+## 3. 命令详表
 
-退出码约定:`0` 成功 / `1` 通用错误 / `2` **门禁失败** / `3` 用户取消。**命令面向 agent,统一吐简单 JSON**(`{ok, ...}`,成败都结构化,退出码语义不变);人看进度去 web,不为 CLI 做花哨人读文本(harness §2.3)。
+> 所有命令缺省输出人读文本,加 `--json` 转结构化。下表「执行后返回」列示 `--json` 下的对象(面向 agent 的命令)或文本要点(面向人的命令)。
 
-### 5.1 `ttur task ...`
+### 3.1 运行时命令(主要由 agent 调用)
 
-```text
-ttur task create "<title>" [--workflow <id>] [--assignee <slug>]
-ttur task list [--mine|--all] [--status ...] [--archived]
-ttur task status [<task>]
-ttur task start <task>                 # 写 runtime/current-task.json 当前任务指针(harness §7.1)
-ttur task assign <task> <slug>         # 改派 assignee(creator 不变,core.md §3.1)
-ttur task archive <task> [--cancelled]
-```
+| 命令                           | 说明                                                                                                                                                                                                                                                                              | 可选参数                                                                                                                                    | 执行后返回                                                                                                                                                  |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `task start "<title>" \| <id>` | 聚焦或新建当前任务(合并了旧 create/start):**实参命中已存在任务 id** → 只写当前任务指针,不碰目录/task.json;**不存在** → 把实参当 title 派生 `id=<MM-DD>-<slug>`、校验 workflow、写 task.json/state.json(游标=entry)后设指针。workflow 结构非法则拒绝,skill/template 悬空降级为告警 | `-w, --workflow <id>`(默认 `default`,仅新建路径)<br>`-a, --assignee <slug>`(默认当前开发者,仅新建路径)                                      | 聚焦:`{ ok, task, current:true }`;新建:`{ ok, task, created:true, status, node, warnings[] }`;新建且无身份又无 `--assignee` → `{ ok:false, error }` exit 1  |
+| `task list`                    | 列任务,默认只看自己、不含归档                                                                                                                                                                                                                                                     | `--mine` / `--all`<br>`--status <status>`<br>`--archived`                                                                                   | `{ ok, tasks:[{ id, title, status, assignee, priority }] }`                                                                                                 |
+| `task status [task]`           | 看单任务的当前节点 / 已完成节点 / 判定记录(task 缺省走当前任务)                                                                                                                                                                                                                   | ——                                                                                                                                          | `{ ok, task, title, status, node, completed[], decisions }`                                                                                                 |
+| `task archive <task>`          | 写 archivedAt + 移目录到 `tasks/archive/<YYYY-MM>/`;默认不改状态,不绑产物、不动 git                                                                                                                                                                                               | `--cancelled`(归档同时标记取消)                                                                                                             | `{ ok, task, archived:true, cancelled }`                                                                                                                    |
+| `next`                         | **唯一推进门禁**:读 `state.currentNode`。skill 节点核对 gate(产物存在非空 / 检查退 0 / 已 approve);switch 节点需 `--branch`,无则列分支等判定。每次调用(成败)追加一条 `events.jsonl`                                                                                               | `--task <id>`<br>`--branch <label>`(switch 选路)<br>`--reason <text>`(`--skip` 必填、`--branch` 建议填)<br>`--skip`(人工显式跳过门禁、留痕) | 过门禁 `{ ok:true, exitCode:0, node, done?, next? }` exit 0;<br>挡住 `{ ok:false, exitCode:2, blocked? / needsBranch? / branches[]? / nextAction? }` exit 2 |
+| `approve`                      | 写 `state.approvals[currentNode]` + 一条 `approval` 事件(web 点确认是等价入口)                                                                                                                                                                                                    | `--task <id>`                                                                                                                               | `{ ok, task, node, approved:true }`;无身份 exit 1                                                                                                           |
+| `rewind --to <node>`           | switch 判错恢复:游标退回目标节点、清下游 completed/approvals、记 `rewind` 事件                                                                                                                                                                                                    | `--to <node>`(必填)<br>`--task <id>`<br>`--reason <text>`                                                                                   | `{ ok, task, node, completed[] }`                                                                                                                           |
+| `hook <event>`                 | 平台事件入口。`session-start`:经 `renderSessionStart` 输出注入正文 + 追加 `session_start` 事件;其余事件暂为 no-op                                                                                                                                                                 | (event 为位置参数;`TUTEUR_HOOKS=0` 或非 Tuteur 项目 → 静默 exit 0)                                                                          | stdout 注入纯文本;恒 exit 0(不受 `--json` 影响)                                                                                                             |
 
-> 所有命令默认输出简单 JSON(`{ok, ...}`,见 §5 开头),不再有独立 `--json` flag。
+> 任务定位口径统一为 `resolveTaskId`:`--task` > 当前任务指针 > 唯一未完成任务兜底;多个未完成 → AMBIGUOUS、指针失效 → STALE,均报错让用户 `task start <id>` 选定(harness §7.1)。实施计划不设 CLI 子命令——agent 用自己的文件工具直接维护 `tasks/<id>/implement.md`(§3.3)。
 
-`create`(**新任务通常由 agent 替用户建**:用户描述需求 → agent 跑此命令):`core.resolveProjectScope()` → 校验 workflow → `taskId=<MM-DD>-<slug>` → 写归属(`creator = 当前 .developer.slug`,`assignee = --assignee ?? 当前 .developer.slug`;**既无 `.developer` 又无 `--assignee` 则快速失败**,提示先 `ttur init -u`,对齐 Trellis,core.md §3.1)→ `core.writeTask/writeState`(state 初始化到 `entry` 节点);同名检测只查活跃任务目录(归档区按 `<YYYY-MM>` 分桶,跨年同名可共存,core.md §9)。`start`:写当前任务指针,完成/归档自动清除(harness §7.1)。`assign`:只改 `assignee`(校验 `workspace/<slug>/` 在册,core.md §3.1)。`list --mine` 用 `core.isOwnedBy`(按 assignee)+ `core.shouldFilterByUser`(全局根不过滤,core.md §3),默认不含归档。`archive`:`core.archiveTask` —— 默认不改 status(未完成任务询问,或 `--cancelled` 标记取消)+ 写 archivedAt + 移动目录到 `tasks/archive/<YYYY-MM>/<id>/`,**不绑任何产物、不执行任何 git 操作**(core.md §9)。
+### 3.2 安装与运维命令
 
-### 5.2 `ttur next` —— agent 面向核心门禁
+| 命令              | 说明                                                                                                                                                                                                                                                                                | 可选参数                                                                                                                                                                                                  | 执行后返回                                                                                |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `init`            | 项目模式:建 `.tuteur/` 结构 + 写 config/context/默认 workflow + 装 canonical skill + 配选中 agent + 写本地身份;存在全局根则登记进 `projects.json`。全局模式(`--global`):只在 `~/.tuteur/` 落 config + projects 注册表 + workflow/knowledge 模板,**不配 agent、不建身份**(core §2.3) | `-y, --yes`(用默认勾选)<br>`-u, --user <name>`(缺省取 `git config user.name`)<br>`--global`<br>`--copy`(skill 独立副本,缺省软链)<br>`--codex` / `--claude` / `--gemini`…(每 agent 一个 flag,由注册表派生) | 文本:安装路径、选中 agent、skill 模式、当前用户、等价命令;取消 exitCode 1                 |
+| `dashboard start` | 后台拉起控制台(多项目管理器);门禁为全局根存在,与 cwd 解绑,状态写 `~/.tuteur/runtime/dashboard.json`。cwd 若是已初始化项目则作默认项目兜底                                                                                                                                           | ——                                                                                                                                                                                                        | 文本:启动 URL,或"已在运行"                                                                |
+| `dashboard stop`  | 据全局 runtime 状态结束进程,任意目录可执行                                                                                                                                                                                                                                          | ——                                                                                                                                                                                                        | 文本:已停止 / 未运行                                                                      |
+| `knowledge graph` | 从 `[[链接]]` + frontmatter 派生文档关系图                                                                                                                                                                                                                                          | `--global`<br>`--merged`(全局+项目全景)                                                                                                                                                                   | `{ ok, scope, nodes, edges, graph }`                                                      |
+| `knowledge index` | 据 frontmatter 重算各级 `index.md`                                                                                                                                                                                                                                                  | `--global`                                                                                                                                                                                                | `{ ok, scope, written, paths[] }`                                                         |
+| `knowledge lint`  | 机械体检:孤儿页 / 断链 / 悬空注入引用                                                                                                                                                                                                                                               | `--global`                                                                                                                                                                                                | `{ ok, scope, errors, warnings, issues[] }`;有 error exit 1                               |
+| `update`          | 按模板哈希升级 Tuteur 托管的 skill:不存在→建、内容同→跳过、用户没改→自动更新、改过→冲突(交互或 flag 决策)                                                                                                                                                                           | `--dry-run`<br>`-f, --force`(备份后覆盖)<br>`-s, --skip-all`<br>`-n, --create-new`(写 `.new` 副本)                                                                                                        | 文本:变更计划 + 汇总(created/auto-updated/overwritten/copied/skipped/unchanged)+ 备份目录 |
+| `uninstall`       | 删除项目内 Tuteur 托管 skill 与 `.tuteur/`;`--global` 删除全局根 `~/.tuteur/`                                                                                                                                                                                                       | `-y, --yes`<br>`--dry-run`<br>`--global`                                                                                                                                                                  | 文本:删除计划 + 汇总;非交互且无 `--yes` 时拒绝执行                                        |
 
-```text
-ttur next [--task <task>] [--branch <label> --reason "..."] [--skip --reason "..."]
-  # 不接收 node 参数;从 state.currentNode 读取当前节点
-  # skill 节点:核对 gate(artifacts/checks/approval)
-  # switch 节点:无 --branch 时输出合法分支与 nextAction;有 --branch 时校验并推进
-  # --task 缺省走 resolveCurrentTask(harness §7.1);输出统一简单 JSON
-  → core.nextNode(scope, taskId, { branch, reason, by })   # 唯一推进门禁:读取 currentNode
-  → result.ok  → exit 0 + stdout 下一步 JSON(harness §2.3:next 节点/类型;switch 列分支 criteria)
-  → !result.ok → exit 2 + { ok:false, blocked:[...] }(缺产物/检查失败/待 approve;或 switch 缺/非法 --branch)
-  → --skip     → 人工显式跳过并留痕(门禁永不自动放行,harness §2.4)
-  每次调用(成败)appendEvent 到 events.jsonl(core §4.4)
-```
+> workflow 图校验不开放 CLI 命令:`validateWorkflow` 作为 core 函数,在 `task start` 新建任务时与 web 保存画布时各跑一次(harness §3、web §3.3);手改 `workflow.json` 的结构错误会在下次 `task start` 新建任务时被拦截。
 
-CLI 只做"解析参数 + 调 core + 映射退出码",**门禁与节点图推进全在 core**(harness.md §2/§3)。`ttur next` 是为 agent 降低参数歧义的唯一推进入口:agent 不需要知道当前节点 id,也不能传错节点。
+### 3.3 实施计划 implement.md(agent 维护,web 只读展示)
 
-> **落地状态**:`ttur next` 待实现。当前已有 `ttur complete <node>` 的旧实现,但本轮决策是迁移门禁逻辑后**删除 `complete` 命令**,不保留兼容入口,也不在 hook/skill/web 中引用它。
+任务的实施顺序与当前进度用 `tasks/<id>/implement.md` 承载,**agent 用自己的文件工具直接写**。规划阶段从 `prd.md` 和 `design.md` 提炼有序步骤,每项包含验证方式;完成时把 `- [ ]` 改为 `- [x]`。无 CLI 子命令——与知识库「检索=agent 自读文件」同一取舍。
 
-### 5.2.1 `ttur rewind --to <node>` / `ttur approve`
-
-```text
-ttur rewind --to <node> [--task <task>] [--reason "..."]   # switch 判错恢复:退游标回目标节点、清下游、记 rewind 事件(harness §3.1)
-ttur approve [--task <task>]                              # 批准当前 currentNode,写 state.approvals[currentNode]+ approval 事件
-```
-
-`approve` 是 approval 门禁的写入口(web 点确认是等价的另一入口),不再接收 node 参数;`rewind` 是无环图下唯一的"往回走"恢复动作,因为目标通常不是当前节点,所以保留显式 `--to <node>`。
-
-### 5.3 `ttur hook <event>` —— 平台事件统一入口(三阶段)
-
-把被动事件收敛成 CLI 子命令,逻辑全在 core(harness.md §6 三阶段功能规格)。三个事件对应 hook 三阶段:
-
-```text
-ttur hook session-start            # 会话启动:全量注入(会话须知+当前态+workflow概览+任务状态机+planned context)
-                                   #   stdout 输出注入内容 + 追加 session_start 事件
-ttur hook inject-workflow-state    # 每轮用户输入:输出当前节点轻量 breadcrumb(P2)
-ttur hook inject-subagent-context  # 派生子 agent:输出/改写该节点精选上下文(P1+;pull 平台不发)
-
-  公共参数/行为(harness §6.2):
-    --platform <id>   显式平台(否则按 env/ cwd 目录自动探测),决定事件名与输出信封
-    任务定位:core.resolveCurrentTask(指针 > 唯一未完成任务兜底,harness §7.1);TUTEUR_PROJECT_ROOT 仅作 scope 兜底
-    kill-switch:TUTEUR_HOOKS=0 或平台非交互标志 → 静默退出 0、不注入
-    退出码:0=成功;非 0=失败(平台忽略,绝不阻断会话)
-```
-
-> **现状(MVP 已实现)**:`ttur hook session-start` —— 经 `renderSessionStart` 输出**纯文本**注入(多态:NO ACTIVE TASK / AMBIGUOUS / STALE / 停在 skill / 停在 switch / COMPLETED)+ 追加 `session_start` 事件;非 Tuteur 项目或 `TUTEUR_HOOKS=0` 静默退出 0;异常软失败不阻断。**未实现**:`--platform` 探测与 `renderHookOutput` 信封适配、`inject-workflow-state`、`inject-subagent-context`(均为后续)。
-
-`hook session-start` 内部:`core.resolveProjectScope` → `core.readState` + `core.resolvePlannedContext` → 按段拼注入内容,经 `renderHookOutput(event, platform)` 出信封(参考实现见 harness.md §6.4)。事件名/信封的平台差异收在 core 一处,CLI 只解析参数 + 调 core。
-
-### 5.4 `ttur knowledge ...` —— 知识库维护(分 scope,P2)
-
-确定性 bookkeeping 的命令化(规格见 [knowledge.md §9](./knowledge.md));**检索不在命令里**——agent 自带文件工具直接读 `knowledge/` 导航(无 `search` 命令,knowledge.md §6.3)。**默认作用于当前项目知识库,`--global` 切到全局**(同 `init --global` 语义)。
-
-```text
-ttur knowledge graph [--global] [--merged] [--json]   # 从 [[链接]]+frontmatter 派生文档关系图;--merged=全局+项目全景
-ttur knowledge index [--global]                        # 据 frontmatter 重算各级 index.md(根 catalog + wiki 子目录)
-ttur knowledge lint  [--global]                        # 孤儿页/断链/悬空 injectByDefault 机械体检
-  scope:默认 resolveProjectScope(当前项目);--global → ~/.tuteur/knowledge/
-  id 撞车:全局/项目同 id 时项目覆盖全局(与注入合并同规则,knowledge.md §7)
-```
-
-`graph` 优先(服务 web 图谱视图 W7c);`index`/`lint` MVP 先由 `tuteur-knowledge` skill 让 agent 做,规模大了再固化(knowledge.md §9)。
+- **定位:实施计划 + web 只读进度**,可被节点 `gate.artifacts` 当存在性核对,勾选状态不参与放行、不做跨任务统计。
+- **进度解析 best-effort**:core 扫 `- [ ]` / `- [x]` 行算 `done/total`;**把没识别成复选框的 bullet 数显式标出**,丢项变成可见提示而非静默失守(规避 markdown 解析的老问题)。
+- **职责分离**:`prd.md` 是需求与验收标准,`design.md` 是方案与边界,`implement.md` 是可勾选的实施步骤和逐步验证。
 
 ---
 
-## 6. 数据文件(归属 core)
+## 4. 全流程命令编排
 
-`.tuteur/` 结构、各 JSON schema、双层布局**统一在 [core.md §2/§4](./core.md)**,本文不复制。CLI 只通过 `core.store` 读写。
+从初始化到会话结束,命令按下图串起来(箭头=下一步,`└`=分支)。门禁与节点图推进全在 core,CLI 只解析参数、调 core、映射退出码。
 
-由 `init` 写出:`config.json`、`context.json`、`workflows/default.workflow.json`、`template-hashes.json`、`.developer`、`workspace/<slug>/index.md`、`.gitignore`。
-由 `task`/`next`/`approve`/`hook` 运行时写出:`tasks/<id>/task.json`、`tasks/<id>/state.json`(含 `decisions`/`approvals`)、`tasks/<id>/events.jsonl`、`runtime/current-task.json`。归档后迁入 `tasks/archive/<YYYY-MM>/<id>/`。旧 `complete` 实现写过相同路径,迁移完成后删除命令。
+```text
+ttur init [--global]
+   │  建 .tuteur/(config·context·workflow·knowledge·身份)+ 装 skill + 配 agent hook
+   ▼
+〔用户打开 agent 交互会话〕
+   │
+ttur hook session-start            ← 平台 SessionStart 自动触发
+   │  注入 guide + 当前态(git)+ workflow 概览 + 任务状态 + planned context
+   │  追加 session_start 事件
+   ▼
+当前任务?
+   ├─ 无 / 要新建 ─▶ ttur task start "<title>"   不存在→建 task.json/state.json(游标=entry)并设为当前
+   ├─ 多个歧义 ────▶ ttur task start <id>          聚焦已存在任务
+   └─ 已定位 ─┐
+              ▼
+      ┌────────────── 推进循环(直到 currentNode=null)──────────────┐
+      │  currentNode 是 switch?                                       │
+      │     是 ──▶ ttur next --branch <label> --reason "..."           │
+      │             记 state.decisions + decision 事件,路由到分支     │
+      │     否(skill)──▶ 读 skill 干活、产出产物                       │
+      │             └─▶ ttur next                                      │
+      │                   ├ 门禁过(exit 0)──▶ 进入 next 节点           │
+      │                   └ 门禁挡(exit 2)                             │
+      │                        ├ 缺产物 ─▶ 补产物后重试                │
+      │                        ├ 检查未过 ─▶ 修复后重试                │
+      │                        ├ 缺 approval ─▶ ttur approve 后重试    │
+      │                        └ 授权放行 ─▶ ttur next --skip --reason │
+      │  判错分支 ──▶ ttur rewind --to <node>(清下游)再重判            │
+      └───────────────────────────────────────────────────────────────┘
+   │
+   ▼
+任务完成(status=completed,completedAt 写入,清当前任务指针)
+   │  可选
+   ▼
+ttur task archive <id> [--cancelled]   移入 tasks/archive/<YYYY-MM>/<id>/
+```
+
+三条链路与本图的对应:**控制链** = `next`/`rewind`(改 state 游标);**内容链** = `hook session-start` 注入 → skill 产出 → `implement.md`/产物;**审计链** = 每步追加 `events.jsonl`(session_start / complete_attempt / decision / approval / skip / rewind)。
 
 ---
 
-## 7. 模板更新机制(managed-templates,已实现)
+## 5. 模板更新机制(managed-templates)
+
+`update`/`uninstall` 共用一套哈希追踪,保护用户对 skill 的本地改动不被升级覆盖:
 
 ```text
 analyzeTemplateChange:
-  不存在→create  内容相同→unchanged  哈希匹配(用户没改)→auto-update  否则→conflict
-
-ttur update → create/auto-update 直接写;conflict → --force(备份后覆盖)/--skip-all/--create-new/交互
+  文件不存在 → create        内容相同 → unchanged
+  哈希匹配(用户没改)→ auto-update     否则 → conflict
 ```
 
-`hashContent=sha256`,清单存 `template-hashes.json`。扫描 `.agent/skill` 与 `.claude/skills`(copy 副本计入,symlink 跳过)。这套机制保护用户对 skill 的自定义改动不被升级覆盖(harness.md §8 扩展安全网)。
+`create`/`auto-update` 直接写;`conflict` 按 flag 或交互选 overwrite(备份后覆盖)/ skip / create-new(`.new` 副本)。哈希(sha256)清单存 `template-hashes.json`,扫描范围为 `.agent/skill` 与 `.claude/skills`(copy 副本计入,symlink 跳过)。**铁律(Trellis 教训)**:init 写盘与 update 收集必须用同一组 resolve/copy helper,否则升级会丢文件。
 
 ---
 
-## 8. Agent 接入:数据注册表 + per-agent configurator + 通用层
+## 6. Agent 接入:数据注册表 + per-agent configurator + 通用层
 
-**Trellis 风格(数据与行为分离)**:平台差异尽量建模成**纯数据**和**模板文件**,configurator 只是「把这个平台的模板目录拷过去」。四层职责:
+**Trellis 风格(数据与行为分离)**,四层职责:
 
-```text
-数据注册表    registry.ts:AGENT_PLATFORMS —— 平台静态元数据单一源(目录/flag/勾选/skill 目录/templateContext),无行为
-配置器(行为)  configurators/<id>.ts:configure<Id>(ctx, platform) —— 拷本平台模板目录 + 调 shared helper,不写平台逻辑分支
-通用层(生成)  shared.ts:copyAgentTemplates/writeSkills/linkSkills/copyCanonicalSkills/resolvePlaceholders
-派发          registry.ts:configureAgentPlatform(id, ctx) = PLATFORM_CONFIGURATORS[id](ctx, AGENT_PLATFORMS[id]);index.ts 仅聚合 re-export
-```
+| 层           | 文件                                                      | 职责                                                                                                                |
+| ------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| 数据注册表   | core `agents/registry.ts` 的 `AGENT_PLATFORMS`            | 平台静态元数据单一源(`configDir`/`cliFlag`/`defaultChecked`/`skillTarget`/`skillDirs`/`templateContext`),**无行为** |
+| 配置器(行为) | `configurators/<id>.ts` 的 `configure<Id>(ctx, platform)` | 拷本平台模板目录 + 按 `skillTarget` 落 skill,不写平台分支逻辑                                                       |
+| 通用层(生成) | `configurators/shared.ts`                                 | `copyAgentTemplates`/`writeSkills`/`linkSkills`/`copyCanonicalSkills`/占位符渲染                                    |
+| 派发         | `registry.ts` 的 `configureAgentPlatform(id, ctx)`        | `= PLATFORM_CONFIGURATORS[id](ctx, AGENT_PLATFORMS[id])`                                                            |
 
-设计原则(同 Trellis):**注册表只放静态数据(目录、flag、生效目录、`templateContext` 占位符);凡是「装什么文件」一律下沉到 `templates/<id>/` 模板树,init 拷过去即可。** 挂 hook、定义 agent 角色、写 settings 都是**模板文件**,不是注册表里的配置项,也不需要「登记适配器」抽象。不用 OOP 基类,契约是隐式函数类型 + 共用 shared helper。
+设计原则:**注册表只放静态数据;"装什么文件"一律下沉到 `templates/<id>/` 模板树,init 整目录拷过去即可。** 挂 hook、定义 agent 角色、写 settings 都是模板文件,不是注册表配置项,也无需"登记适配器"抽象。
 
-> **与旧稿的差异(本轮更正)**:删去注册表里的 `hooks:{ registry: HookRegistry }` 适配器枚举与 `registerHook` 机制——hook 文件改由模板树承载(§8.4);`configure` 不再写进数据注册表,行为放 `PLATFORM_CONFIGURATORS` 行为表(§8.2);`ttur skill list` 命令删除,skill 发现是 core 能力、给 web 用(§8.6)。
+**加一个新 agent**:① 注册表加一条数据;② 行为表加一条(多数照抄 codex/claude 的 `copyAgentTemplates` 模式);③ 建 `templates/<id>/` 模板树。公共生成逻辑零增量;全局模式不走 configurator(core §2.3)。
 
-### 8.1 AGENT_PLATFORMS 注册表(纯数据单一源)
+### 6.1 Hook:声明文件即模板,命令直配
 
-注册表只描述「这个平台长什么样、文件落到哪」,**不含任何函数与 hook 登记逻辑**:
+挂 hook 不是注册表配置、也无 `registerHook` 适配器:每个平台的 hook 声明放在 `templates/<id>/` 里,`copyAgentTemplates` 拷过去(json 占位符渲染)即完成登记。已核实 Claude/Codex 的 hook 都接受 `type:"command"` 命令字符串,声明文件里直接写 `ttur hook <event>`,**不落任何 `.py`/`.sh` 包装脚本**(`.sh` 在 Windows 不可移植,直接命令靠 `ttur.cmd` shim 全平台可用,harness §6.3)。
 
-```ts
-// configurators/registry.ts(数据) + types/agent.ts(类型)
-export interface AgentPlatformConfig {
-  id: string;
-  name: string;
-  configDir: string; // '.codex' / '.claude'
-  cliFlag: string;
-  defaultChecked: boolean; // init flag 与默认勾选
-  skillTarget: string | null; // skill 适配目录;null=只用 .agent/skill
-  skillDirs: { project: string[]; global: string[] }; // skill 发现目录(静态):project 相对项目根,global 相对用户 home(§8.6)
-  supportsAgentSkills?: boolean; // 直接读共享 .agent/skill(Codex/Gemini)
-  templateContext: TemplateContext; // 占位符渲染上下文(枚举字段)
-}
-export interface TemplateContext {
-  cmdRefPrefix: string;
-  userActionLabel: 'Skills' | 'Slash commands';
-  cliFlag: string;
-}
+| 平台   | 声明文件                         | MVP 注册事件            | 落地到                  |
+| ------ | -------------------------------- | ----------------------- | ----------------------- |
+| codex  | `templates/codex/hooks.json`     | `SessionStart`          | `.codex/hooks.json`     |
+| claude | `templates/claude/settings.json` | `SessionStart`          | `.claude/settings.json` |
+| gemini | `templates/gemini/settings.json` | 待核实(per-turn 名待定) | `.gemini/settings.json` |
 
-// defineAgentPlatforms 用映射类型把每条的 id/cliFlag 锁到注册表 key,使 AgentTool 保持窄联合
-export const AGENT_PLATFORMS = defineAgentPlatforms({
-  codex: {
-    id: 'codex',
-    name: 'Codex',
-    configDir: '.codex',
-    cliFlag: 'codex',
-    defaultChecked: true,
-    skillTarget: null,
-    supportsAgentSkills: true,
-    skillDirs: { project: ['.agent/skill', '.codex/skills'], global: ['.codex/skills'] },
-    templateContext: { cmdRefPrefix: '$', userActionLabel: 'Skills', cliFlag: 'codex' },
-  },
-  claude: {
-    id: 'claude',
-    name: 'Claude Code',
-    configDir: '.claude',
-    cliFlag: 'claude',
-    defaultChecked: true,
-    skillTarget: '.claude/skills',
-    skillDirs: { project: ['.claude/skills'], global: ['.claude/skills'] },
-    templateContext: { cmdRefPrefix: '/tuteur:', userActionLabel: 'Slash commands', cliFlag: 'claude' },
-  },
-  gemini: {
-    id: 'gemini',
-    name: 'Gemini CLI',
-    configDir: '.gemini',
-    cliFlag: 'gemini',
-    defaultChecked: false,
-    skillTarget: null,
-    supportsAgentSkills: true,
-    skillDirs: { project: ['.agent/skill'], global: ['.gemini/skills'] },
-    templateContext: { cmdRefPrefix: '/tuteur:', userActionLabel: 'Slash commands', cliFlag: 'gemini' },
-  },
-});
-export type AgentTool = keyof typeof AGENT_PLATFORMS; // 'codex' | 'claude' | 'gemini'
-```
+per-turn breadcrumb 与子 agent 注入是后续事件,届时在同一声明文件追加 event 段即可——仍是"改模板、零适配器代码"。
 
-init 的 agent flag、交互勾选、InitConfig 全从这张表派生(§4.1、core.md §8)。**平台特有文件(hook/agent/settings)放 `templates/<id>/`,由 `copyAgentTemplates` 整目录拷到 `configDir`,不在注册表里逐项声明。**
+> ⚠️ **Codex 的 hook 需用户手动开启并信任**:① `~/.codex/config.toml` 设 `[features] hooks = true`;② Codex 0.129+ 在 CLI 里 `/hooks` review/trust 一次。任一缺失则 hook 静默不生效——症状即 `events.jsonl` 中没有任何 `session_start` 事件(web 据此告警)。`init` 的 `warnCodexHookFlag()` 已在 stderr 提示。
 
-### 8.2 per-agent configurator(行为,与数据分离)
+> 声明文件冲突:全新项目按模板直接写;目标已有用户内容时,沿用 §5 的 managed-templates 冲突策略,不做隐式深合并。
 
-行为不进数据注册表,单独一张 `PLATFORM_CONFIGURATORS` 表(`registry.ts`)。每个 `configurators/<id>.ts` 导出 `configure<Id>(context, platform): Promise<ConfigureAgentResult>`(platform 由派发器注入,免去 configurator 反向 import 注册表),主体只有两件事:**拷本平台模板目录树** + **按 `skillTarget` 落 skill**:
+### 6.2 Skill 发现(core 能力,供 web,不暴露 CLI 命令)
 
-```ts
-// configurators/claude.ts
-export async function configureClaude(
-  context: ConfigureAgentContext,
-  platform: AgentPlatformConfig,
-): Promise<ConfigureAgentResult> {
-  const writtenPaths = copyAgentTemplates({
-    // 拷 templates/claude/* → .claude/(settings.json、hooks/、agents/),json 占位符渲染
-    projectRoot: context.projectRoot,
-    templateId: platform.id,
-    configDir: platform.configDir,
-    templateContext: platform.templateContext,
-    createdPaths: context.createdPaths,
-  });
-  if (platform.skillTarget)
-    // skill:link 或 copy 到 .claude/skills
-    writtenPaths.push(
-      ...(context.skillAdapterMode === 'copy'
-        ? copyCanonicalSkills({
-            projectRoot: context.projectRoot,
-            targetRoot: platform.skillTarget,
-            createdPaths: context.createdPaths,
-          })
-        : linkSkills({
-            projectRoot: context.projectRoot,
-            linkRoot: platform.skillTarget,
-            createdPaths: context.createdPaths,
-          })),
-    );
-  return { configured: true, writtenPaths };
-}
-// configurators/codex.ts —— supportsAgentSkills,skill 直接用 .agent/skill;hook 模板随 copyAgentTemplates 落地,另发 feature-flag 提醒
-export async function configureCodex(
-  context: ConfigureAgentContext,
-  platform: AgentPlatformConfig,
-): Promise<ConfigureAgentResult> {
-  const writtenPaths = copyAgentTemplates({
-    projectRoot: context.projectRoot,
-    templateId: platform.id,
-    configDir: platform.configDir,
-    templateContext: platform.templateContext,
-    createdPaths: context.createdPaths,
-  });
-  warnCodexHookFlag(); // stderr 提醒开 features.hooks(§8.4)
-  return { configured: true, writtenPaths };
-}
-```
-
-隐式契约:`type PlatformConfigurator = (context: ConfigureAgentContext, platform: AgentPlatformConfig) => Promise<ConfigureAgentResult>`。派发:`registry.ts` 的 `PLATFORM_CONFIGURATORS: Record<AgentTool, PlatformConfigurator>`,`configureAgentPlatform(id, ctx) = PLATFORM_CONFIGURATORS[id](ctx, AGENT_PLATFORMS[id])`。**加平台 = 注册表加一条数据 + 行为表加一条 + 建 `templates/<id>/` 目录**(§8.5)。
-
-### 8.3 通用层 shared.ts(生成方法)
-
-所有 configurator 共用,保证模板拷贝/skill 渲染/写盘/软链/占位符一致:
-
-```ts
-copyAgentTemplates({ projectRoot, templateId, configDir, templateContext, createdPaths }): string[];  // 拷 templates/<templateId>/ → configDir,过滤 *.ts/.js/.gitkeep,*.json 占位符渲染,不覆盖已存在文件
-resolveWorkflowSkills(ctx: TemplateContext): { name; content }[];   // 读 common/skills/*,替换占位符
-writeSkills({ skillsRoot, skills, createdPaths }): string[];        // 写盘(不覆盖同名)
-linkSkills({ projectRoot, linkRoot, createdPaths }): string[];      // 软链 .agent/skill → linkRoot(Win 用 junction)
-copyCanonicalSkills({ projectRoot, targetRoot, createdPaths }): string[];  // 复制独立副本
-resolvePlaceholders(content, ctx): string;                  // {{PRODUCT_NAME}}/{{CMD_REF_PREFIX}}/{{USER_ACTION_LABEL}}/{{CLI_FLAG}}(skill 另替换 {{SKILL_NAME}})
-installCanonicalWorkflowSkills({ projectRoot, createdPaths }): string[];  // 装到 .agent/skill
-```
-
-占位符替换表(值由 `templateContext` 提供)见 harness.md §5.1。**关键不变量(Trellis 教训)**:init 写盘与 update collect 必须用**同一组** resolve/copy helper,否则升级用户会丢文件。
-
-### 8.4 Hook:声明文件即模板,命令直配(无脚本、无适配器)
-
-挂 hook **不是注册表配置,也没有 `registerHook` 适配器**。每个平台的 hook 声明文件放在它的 `templates/<id>/` 模板树里,`copyAgentTemplates` 拷过去(json 占位符渲染)即完成登记。**已核实 Claude/Codex 的 hook 都接受 `type:"command"` 命令字符串,所以声明文件里直接写 `ttur hook session-start`,不落任何 `.py`/`.sh` 包装脚本**(理由见 harness.md §6.3:`.sh` 在 Windows 不可移植,直接命令靠 `ttur.cmd` shim 全平台可用):
-
-| 平台   | 声明文件                         | 注册的 hook 事件(harness §6.1)                           | 落地到                  |
-| ------ | -------------------------------- | -------------------------------------------------------- | ----------------------- |
-| codex  | `templates/codex/hooks.json`     | `SessionStart`(MVP);`UserPromptSubmit`/`PreToolUse` 后续 | `.codex/hooks.json`     |
-| claude | `templates/claude/settings.json` | `SessionStart`(MVP);`UserPromptSubmit`/`PreToolUse` 后续 | `.claude/settings.json` |
-| gemini | `templates/gemini/settings.json` | 待核实(per-turn 事件名为 `BeforeAgent`,§6.2)             | `.gemini/settings.json` |
-
-每个事件登记一行 `ttur hook <event>` 命令(命令随事件不同:`session-start`/`inject-workflow-state`/`inject-subagent-context`)。**MVP 只装 `SessionStart`→`ttur hook session-start`**(P0);per-turn breadcrumb 与子 agent 注入是 harness §6.5/§6.6 的后续事件,届时在同一声明文件追加对应 event 段即可——仍是「改模板、零适配器代码」。
-
-Codex 的 `hooks.json` 结构(event → matcher 组 → command handler,键名大小写敏感):
-
-```jsonc
-// templates/codex/hooks.json(MVP 只含 SessionStart;后续在同文件追加 UserPromptSubmit/PreToolUse 段)
-{
-  "hooks": {
-    "SessionStart": [
-      { "matcher": "startup|resume", "hooks": [{ "type": "command", "command": "ttur hook session-start" }] },
-    ],
-  },
-}
-```
-
-Claude 的 `settings.json` 同理(`hooks.SessionStart[].hooks[].command`);两者都不需要包装脚本文件。仅当将来接入「只收脚本路径」的平台时才用包装,且优先 `command_windows` 这类可移植覆盖而非 shebang 脚本。
-
-> 说明:声明文件(`settings.json`/`hooks.json`)在「全新项目」场景按模板直接写;若目标已存在用户内容,沿用 §7 的 managed-templates 冲突策略(哈希未改→覆盖更新,改过→冲突走 `--force`/交互),不做隐式深合并,避免静默改写用户配置。
-
-> ⚠️ **Codex 的 hook 需用户手动开启并信任**:① `~/.codex/config.toml` 里设 `[features] hooks = true`(`init` 完成输出与文档须含此指引);② Codex 0.129+ 装好后还要在 CLI 里 `/hooks` review/trust 一次。任一缺失 hook 都静默不生效——症状即 `events.jsonl` 中没有任何 `session_start` 事件(web 事件时间线据此告警,web.md §3.1)。`init` 的 `warnCodexHookFlag()` 已在 stderr 提示(configurators/codex.ts)。
-
-### 8.5 加一个新 agent 的步骤
-
-1. `AGENT_PLATFORMS` 加一条**数据**(cliFlag/configDir/skillTarget/skillDirs/templateContext)。
-2. `PLATFORM_CONFIGURATORS` 加一条**行为**(多数照抄 codex/claude 的 `copyAgentTemplates` 模式)。
-3. 建 `templates/<id>/` 模板树,把该平台的 hook 脚本/声明文件/agent 角色放进去。
-4. 若 hook 声明是全新格式,只是模板里多一个文件——**不需要新增任何适配器代码**。
-
-公共生成逻辑(模板拷贝/skill 渲染/软链)零增量——这就是「数据注册表 + 模板树 + 通用生成层」。**全局模式不走 configurator**(core.md §2.3)。
-
-### 8.6 Skill 发现(core 能力,供 web,不暴露 CLI 命令)
-
-workflow 编排 skill,需要列出本地都有哪些 skill。**这是 core 的读能力,不是一条 `ttur` 命令**——消费方是 web 画布:定义 workflow 时,skill 节点的 `skill` 下拉从这里取候选(**按逻辑名去重**)、按 `agent`/`source` tag 分组(web §3.3、core §5.1)。CLI 不为此单开命令(对齐 Trellis:其 CLI 也只有 init/uninstall/update)。
-
-发现目录由 core `agents/registry.ts` 的 `getProjectSkillDirs()`/`getGlobalSkillDirs()` 从 `AGENT_PLATFORMS.skillDirs` 派生(**单一数据源**):project 组相对项目根、global 组相对各 agent 的 **home 目录**(全局 skill 不在 `~/.tuteur/`,core §2.3 安全边界)。扫描 + 解析 frontmatter 落在 core(`skills.ts` 的 `discoverSkills`,core §5.1),按逻辑名去重(剥 `tuteur-` 前缀、合并多处安装位置):
-
-```ts
-// core/skills.ts(节选,完整签名见 core §5.1)
-export function discoverSkills(scope: Scope): DiscoveredSkill[] {
-  // 扫 getProjectSkillDirs()(相对 scope.root)+ getGlobalSkillDirs()(相对 os.homedir())
-  // 每个含 SKILL.md 的目录 → 取 logicalSkillName,按名折叠成一条,合并 paths[]
-  // 返回 { name, description?, source, paths } 列表
-}
-```
-
-web 经 `GET /api/skills?project`(web §3.3/§9 W11)拿到去重后的结果;`resolveSkillRef` 用同一组目录做校验期/运行期检查(解析不到则报错)。目录清单只在 `AGENT_PLATFORMS` 定义一次,扫描与解析是 core 的事。
+workflow 编排 skill,需要列出本地有哪些 skill。**这是 core 的读能力,不是 `ttur` 命令**——消费方是 web 画布的 skill 下拉(按逻辑名去重、按 `agent`/`source` tag 分组)。发现目录由 `AGENT_PLATFORMS.skillDirs` 派生(**单一数据源**):project 组相对项目根、global 组相对各 agent 的 home 目录(全局 skill 不在 `~/.tuteur/`,core §2.3 安全边界)。扫描 + 解析 frontmatter 落在 core `skills.ts` 的 `discoverSkills`;`resolveSkillRef` 用同一组目录做校验期/运行期检查(解析不到则报错)。CLI 不为此单开命令(对齐 Trellis 只有 init/uninstall/update)。
 
 ---
 
-## 9. 代码评价与 TODO
+## 7. 由命令写出的数据文件(归属 core)
 
-### 9.1 评价
+`.tuteur/` 结构、各 JSON schema、双层布局统一在 [core.md §2/§4](./core.md),本文不复制;CLI 只通过 `core.store` 读写。
 
-- 约定式命令加载、哈希追踪更新、幂等写入:成熟,保留。
-- **数据注册表 + per-agent configurator + shared 通用层**(Trellis 风格)兼顾「每平台一个文件可读」与「公共生成逻辑不重复」,呼应你的诉求 4。注册表纯数据,挂 hook/定义 agent 一律走 `templates/<id>/` 模板树,不做适配器配置。
-- **InitConfig 统一模型** 让 CLI flag/交互/web 表单三种输入同源,初始化逻辑只有一份(诉求 1)。
-- **依赖 core** 后,CLI 不再持有读盘逻辑,与 app 行为天然一致(诉求 2)。
-- 现状缺口仍是:`ttur next` 未实现、`complete` 命令待删除、`approve`/`rewind` 的 node 参数待收敛、核心门禁测试不足、workflow 类 skill 正文仍为 TODO。
+| 写入者                                                | 文件                                                                                                                                                                                                      |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `init`                                                | `config.json`、`context.json`、`guide.md`、`workflows/default.workflow.json`、`template-hashes.json`、`.developer`、`workspace/<slug>/index.md`、`.gitignore`、`knowledge/{sources,wiki,index.md,log.md}` |
+| `task start` / `next` / `approve` / `rewind` / `hook` | `tasks/<id>/task.json`、`tasks/<id>/state.json`(含 `decisions`/`approvals`)、`tasks/<id>/events.jsonl`、`runtime/current-task.json`                                                                       |
+| agent(文件工具直接写)                                 | `tasks/<id>/design.md`、`tasks/<id>/implement.md` 等节点产物                                                                                                                                              |
+| `archive` 后                                          | 整个任务目录迁入 `tasks/archive/<YYYY-MM>/<id>/`                                                                                                                                                          |
 
-### 9.2 TODO
+---
 
-| #   | 项                                                                                                                                                    | 状态/优先级 | 依赖                             |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | -------------------------------- |
-| C1  | CLI 改依赖 `@tuteur/core`,删自有读盘/常量                                                                                                             | ✅ 已实现 | core K1-K7                       |
-| C2  | `task create/list/status/start/assign/archive`(create 写 creator/assignee 默认当前用户、无身份快速失败,§3.1;归档:不改状态/`--cancelled`/YYYY-MM 分桶) | ✅ 已实现 | core store/§3.1/§9、harness §7.1 |
-| C3  | 旧 `complete <node>`(skill gate / switch `--branch --reason`;退出码 0/2;JSON 接力;`--skip` 留痕)+ `rewind` + `approve`                                | ✅ 已实现(待迁移删除) | core K4、harness §2.3-§2.6       |
-| C3a | `next`(读取 currentNode、承载唯一推进门禁、switch 无 branch 时输出分支提示;hook/skill 改提示它)                                                       | P0     | C3、harness §2                   |
-| C3b | 删除 `complete` 命令与 node 参数入口;`approve <node>` → `approve`;`rewind <node>` → `rewind --to <node>`                                             | P0     | C3a                              |
-| C4  | `hook <event>` 入口 + hook 声明文件(命令直配,无脚本)+ session_start 事件回写                                                                          | ✅ 已实现(session-start);per-turn/subagent 待补 | core context、harness §6         |
-| C5  | 数据注册表(含 skillDirs 两组)+ PLATFORM_CONFIGURATORS 行为表 + 模板树承载 hook(含 Codex feature flag 指引)                                            | ✅ 已实现 | §8                               |
-| C6  | InitConfig 三输入(flag/交互/web)+ serializeToCommand                                                                                                  | 🟡 CLI/core 已实现;web 表单待接入 | core §8                          |
-| C7  | `init --global`(只装模板+config+projects,不配 agent)                                                                                                  | ✅ 已实现 | core §2.3                        |
-| C8  | `uninstall --global`、dashboard 多项目调整                                                                                                            | 🟡 uninstall/global dashboard runtime 已实现;web 多项目待补 | web §2/§7                        |
-| C9  | 给门禁/状态/归档/decision 写 Vitest                                                                                                                   | P0     | core K4                          |
-| C10 | `discoverSkills`(core 能力,项目+agent home,带 tag;供 web `GET /api/skills`,**不暴露 CLI 命令**)                                                       | 🟡 基础版已实现 | §8.6、core §5.1                  |
-| C11 | `workflow validate`(节点连通/无环/阶段单调/switch default/skill 可解析)                                                                               | ✅ 已实现 | core resolveSkillRef             |
-| C12 | ~~`task create --worktree`~~ 已后置(方案存档 core §9.1)                                                                                               | P2     | core §9.1                        |
+## 8. TODO 与待确认
 
-### 9.3 待确认
+### 8.1 TODO
 
-- agent flag 全集是否随注册表增长(每加平台一个 `--xxx`)?**推荐**:是,与 Trellis 一致;flag↔注册表用编译期断言锁一致性。
-- ~~`ttur run <node>` 是否进 MVP~~ → **已定:不进**,run 模式整体移除,交互模式唯一(harness §7)。
-- ~~缺省 `--task`~~ → **已定**:`resolveCurrentTask` 三层解析(`--task` > `runtime/current-task.json` 指针 > 唯一未完成任务兜底,harness §7.1)。
+| #   | 项                                                                                             | 状态/优先级                             |
+| --- | ---------------------------------------------------------------------------------------------- | --------------------------------------- |
+| C1  | CLI 改依赖 `@tuteur/core`,删自有读盘/常量                                                      | ✅ 已实现                               |
+| C2  | `task start`(建或聚焦合一)/`list`/`status`/`archive`(归属/快速失败/YYYY-MM 分桶)               | 🟡 旧 create/start 待合并;assign 待删   |
+| C3  | `next`(读取 currentNode、唯一推进门禁、switch `--branch`、`--skip` 留痕)+ `rewind` + `approve` | ✅ 已实现(`complete` 已删除)            |
+| C4  | `hook <event>` + hook 声明文件(命令直配)+ session_start 事件回写                               | ✅ session-start;per-turn/子 agent 待补 |
+| C5  | 数据注册表 + PLATFORM_CONFIGURATORS 行为表 + 模板树承载 hook                                   | ✅ 已实现                               |
+| C6  | InitConfig 三输入(flag/交互/web)+ serializeToCommand                                           | 🟡 CLI/core 已实现;web 表单待接入       |
+| C7  | `init --global` / `uninstall --global` / dashboard 多项目 runtime                              | ✅ CLI 已实现;web 多项目待补            |
+| C8  | `knowledge graph/index/lint`(分 scope)                                                         | ✅ 已实现                               |
+| C9  | 全局 `--json` flag + 每命令人读渲染(缺省人读、`--json` 转结构化)                               | ❌ 待实现(当前 agent 命令恒 JSON)       |
+| C10 | `implement.md` 承载实施计划与复选框进度(agent 直写 + best-effort 解析);删 `ttur check` 命令族  | ✅ 已实现                               |
+| C11 | `workflow validate` CLI 命令删除(`validateWorkflow` 仍作 core 函数,create/web 在用)            | 🟡 命令待删                             |
+| C12 | `discoverSkills` 富化(按 agent 细分 tag,供 web `GET /api/skills`)                              | 🟡 基础版已实现                         |
+| C13 | workflow 类 skill 正文(brainstorm/grill-me/dev/check/finish)                                   | ❌ 未实现                               |
+| C14 | ~~`task create --worktree`~~ 已后置(方案存档 core §9.1)                                        | P2                                      |
+
+### 8.2 待确认
+
+- agent flag 全集随注册表增长(每加平台一个 `--xxx`)?**推荐**:是,与 Trellis 一致,flag↔注册表用编译期断言锁一致性。
+- ~~`ttur run <node>` 是否进 MVP~~ → **已定:不进**,run 模式整体移除,交互模式唯一。
+- ~~缺省 `--task`~~ → **已定**:`resolveCurrentTask` 三层解析(`--task` > 指针 > 唯一未完成兜底,harness §7.1)。
