@@ -7,23 +7,14 @@
   background: transparent;
 }
 
-/* 连线:默认实线取强描边线,switch 非默认分支走信息蓝虚线(layout.ts 给 className) */
+/* 连线:统一实线、墨灰、略粗便于辨识(分支靠 label 区分,不用虚线) */
 .react-flow__edge.tt-edge .react-flow__edge-path {
-  stroke: var(--line-strong);
-  stroke-width: 1.5px;
-}
-
-.react-flow__edge.tt-edge-branch .react-flow__edge-path {
-  stroke: var(--blue);
-  stroke-width: 1.5px;
+  stroke: var(--ink-soft);
+  stroke-width: 1.8px;
 }
 
 .react-flow__arrowhead {
-  fill: var(--line-strong);
-}
-
-.react-flow__edge.tt-edge-branch .react-flow__arrowhead {
-  fill: var(--blue);
+  fill: var(--ink-soft);
 }
 
 /* 分支标签:燕麦纸底 + 墨字,贴合主题 */

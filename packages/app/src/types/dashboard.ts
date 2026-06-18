@@ -94,6 +94,12 @@ export interface CanvasGate {
   approval?: boolean;
 }
 
+// 画布坐标(编辑器维护,不参与校验):x 自由;y 为所在泳道内相对带顶的偏移
+export interface CanvasPos {
+  x: number;
+  y: number;
+}
+
 // skill 节点:引用一个 skill,完成后推进到 next(null=结束)
 export interface CanvasSkillNode {
   id: string;
@@ -101,6 +107,7 @@ export interface CanvasSkillNode {
   skill: string;
   next: string | null;
   phase?: string | null;
+  pos?: CanvasPos;
   gate?: CanvasGate;
 }
 
@@ -117,12 +124,13 @@ export interface CanvasSwitchNode {
   id: string;
   type: 'switch';
   phase?: string | null;
+  pos?: CanvasPos;
   branches: CanvasBranch[];
 }
 
 export type CanvasNode = CanvasSkillNode | CanvasSwitchNode;
 
-// 固定阶段容器(规划/执行/收尾):id 对齐 core PHASE_*,label 取 workflow 声明
+// 固定三阶段(规划/执行/收尾):id 对齐 core PHASE_*,label 取 workflow 声明
 export interface CanvasPhase {
   id: string;
   label: string;

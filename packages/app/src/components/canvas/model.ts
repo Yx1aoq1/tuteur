@@ -1,5 +1,12 @@
 import { BRANCH_HANDLE_PREFIX } from './model-constants';
-import type { CanvasArtifact, CanvasNode, CanvasSkillNode, CanvasSwitchNode, CanvasWorkflow } from '@/types/dashboard';
+import type {
+  CanvasPos,
+  CanvasNode,
+  CanvasArtifact,
+  CanvasSkillNode,
+  CanvasSwitchNode,
+  CanvasWorkflow,
+} from '@/types/dashboard';
 
 // 画布编辑的纯逻辑:节点增删改、连线回写、引用清理。无 React/DOM 依赖,便于推理与复用。
 
@@ -38,19 +45,28 @@ export function uniqueNodeId(wf: CanvasWorkflow, base: string): string {
   return `${slug}-${n}`;
 }
 
-// 在指定阶段新建一个 skill 节点(next 暂空,待用户连线到下一步)
-export function newSkillNode(wf: CanvasWorkflow, skillName: string, phaseId: string): CanvasSkillNode {
-  return { id: uniqueNodeId(wf, skillName), type: 'skill', skill: skillName, phase: phaseId, next: null };
+// 在指定阶段新建一个 skill 节点(next 暂空,待用户连线到下一步;pos=拖入落点)
+export function newSkillNode(wf: CanvasWorkflow, skillName: string, phaseId: string, pos?: CanvasPos): CanvasSkillNode {
+  return { id: uniqueNodeId(wf, skillName), type: 'skill', skill: skillName, phase: phaseId, pos, next: null };
 }
 
-// 在指定阶段新建一个 switch 节点(含一条默认分支,出口待连线)
-export function newSwitchNode(wf: CanvasWorkflow, phaseId: string): CanvasSwitchNode {
+// 在指定阶段新建一个 switch 节点(含一条默认分支,出口待连线;pos=拖入落点)
+export function newSwitchNode(wf: CanvasWorkflow, phaseId: string, pos?: CanvasPos): CanvasSwitchNode {
   return {
     id: uniqueNodeId(wf, 'switch'),
     type: 'switch',
     phase: phaseId,
+    pos,
     branches: [{ label: 'default', next: null, default: true }],
   };
+}
+
+// 拖停后落盘:更新节点画布坐标 pos,并把阶段写成所在横带的 phase(无 placement 校验,web §3.3)
+export function moveNode(wf: CanvasWorkflow, id: string, pos: CanvasPos, phaseId: string): CanvasWorkflow {
+  const node = wf.nodes.find(n => n.id === id);
+  if (!node) return wf;
+
+  return replaceNode(wf, id, { ...node, pos, phase: phaseId });
 }
 
 // 替换某节点(保持其余不变)

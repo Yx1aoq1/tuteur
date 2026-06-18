@@ -7,37 +7,42 @@ import { BRANCH_ROW, SWITCH_HEAD } from './layout';
 import type { FlowNodeData, PhaseGroupData } from './layout';
 import type { CanvasSkillNode, CanvasSwitchNode } from '@/types/dashboard';
 
-// 画布自定义节点:三阶段容器(phase)+ skill 卡 + switch 卡。
-// 节点不可拖拽(布局由 next/branches 推导),但出口可连线:左/上=入口,右=出口。
-// skill 单出口(handle 's');switch 每条分支一个出口(handle 'b:<i>',按行对齐)。编辑走右侧面板。
+// 画布自定义节点:横向泳道带(phase,背景)+ skill 卡 + switch 卡。
+// 自由画布:节点可拖动、pos 落盘;连线左入(t-in)右出(skill 's-out' / switch 'b:<i>')。
+// 阶段由所在横带在拖停时写回(CanvasView)。编辑走右侧面板。
 
-const PHASE_TONE: Record<string, string> = {
-  planning: 'text-blue',
-  execute: 'text-mustard',
-  finish: 'text-teal',
+// 阶段配色:暖色调,每条泳道一色(规划金 / 执行陶土 / 收尾橄榄),虚线包围 + 半透明底(不挡连线)
+const PHASE_TOKEN: Record<string, string> = {
+  planning: '--mustard',
+  execute: '--terracotta',
+  finish: '--sage',
 };
 
-// 入口连接点(左 + 上):接收上一步/上一阶段的连线
-function TargetHandles() {
-  return (
-    <>
-      <Handle type="target" position={Position.Top} id="t-top" className="tt-handle tt-handle-in" />
-      <Handle type="target" position={Position.Left} id="t-left" className="tt-handle tt-handle-in" />
-    </>
-  );
+// 入口连接点(左):接收上一步的连线
+function TargetHandle() {
+  return <Handle type="target" position={Position.Left} id="t-in" className="tt-handle tt-handle-in" />;
 }
 
-// 阶段容器:固定不可删/改名,作为 skill/switch 节点的父框(React Flow Sub Flow)
+// 阶段泳道:横向背景带(全宽全高由 layout 的 style 给),不拦指针、不可拖/选。
+// 虚线包围 + 半透明暖色底(底色透明故不遮连线);带间留间隔,边界一眼可辨。
 export function PhaseNode({ data }: { data: PhaseGroupData }) {
-  const t = useTranslations('canvas');
-  const tone = PHASE_TONE[data.phaseId] ?? 'text-ink-soft';
+  const token = PHASE_TOKEN[data.phaseId] ?? '--ink-soft';
 
   return (
-    <div className="h-full w-full rounded-card border border-dashed border-line-strong bg-[color-mix(in_srgb,var(--paper)_30%,transparent)]">
-      <div className="flex items-center gap-1.5 px-3 pt-2.5">
-        <span className={`font-serif text-[14px] font-semibold ${tone}`}>{data.label}</span>
-        {data.empty && <span className="text-[11px] text-ink-faint">· {t('dropHere')}</span>}
-      </div>
+    <div
+      className="pointer-events-none h-full w-full rounded-card"
+      style={{
+        pointerEvents: 'none',
+        background: `color-mix(in srgb, var(${token}) 11%, transparent)`,
+        border: `1.5px dashed color-mix(in srgb, var(${token}) 50%, transparent)`,
+      }}
+    >
+      <span
+        className="absolute left-3 top-1.5 font-serif text-[13px] font-semibold"
+        style={{ color: `color-mix(in srgb, var(${token}) 82%, var(--ink))` }}
+      >
+        {data.label}
+      </span>
     </div>
   );
 }
@@ -51,13 +56,14 @@ export function SkillNode({ data, selected }: { data: FlowNodeData; selected?: b
 
   return (
     <div className={cardClass(selected)}>
-      <TargetHandles />
+      <TargetHandle />
       <div className="flex items-center gap-1.5">
         <span className="text-teal">❋</span>
         <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13.5px] font-semibold text-ink">
           {node.skill}
         </span>
         {data.entry && <span className={badgeClass('blue')}>{t('entry')}</span>}
+        {data.terminal && <span className={badgeClass('teal')}>{t('terminal')}</span>}
       </div>
       <div className="mt-1 truncate font-mono text-[11px] text-ink-faint">{node.id}</div>
       {(artifacts.length > 0 || checks.length > 0 || gate?.approval) && (
@@ -75,9 +81,8 @@ export function SkillNode({ data, selected }: { data: FlowNodeData; selected?: b
           {gate?.approval && <span className={badgeClass('mustard')}>⚑ {t('approval')}</span>}
         </div>
       )}
-      {/* 出口:下(同阶段顺序→下一步)+ 右(跨阶段→下一步),二者都写 node.next */}
-      <Handle type="source" position={Position.Bottom} id="s-bottom" className="tt-handle tt-handle-out" />
-      <Handle type="source" position={Position.Right} id="s-right" className="tt-handle tt-handle-out" />
+      {/* 单出口(右):写 node.next */}
+      <Handle type="source" position={Position.Right} id="s-out" className="tt-handle tt-handle-out" />
     </div>
   );
 }
@@ -88,7 +93,7 @@ export function SwitchNode({ data, selected }: { data: FlowNodeData; selected?: 
 
   return (
     <div className={cardClass(selected)} style={{ minHeight: SWITCH_HEAD + node.branches.length * BRANCH_ROW }}>
-      <TargetHandles />
+      <TargetHandle />
       <div className="flex items-center gap-1.5">
         <span className="text-blue">◇</span>
         <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13.5px] font-semibold text-ink">

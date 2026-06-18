@@ -7,7 +7,7 @@ interface CanvasPageProps {
   searchParams: Promise<{ project?: string; scope?: string }>;
 }
 
-// workflow 画布视图:三固定阶段容器 + skill/switch 节点(React Flow Sub Flow),右栏 skill 可拖入编辑。
+// workflow 画布视图:自由画布 + 横向软泳道(规划/执行/收尾)+ skill/switch 节点,右栏 skill 可拖入编辑。
 export default async function CanvasPage({ searchParams }: CanvasPageProps) {
   const { project, scope: scopeParam } = await searchParams;
   const t = await getTranslations('empty');

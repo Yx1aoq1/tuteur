@@ -91,6 +91,7 @@
     "dropHere": "把节点拖到这里",
     "switchPaletteDesc": "分支节点 —— 运行时由 agent 选择走哪条",
     "entry": "入口",
+    "terminal": "终点",
     "switch": "分支",
     "skillNode": "skill 节点",
     "skill": "技能",

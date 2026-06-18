@@ -18,21 +18,23 @@ import {
 } from '@xyflow/react';
 import type { Connection, Edge } from '@xyflow/react';
 import { nodeTypes } from './nodes';
-import { layoutWorkflow } from './layout';
+import { HEADER_H, nodeHeight, layoutWorkflow } from './layout';
 import { CanvasPanel } from './CanvasPanel';
 import { DRAG_MIME } from './model-constants';
 import {
   addNode,
-  newSkillNode,
-  newSwitchNode,
+  moveNode,
   removeNode,
   replaceNode,
-  sanitizeWorkflow,
+  newSkillNode,
+  newSwitchNode,
   setEdgeTarget,
+  sanitizeWorkflow,
 } from './model';
-import type { LaidOutGraph } from './layout';
+import type { FlowNodeData, LaidOutGraph } from './layout';
 import type { DragPayload } from './model';
 import type { CanvasData, CanvasNode, CanvasWorkflow } from '@/types/dashboard';
+import type { Node } from '@xyflow/react';
 
 interface CanvasViewProps {
   data: CanvasData;
@@ -83,22 +85,28 @@ function CanvasInner({ data, project }: CanvasViewProps) {
     setIssues([]);
   }, []);
 
-  // 落点 → 命中的阶段容器 id;命中不到则按 x 取最近的容器,再不行取第一个阶段
-  const phaseAtPoint = useCallback(
-    (x: number, y: number): string | null => {
-      const bounds = layout.groupBounds;
+  // 节点中心 y 命中的横向泳道 phase;落在带间间隔/上下溢出则取最近的一条带(无 placement 校验)
+  const phaseAtY = useCallback(
+    (y: number): string | null => {
+      const bounds = layout.laneBounds;
       if (bounds.length === 0) return null;
-      const hit = bounds.find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
+      const hit = bounds.find(b => y >= b.y0 && y < b.y1);
       if (hit) return hit.phaseId;
-      const nearest = bounds.reduce((best, b) =>
-        Math.abs(x - (b.x + b.w / 2)) < Math.abs(x - (best.x + best.w / 2)) ? b : best,
-      );
-      return nearest.phaseId;
+      let best = bounds[0];
+      let bestDist = Infinity;
+      for (const b of bounds) {
+        const dist = y < b.y0 ? b.y0 - y : y - b.y1;
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = b;
+        }
+      }
+      return best.phaseId;
     },
-    [layout.groupBounds],
+    [layout.laneBounds],
   );
 
-  // 从右栏拖入:skill → 新 skill 节点;switch → 新 switch 节点(均落到命中的阶段)
+  // 从右栏拖入:skill → 新 skill 节点;switch → 新 switch 节点;落点 y 定阶段、落点存为 pos
   const onDrop = useCallback(
     (event: React.DragEvent): void => {
       event.preventDefault();
@@ -111,20 +119,39 @@ function CanvasInner({ data, project }: CanvasViewProps) {
         return;
       }
       const point = screenToFlowPosition({ x: event.clientX, y: event.clientY });
-      const phaseId = phaseAtPoint(point.x, point.y);
+      const phaseId = phaseAtY(point.y);
       if (!phaseId) return;
+      const laneTop = layout.laneBounds.find(b => b.phaseId === phaseId)?.y0 ?? 0;
+      const pos = { x: point.x, y: Math.max(HEADER_H, point.y - laneTop) };
       const node =
-        payload.kind === 'switch' ? newSwitchNode(workflow, phaseId) : newSkillNode(workflow, payload.name, phaseId);
+        payload.kind === 'switch'
+          ? newSwitchNode(workflow, phaseId, pos)
+          : newSkillNode(workflow, payload.name, phaseId, pos);
       edit(addNode(workflow, node));
       setSelectedId(node.id);
     },
-    [screenToFlowPosition, phaseAtPoint, workflow, edit],
+    [screenToFlowPosition, phaseAtY, layout.laneBounds, workflow, edit],
   );
 
   const onDragOver = useCallback((event: React.DragEvent): void => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'copy';
   }, []);
+
+  // 拖动节点结束:按节点中心 y 命中横带写回 phase,并把 pos 存成「带内相对坐标」(吸附进带内)
+  const onNodeDragStop = useCallback(
+    (_: unknown, node: Node): void => {
+      if (node.type !== 'skill' && node.type !== 'switch') return;
+      const cn = (node.data as FlowNodeData).node;
+      const cy = node.position.y + (node.measured?.height ?? nodeHeight(cn)) / 2;
+      const phaseId = phaseAtY(cy);
+      if (!phaseId) return;
+      const laneTop = layout.laneBounds.find(b => b.phaseId === phaseId)?.y0 ?? 0;
+      const pos = { x: node.position.x, y: Math.max(HEADER_H, node.position.y - laneTop) };
+      edit(moveNode(workflow, node.id, pos, phaseId));
+    },
+    [workflow, edit, phaseAtY, layout.laneBounds],
+  );
 
   // 连线 → 回写出口目标(skill.next / switch 分支 next)
   const onConnect = useCallback(
@@ -239,8 +266,9 @@ function CanvasInner({ data, project }: CanvasViewProps) {
             onConnect={onConnect}
             onReconnect={onReconnect}
             onEdgesDelete={onEdgesDelete}
+            onNodeDragStop={onNodeDragStop}
             nodeTypes={nodeTypes}
-            nodesDraggable={false}
+            nodesDraggable
             nodesConnectable
             fitView
             fitViewOptions={{ padding: 0.2, maxZoom: 1 }}

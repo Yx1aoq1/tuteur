@@ -91,6 +91,7 @@
     "dropHere": "drop a node here",
     "switchPaletteDesc": "Branching node — agent picks a branch at runtime",
     "entry": "entry",
+    "terminal": "end",
     "switch": "Switch",
     "skillNode": "Skill node",
     "skill": "Skill",
