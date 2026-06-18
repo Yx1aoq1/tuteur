@@ -1,5 +1,5 @@
-// 看板/侧栏的视图模型类型。纯类型、无 @tuteur/core 依赖,供服务端读取层与客户端组件共享
-// (客户端组件不可 import @tuteur/core —— 会把 node:fs 带进浏览器包)。
+// 看板/侧栏的视图模型类型。纯类型、无 @withy/core 依赖,供服务端读取层与客户端组件共享
+// (客户端组件不可 import @withy/core —— 会把 node:fs 带进浏览器包)。
 
 export type BoardColumn = 'todo' | 'doing' | 'done';
 
@@ -86,7 +86,7 @@ export type TaskFilter = 'mine' | 'all';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Workflow 画布(canvas)视图模型 —— 镜像 core Workflow 结构。
-// 客户端画布组件不可 import @tuteur/core(会带入 node:fs),故在此重定义为纯类型;
+// 客户端画布组件不可 import @withy/core(会带入 node:fs),故在此重定义为纯类型;
 // 字段与 core 的 zod schema 一一对应,PUT 时整体回传可被 WorkflowSchema 校验。
 // ──────────────────────────────────────────────────────────────────────────
 

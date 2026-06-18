@@ -5,7 +5,7 @@ import {
   readWorkflow,
   skillExists,
   WorkflowSchema,
-} from '@tuteur/core';
+} from '@withy/core';
 
 export const runtime = 'nodejs';
 

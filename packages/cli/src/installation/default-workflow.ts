@@ -1,4 +1,4 @@
-import type { Workflow } from '@tuteur/core';
+import type { Workflow } from '@withy/core';
 
 // Default coding workflow seeded into both project and global roots (core §4.3):
 // a `triage` switch in front of the three fixed phase containers (planning /

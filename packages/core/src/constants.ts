@@ -1,9 +1,9 @@
 // Canonical product/runtime constants. The CLI re-exports these via its own
 // constants/product.ts shim so existing CLI import sites keep working.
 
-export const PRODUCT_DISPLAY_NAME = 'Tuteur';
+export const PRODUCT_DISPLAY_NAME = 'Withy';
 export const PRODUCT_SLUG = toDirectoryName(PRODUCT_DISPLAY_NAME);
-export const CLI_COMMAND_NAME = 'ttur';
+export const CLI_COMMAND_NAME = 'withy';
 export const PROJECT_DIR_NAME = `.${PRODUCT_SLUG}`;
 export const GLOBAL_DIR_NAME = `.${PRODUCT_SLUG}`;
 export const SKILL_NAME_PREFIX = PRODUCT_SLUG;
@@ -23,12 +23,12 @@ export const DEFAULT_STUCK_THRESHOLD = 3;
 /** Max length a stored event `reason` is truncated to (compact JSONL lines). */
 export const EVENT_REASON_MAX = 200;
 
-/** Bundled skill name for a workflow base name, e.g. `dev` → `tuteur-dev`. */
+/** Bundled skill name for a workflow base name, e.g. `dev` → `withy-dev`. */
 export function getBundledSkillName(baseName: string): string {
   return `${SKILL_NAME_PREFIX}-${toDirectoryName(baseName)}`;
 }
 
-/** Slash-command prefix used by Claude/Gemini skill invocation, e.g. `/tuteur:`. */
+/** Slash-command prefix used by Claude/Gemini skill invocation, e.g. `/withy:`. */
 export function getSlashCommandPrefix(): string {
   return `/${PRODUCT_SLUG}:`;
 }

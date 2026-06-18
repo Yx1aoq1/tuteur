@@ -16,7 +16,7 @@ interface AgentChoice {
 
 type Stage = 'detect' | 'init';
 
-// 加项目对话框:① 输入路径检测/登记;② 未初始化时弹 init 表单 → spawn ttur init。
+// 加项目对话框:① 输入路径检测/登记;② 未初始化时弹 init 表单 → spawn withy init。
 // 成功后 router.refresh() 刷新侧栏项目列表。
 export function AddProjectDialog({ onClose }: AddProjectDialogProps) {
   const t = useTranslations('addProject');

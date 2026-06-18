@@ -1,4 +1,4 @@
-import { resolveProjectScope, archiveTask } from '@tuteur/core';
+import { resolveProjectScope, archiveTask } from '@withy/core';
 
 export const runtime = 'nodejs';
 

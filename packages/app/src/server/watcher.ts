@@ -3,7 +3,7 @@
 
 import { watch } from 'chokidar';
 import type { FSWatcher } from 'chokidar';
-import { resolveProjectScope } from '@tuteur/core';
+import { resolveProjectScope } from '@withy/core';
 
 type Subscriber = () => void;
 
@@ -15,13 +15,13 @@ interface ProjectWatch {
 
 // 跨 dev 热重载复用同一注册表,避免重复监听句柄泄漏。
 const registry: Map<string, ProjectWatch> =
-  ((globalThis as Record<string, unknown>).__tuteurWatchers as Map<string, ProjectWatch>) ?? new Map();
-(globalThis as Record<string, unknown>).__tuteurWatchers = registry;
+  ((globalThis as Record<string, unknown>).__withyWatchers as Map<string, ProjectWatch>) ?? new Map();
+(globalThis as Record<string, unknown>).__withyWatchers = registry;
 
 const DEBOUNCE_MS = 200;
 
 /**
- * 订阅某项目 .tuteur 目录的变化;返回取消订阅函数。
+ * 订阅某项目 .withy 目录的变化;返回取消订阅函数。
  * 变化经 ~200ms 去抖后回调一次(只通知「有变更」,具体 taskId 由前端整体 revalidate)。
  * @param projectPath 项目根路径(?project= 传入);无法解析为有效 scope 时不订阅,返回空操作。
  * @param onChange 去抖后的变更回调。
@@ -30,7 +30,7 @@ export function subscribeProject(projectPath: string, onChange: Subscriber): () 
   const scope = resolveProjectScope(projectPath);
   if (!scope) return () => {};
 
-  const key = scope.tuteurDir;
+  const key = scope.withyDir;
   let entry = registry.get(key);
   if (!entry) {
     const watcher = watch(key, {

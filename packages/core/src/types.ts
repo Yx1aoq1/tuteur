@@ -209,7 +209,7 @@ export const DeveloperSchema = z.object({
 export type Developer = z.infer<typeof DeveloperSchema>;
 
 // ──────────────────────────────────────────────────────────────────────────
-// Global project registry (~/.tuteur/projects.json) — core.md §2.1
+// Global project registry (~/.withy/projects.json) — core.md §2.1
 // The global root is config + project registry + templates; it holds no tasks.
 // ──────────────────────────────────────────────────────────────────────────
 

@@ -27,10 +27,10 @@ import type { GuardReport } from './engine.js';
 import type { State, Task, Workflow, SkillNode } from '../types.js';
 
 // ──────────────────────────────────────────────────────────────────────────
-// IO shell over the state machine. Loads `.tuteur/`, computes the current node's
+// IO shell over the state machine. Loads `.withy/`, computes the current node's
 // gate result (the only IO the pure step needs), drives `stepWorkflow`, then
 // persists the returned state + events. No transition/branch/gate *logic* lives
-// here — that's engine.ts (mechanics), interpret.ts (Tuteur policy), gate.ts
+// here — that's engine.ts (mechanics), interpret.ts (Withy policy), gate.ts
 // (checkers). This file only does fs/spawn + bookkeeping.
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -54,7 +54,7 @@ export interface NextOptions {
 }
 
 /**
- * The sole agent-facing advance gate (`ttur next`). Reads `state.currentNode` —
+ * The sole agent-facing advance gate (`withy next`). Reads `state.currentNode` —
  * the caller never names a node. For a skill node we evaluate its gate (fs/checks/
  * approval) into a guard report and hand it to the pure `stepWorkflow`; switch
  * routing is decided in interpret.ts over the generic engine. harness §2.

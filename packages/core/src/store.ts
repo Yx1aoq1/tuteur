@@ -1,5 +1,5 @@
 import { readdirSync, existsSync, rmSync } from 'node:fs';
-import { relative, resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 import type { z } from 'zod';
 import { EVENT_REASON_MAX } from './constants.js';
 import {
@@ -35,6 +35,7 @@ import {
 import {
   readTextFileIfExists,
   appendJsonlLine,
+  existsNonEmpty,
   writeJsonFile,
   writeTextFile,
   readJsonFile,
@@ -42,7 +43,7 @@ import {
   nowIso,
 } from './utils/index.js';
 
-/** Raised when a `.tuteur/` file is missing or fails schema validation. */
+/** Raised when a `.withy/` file is missing or fails schema validation. */
 export class StoreError extends Error {}
 
 function readValidated<S extends z.ZodTypeAny>(path: string, schema: S, label: string): z.output<S> {
@@ -214,15 +215,36 @@ export function readImplementation(scope: Scope, taskId: string): Implementation
   return { items, unparsed };
 }
 
+// ── Task artifacts (tasks/<id>/*.md — agent-authored planning docs) ──────────
+
+/**
+ * List a task's existing planning artifacts: the non-empty Markdown files in the
+ * task directory. Runtime state (task.json/state.json/events.jsonl) is JSON/JSONL
+ * and is excluded by construction, so callers get only authored documents.
+ * @param scope Resolved project scope.
+ * @param id Task id (archived tasks are resolved via the same fallback as reads).
+ */
+export function listTaskArtifacts(scope: Scope, id: string): string[] {
+  const dir = dirname(taskReadPath(scope, id, 'task.json'));
+  if (!existsSync(dir)) return [];
+
+  return readdirSync(dir, { withFileTypes: true })
+    .filter(
+      entry => entry.isFile() && entry.name.toLowerCase().endsWith('.md') && existsNonEmpty(resolve(dir, entry.name)),
+    )
+    .map(entry => entry.name)
+    .sort();
+}
+
 // ── Context config ───────────────────────────────────────────────────────────
 
 export function readContextConfig(scope: Scope): ContextConfig {
-  const file = resolve(scope.tuteurDir, 'context.json');
+  const file = resolve(scope.withyDir, 'context.json');
   if (!existsSync(file)) return ContextConfigSchema.parse({});
   return readValidated(file, ContextConfigSchema, 'context.json');
 }
 
-// ── Session guide (.tuteur/guide.md — tool-level intro, injected verbatim) ───
+// ── Session guide (.withy/guide.md — tool-level intro, injected verbatim) ───
 
 export function readGuide(scope: Scope): string | null {
   return readTextFileIfExists(guidePath(scope));
@@ -277,7 +299,7 @@ export function listKnowledgeFiles(scope: Scope): KnowledgeFile[] {
   return files;
 }
 
-/** Write text to a path relative to `knowledge/` (creates parents). Backs `ttur knowledge index`. */
+/** Write text to a path relative to `knowledge/` (creates parents). Backs `withy knowledge index`. */
 export function writeKnowledgeFile(scope: Scope, relPath: string, content: string): void {
   writeTextFile(resolve(knowledgeDir(scope), relPath), content);
 }
@@ -285,7 +307,7 @@ export function writeKnowledgeFile(scope: Scope, relPath: string, content: strin
 // ── Developer identity ───────────────────────────────────────────────────────
 
 export function readDeveloper(scope: Scope): Developer | null {
-  const file = resolve(scope.tuteurDir, '.developer');
+  const file = resolve(scope.withyDir, '.developer');
   if (!existsSync(file)) return null;
   return readValidated(file, DeveloperSchema, '.developer');
 }

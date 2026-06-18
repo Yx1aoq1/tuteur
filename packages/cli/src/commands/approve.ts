@@ -1,4 +1,4 @@
-import { approveCurrentNode } from '@tuteur/core';
+import { approveCurrentNode } from '@withy/core';
 import type { Command } from 'commander';
 import { actorSlug, emit, requireProjectScope, resolveTaskId } from '../harness/runtime.js';
 
@@ -19,7 +19,7 @@ function runApprove(options: ApproveOptions): void {
   const taskId = resolveTaskId(scope, options.task);
   const by = actorSlug(scope);
   if (!by) {
-    emit({ ok: false, error: 'no developer identity — run `ttur init -u <name>` first' }, 1);
+    emit({ ok: false, error: 'no developer identity — run `withy init -u <name>` first' }, 1);
   }
   try {
     const state = approveCurrentNode(scope, taskId, by);

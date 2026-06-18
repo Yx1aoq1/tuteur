@@ -1,4 +1,4 @@
-import type { AgentPlatformConfig, ConfigureAgentContext, ConfigureAgentResult } from '@tuteur/core';
+import type { AgentPlatformConfig, ConfigureAgentContext, ConfigureAgentResult } from '@withy/core';
 import { copyAgentTemplates } from './shared.js';
 
 export async function configureCodex(
@@ -22,12 +22,12 @@ export async function configureCodex(
 }
 
 function warnCodexHookFlag(): void {
-  if (process.env.VITEST || process.env.TUTEUR_QUIET) {
+  if (process.env.VITEST || process.env.WITHY_QUIET) {
     return;
   }
 
   process.stderr.write(
     '⚠️  Codex hooks require `features.hooks = true` in your ~/.codex/config.toml. ' +
-      'Without it the session-start hook never fires (no session_start events). See Tuteur docs.\n',
+      'Without it the session-start hook never fires (no session_start events). See Withy docs.\n',
   );
 }

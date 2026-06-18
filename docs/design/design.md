@@ -1,6 +1,6 @@
 # Web 视觉设计规范(design.md)
 
-> 适用范围:`packages/app`(`@tuteur/app`,Next.js 16 + React 19 + Tailwind 4)的**视觉层**。
+> 适用范围:`packages/app`(`@withy/app`,Next.js 16 + React 19 + Tailwind 4)的**视觉层**。
 > 分工:[web.md](./web.md) 定义页面/数据流/API/交互;**本文定义"长什么样"**——视觉主题、配色 token、字号、间距、组件样式、排版规则。两者冲突时,功能行为以 web.md 为准,观感以本文为准。
 > 单一来源:所有 token 落在 `packages/app/src/app/globals.css`,页面只用工具类,**不硬编码 hex**(对齐项目"单一数据源"铁律)。
 

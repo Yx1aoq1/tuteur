@@ -1,7 +1,7 @@
 // ──────────────────────────────────────────────────────────────────────────
 // Generic finite-state-machine engine. Domain-agnostic on purpose: it knows
 // only states, labeled (optionally guarded) transitions, and a cursor over them.
-// It never sees Tuteur's workflow schema, gates, or event shapes — callers
+// It never sees Withy's workflow schema, gates, or event shapes — callers
 // compile their domain into a `MachineDef`, evaluate guards themselves, and feed
 // the results in. This file should not change when business fields/gates change.
 // ──────────────────────────────────────────────────────────────────────────

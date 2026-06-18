@@ -3,17 +3,17 @@ import {
   findProjectByName,
   upsertProject,
   readProjects,
-  detectTuteur,
+  detectWithy,
   isDirectory,
-} from '@tuteur/core';
+} from '@withy/core';
 import { RESERVED_PROJECT_NAMES } from '@/constants/views';
 
 export const runtime = 'nodejs';
 
-// 加项目:校验路径 + 项目名 → detectTuteur。
+// 加项目:校验路径 + 项目名 → detectWithy。
 // - 名称为唯一 URL 身份(/<name>):被别的路径占用 → 409 nameTaken,前端提示改名。
-// - 已含 .tuteur/ → upsert 进全局注册表(added|exists)。
-// - 是有效目录但无 .tuteur/ → needInit(前端弹初始化表单,走 /api/projects/init,name 透传)。
+// - 已含 .withy/ → upsert 进全局注册表(added|exists)。
+// - 是有效目录但无 .withy/ → needInit(前端弹初始化表单,走 /api/projects/init,name 透传)。
 // - 路径无效 → 400 invalidPath。
 export async function POST(req: Request): Promise<Response> {
   let body: { path?: unknown; name?: unknown };
@@ -45,7 +45,7 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ ok: false, error: 'nameTaken' }, { status: 409 });
   }
 
-  if (!detectTuteur(target)) {
+  if (!detectWithy(target)) {
     return Response.json({ ok: true, status: 'needInit' });
   }
 

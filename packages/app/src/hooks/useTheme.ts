@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 
 export type Theme = 'light' | 'dark';
 
-export const THEME_STORAGE_KEY = 'tuteur-theme';
+export const THEME_STORAGE_KEY = 'withy-theme';
 
 // 读取 <html data-theme>(首屏由 layout 内联脚本依 localStorage 设好);SSR 无 document 时回退 light。
 function readTheme(): Theme {

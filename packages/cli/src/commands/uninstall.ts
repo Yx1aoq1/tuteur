@@ -2,7 +2,7 @@ import { existsSync, lstatSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { stdin as input, stdout as output } from 'node:process';
 import { confirm } from '@inquirer/prompts';
-import { resolveGlobalScope } from '@tuteur/core';
+import { resolveGlobalScope } from '@withy/core';
 import type { Command } from 'commander';
 import { PRODUCT_DISPLAY_NAME, PROJECT_DIR_NAME } from '../constants/product.js';
 import {
@@ -26,11 +26,11 @@ export default function registerUninstallCommand(program: Command): void {
   program
     .command('uninstall')
     .description(
-      `Remove ${PRODUCT_DISPLAY_NAME}-managed skills and ${PROJECT_DIR_NAME}/ from this project, or the global ~/.tuteur root with --global`,
+      `Remove ${PRODUCT_DISPLAY_NAME}-managed skills and ${PROJECT_DIR_NAME}/ from this project, or the global ~/.withy root with --global`,
     )
     .option('-y, --yes', 'Skip confirmation prompt')
     .option('--dry-run', 'List what would be removed without changing anything')
-    .option('--global', 'Remove the global ~/.tuteur root instead of the project install')
+    .option('--global', 'Remove the global ~/.withy root instead of the project install')
     .action(runUninstallCommand);
 }
 
@@ -69,10 +69,10 @@ async function runUninstallCommand(options: UninstallCommandOptions): Promise<vo
   );
 }
 
-// Remove the global root ~/.tuteur (own namespace; no agent dirs were ever
+// Remove the global root ~/.withy (own namespace; no agent dirs were ever
 // written there — core §2.3 — so this only deletes config + registry + templates).
 async function runGlobalUninstall(options: UninstallCommandOptions): Promise<void> {
-  const globalDir = resolveGlobalScope().tuteurDir;
+  const globalDir = resolveGlobalScope().withyDir;
   if (!existsSync(globalDir)) {
     throw new Error(`${PRODUCT_DISPLAY_NAME} global root is not installed (no ${globalDir}).`);
   }

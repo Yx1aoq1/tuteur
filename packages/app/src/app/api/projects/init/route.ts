@@ -6,16 +6,16 @@ import {
   findProjectByName,
   getAgentPlatform,
   upsertProject,
-  detectTuteur,
+  detectWithy,
   isDirectory,
-} from '@tuteur/core';
-import type { AgentTool, InitConfig, SkillInstallMode } from '@tuteur/core';
+} from '@withy/core';
+import type { AgentTool, InitConfig, SkillInstallMode } from '@withy/core';
 import { RESERVED_PROJECT_NAMES } from '@/constants/views';
 
 export const runtime = 'nodejs';
 
-// 启动 dashboard 的 CLI 可执行;默认 PATH 上的 `ttur`,可由启动器经 TUTEUR_CLI_BIN 覆盖为绝对路径。
-const CLI_BIN = process.env.TUTEUR_CLI_BIN ?? 'ttur';
+// 启动 dashboard 的 CLI 可执行;默认 PATH 上的 `withy`,可由启动器经 WITHY_CLI_BIN 覆盖为绝对路径。
+const CLI_BIN = process.env.WITHY_CLI_BIN ?? 'withy';
 
 // 返回 web init 表单所需的 agent 选项(单一事实源 = core 注册表)与 skill 模式。
 export function GET(): Response {
@@ -27,7 +27,7 @@ export function GET(): Response {
   return Response.json({ agents, skills: ['link', 'copy'] satisfies SkillInstallMode[] });
 }
 
-// web 触发 init(设计 §2.4):校验路径(存在/目录/无 .tuteur)→ spawn ttur init(非交互 per-agent flag)
+// web 触发 init(设计 §2.4):校验路径(存在/目录/无 .withy)→ spawn withy init(非交互 per-agent flag)
 // → 回传 exitCode/stdout/stderr;成功则 upsert 进项目列表。
 export async function POST(req: Request): Promise<Response> {
   let body: { path?: unknown; name?: unknown; agents?: unknown; skills?: unknown; user?: unknown };
@@ -41,7 +41,7 @@ export async function POST(req: Request): Promise<Response> {
   if (!path || !isDirectory(path)) {
     return Response.json({ ok: false, error: 'invalidPath' }, { status: 400 });
   }
-  if (detectTuteur(path)) {
+  if (detectWithy(path)) {
     return Response.json({ ok: false, error: 'alreadyInitialized' }, { status: 409 });
   }
 
@@ -85,7 +85,7 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  // `ttur init` 已用 basename 登记;按 path 去重的 upsert 在此覆盖为用户填写的名称。
+  // `withy init` 已用 basename 登记;按 path 去重的 upsert 在此覆盖为用户填写的名称。
   upsertProject(global, { path, name });
   return Response.json({ ok: true, code: 0, stdout: run.stdout, stderr: run.stderr, command });
 }
@@ -97,7 +97,7 @@ function sanitizeAgents(value: unknown): AgentTool[] {
   return value.filter((item): item is AgentTool => valid.includes(item));
 }
 
-// 从 InitConfig 构造 `ttur init` 参数数组(per-agent flag,与 serializeToCommand 同源)。
+// 从 InitConfig 构造 `withy init` 参数数组(per-agent flag,与 serializeToCommand 同源)。
 function buildInitArgs(config: InitConfig): string[] {
   const args = ['init'];
   for (const agent of config.agents) args.push(`--${getAgentPlatform(agent).cliFlag}`);

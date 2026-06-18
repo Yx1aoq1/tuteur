@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
-import { ensureDir } from '@tuteur/core';
+import { ensureDir } from '@withy/core';
 import { resolveWorkflowSkills } from '../configurators/shared.js';
 import { PROJECT_DIR_NAME } from '../constants/product.js';
 

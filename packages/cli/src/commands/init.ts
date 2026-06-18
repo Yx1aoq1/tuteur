@@ -1,9 +1,9 @@
 import { execSync } from 'node:child_process';
 import { stdin as input, stdout as output } from 'node:process';
 import { checkbox, input as textInput, select } from '@inquirer/prompts';
-import { serializeToCommand, INIT_QUESTIONS } from '@tuteur/core';
+import { serializeToCommand, INIT_QUESTIONS } from '@withy/core';
 import type { Command } from 'commander';
-import type { SkillInstallMode, InitConfig } from '@tuteur/core';
+import type { SkillInstallMode, InitConfig } from '@withy/core';
 import { PRODUCT_DISPLAY_NAME } from '../constants/product.js';
 import { getInitAgentChoices, type AgentPlatformConfig, type AgentTool } from '../configurators/index.js';
 import { runInit, type InitResult } from '../installation/init.js';
@@ -21,7 +21,7 @@ export default function registerInitCommand(program: Command): void {
     .description(`Initialize ${PRODUCT_DISPLAY_NAME} in the current project or global root`)
     .option('-y, --yes', 'Use default agent selections')
     .option('-u, --user <name>', 'Initialize local user identity for task ownership')
-    .option('--global', 'Initialize the global ~/.tuteur root (config + templates, no agent setup)')
+    .option('--global', 'Initialize the global ~/.withy root (config + templates, no agent setup)')
     .option('--copy', 'Install skills as independent copies instead of symlinks');
 
   // Per-agent boolean flags (--codex/--claude/...) derive from the registry, so

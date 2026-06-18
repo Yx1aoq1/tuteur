@@ -8,7 +8,7 @@ import { writeTextFile } from './fs.js';
 const dirs: string[] = [];
 
 function tmp(): string {
-  const dir = mkdtempSync(resolve(tmpdir(), 'tuteur-json-'));
+  const dir = mkdtempSync(resolve(tmpdir(), 'withy-json-'));
   dirs.push(dir);
   return dir;
 }

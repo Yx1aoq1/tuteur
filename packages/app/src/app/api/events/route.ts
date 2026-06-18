@@ -3,7 +3,7 @@ import { subscribeProject } from '@/server/watcher';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// 实时事件流(SSE):监听当前项目 .tuteur 变化,推 `task-updated` 让浏览器局部 revalidate。
+// 实时事件流(SSE):监听当前项目 .withy 变化,推 `task-updated` 让浏览器局部 revalidate。
 // 仅 watch ?project= 指定的前台项目;无 project 时只发心跳保活。
 export function GET(req: Request): Response {
   const project = new URL(req.url).searchParams.get('project') ?? undefined;

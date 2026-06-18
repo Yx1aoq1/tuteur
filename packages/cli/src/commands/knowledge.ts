@@ -4,9 +4,9 @@ import {
   resolveGlobalScope,
   deriveMergedGraph,
   lintKnowledge,
-} from '@tuteur/core';
+} from '@withy/core';
 import type { Command } from 'commander';
-import type { Scope } from '@tuteur/core';
+import type { Scope } from '@withy/core';
 import { emit, requireProjectScope } from '../harness/runtime.js';
 
 export default function registerKnowledgeCommand(program: Command): void {
@@ -17,20 +17,20 @@ export default function registerKnowledgeCommand(program: Command): void {
   knowledge
     .command('graph')
     .description('Derive the document relation graph from [[links]] and frontmatter sources')
-    .option('--global', 'Operate on the global knowledge base (~/.tuteur)')
+    .option('--global', 'Operate on the global knowledge base (~/.withy)')
     .option('--merged', 'Render global + project together (cross-scope view for web)')
     .action(runGraph);
 
   knowledge
     .command('index')
     .description('Recompute every level index.md from page frontmatter (root catalog + wiki subdirs)')
-    .option('--global', 'Operate on the global knowledge base (~/.tuteur)')
+    .option('--global', 'Operate on the global knowledge base (~/.withy)')
     .action(runIndex);
 
   knowledge
     .command('lint')
     .description('Mechanical health check: orphan pages, broken links, dangling injection refs')
-    .option('--global', 'Operate on the global knowledge base (~/.tuteur)')
+    .option('--global', 'Operate on the global knowledge base (~/.withy)')
     .action(runLint);
 }
 
@@ -42,7 +42,7 @@ interface GraphOption extends ScopeOption {
   merged?: boolean;
 }
 
-// Default scope is the current project; `--global` switches to ~/.tuteur (same as `init --global`).
+// Default scope is the current project; `--global` switches to ~/.withy (same as `init --global`).
 function resolveScope(global?: boolean): Scope {
   return global ? resolveGlobalScope() : requireProjectScope();
 }

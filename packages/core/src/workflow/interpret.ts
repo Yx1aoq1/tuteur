@@ -5,15 +5,15 @@ import type { Cursor, GuardReport, MachineDef } from './engine.js';
 import type { ArtifactSpec, State, TaskEvent, TaskStatus, Workflow, WorkflowNode } from '../types.js';
 
 // ──────────────────────────────────────────────────────────────────────────
-// Tuteur ⇆ generic engine adapter. This is the ONLY module that understands the
-// Tuteur workflow schema (skill/switch/gate/branch/default). It compiles a
+// Withy ⇆ generic engine adapter. This is the ONLY module that understands the
+// Withy workflow schema (skill/switch/gate/branch/default). It compiles a
 // Workflow into the generic MachineDef, interprets engine results back into
-// Tuteur state + events, and answers schema queries. The engine (engine.ts) and
+// Withy state + events, and answers schema queries. The engine (engine.ts) and
 // the gate checkers (gate.ts) stay free of these concerns; change business
 // fields here, not there.
 // ──────────────────────────────────────────────────────────────────────────
 
-// The implicit event a skill node / `ttur next` (no branch) sends.
+// The implicit event a skill node / `withy next` (no branch) sends.
 export const ADVANCE = 'advance';
 
 // Guard id for a skill node's gate (compile + runtime must agree on the key).
@@ -51,7 +51,7 @@ export function initialState(wf: Workflow): State {
 // ── Compile Workflow → generic machine ──────────────────────────────────────
 
 /**
- * Flatten the Tuteur workflow into the engine's generic shape: a skill node
+ * Flatten the Withy workflow into the engine's generic shape: a skill node
  * becomes one guarded `advance` edge (its gate → a guard ref); a switch node
  * becomes one edge per branch keyed by the branch label, with `default` marked.
  */
@@ -81,7 +81,7 @@ function applyCursor(state: State, cursor: Cursor): State {
   return { ...state, currentNode: cursor.current, completedNodes: cursor.visited, updatedAt: nowIso() };
 }
 
-// ── Step (pure policy: action → engine event → Tuteur state + events) ─────────
+// ── Step (pure policy: action → engine event → Withy state + events) ─────────
 
 export interface BranchView {
   label: string;
@@ -126,7 +126,7 @@ function failEvent(node: string, reasons: string[]): TaskEvent {
 
 /**
  * Drive the compiled machine for one action and translate the engine's result
- * into Tuteur events + next state. Pure: guard results for the current node are
+ * into Withy events + next state. Pure: guard results for the current node are
  * injected (the IO that computes them lives in runtime.ts). harness §2/§3.
  */
 export function stepWorkflow(wf: Workflow, state: State, action: WorkflowAction, guards: GuardReport = {}): StepResult {
@@ -185,7 +185,7 @@ export function stepWorkflow(wf: Workflow, state: State, action: WorkflowAction,
         blocked: reasons,
         needsBranch: true,
         branches: node.branches.map(toBranchView),
-        nextAction: 'ttur next --branch <label> --reason "..." --json',
+        nextAction: 'withy next --branch <label> --reason "..." --json',
         events: [failEvent(nodeId, reasons)],
       };
     }
@@ -221,7 +221,7 @@ export function approveState(state: State, by: string): State {
 
 export function describeNext(wf: Workflow, state: State): NextStep {
   if (state.currentNode === null) {
-    return { node: null, message: 'workflow complete — run "ttur task archive <id>"' };
+    return { node: null, message: 'workflow complete — run "withy task archive <id>"' };
   }
   const node = nodeById(wf, state.currentNode);
   if (!node) return { node: state.currentNode, message: 'unknown node' };

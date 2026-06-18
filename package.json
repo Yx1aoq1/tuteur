@@ -1,10 +1,10 @@
 {
-  "name": "tuteur-workspace",
+  "name": "withy-workspace",
   "private": true,
   "type": "module",
   "scripts": {
-    "app:dev": "pnpm --filter @tuteur/app dev",
-    "app:build": "pnpm --filter @tuteur/app build",
+    "app:dev": "pnpm --filter @withy/app dev",
+    "app:build": "pnpm --filter @withy/app build",
     "cli": "node scripts/run-cli.mjs",
     "dashboard:start": "pnpm cli dashboard start",
     "dashboard:stop": "pnpm cli dashboard stop",

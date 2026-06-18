@@ -14,7 +14,7 @@ import {
   type ManagedTemplate,
   type TemplateHashes,
 } from '../installation/managed-templates.js';
-import { ensureDir } from '@tuteur/core';
+import { ensureDir } from '@withy/core';
 
 interface UpdateCommandOptions {
   dryRun?: boolean;
@@ -55,7 +55,7 @@ async function runUpdateCommand(options: UpdateCommandOptions): Promise<void> {
   const projectRoot = process.cwd();
   const projectDir = resolve(projectRoot, PROJECT_DIR_NAME);
   if (!existsSync(projectDir)) {
-    throw new Error(`${PRODUCT_DISPLAY_NAME} is not initialized in this project. Run ttur init first.`);
+    throw new Error(`${PRODUCT_DISPLAY_NAME} is not initialized in this project. Run withy init first.`);
   }
 
   const templates = getInstalledWorkflowSkillTemplates(projectRoot);

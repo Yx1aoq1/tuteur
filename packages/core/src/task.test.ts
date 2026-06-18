@@ -3,16 +3,16 @@ import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { taskPath, type Scope } from './paths.js';
-import { readImplementation } from './store.js';
+import { listTaskArtifacts, readImplementation } from './store.js';
 import { implementationProgress } from './task.js';
-import { writeTextFile } from './utils/index.js';
+import { writeTextFile, writeJsonFile } from './utils/index.js';
 
 const dirs: string[] = [];
 
 function createScope(): Scope {
-  const root = mkdtempSync(resolve(tmpdir(), 'tuteur-task-'));
+  const root = mkdtempSync(resolve(tmpdir(), 'withy-task-'));
   dirs.push(root);
-  return { kind: 'project', root, tuteurDir: resolve(root, '.tuteur') };
+  return { kind: 'project', root, withyDir: resolve(root, '.withy') };
 }
 
 afterEach(() => {
@@ -54,5 +54,22 @@ describe('markdown implementation plan', () => {
     writeTextFile(taskPath(scope, 'task-1', 'implement.md'), '- [maybe] unclear\n- [ ]\n');
 
     expect(implementationProgress(scope, 'task-1')).toEqual({ done: 0, total: 0, unparsed: 2 });
+  });
+});
+
+describe('listTaskArtifacts', () => {
+  it('returns an empty list when the task directory has no documents', () => {
+    expect(listTaskArtifacts(createScope(), 'task-1')).toEqual([]);
+  });
+
+  it('lists non-empty markdown documents, sorted, excluding runtime state and empty files', () => {
+    const scope = createScope();
+    writeTextFile(taskPath(scope, 'task-1', 'design.md'), '# Design\n');
+    writeTextFile(taskPath(scope, 'task-1', 'prd.md'), '# PRD\n');
+    writeTextFile(taskPath(scope, 'task-1', 'empty.md'), '');
+    writeJsonFile(taskPath(scope, 'task-1', 'task.json'), { id: 'task-1' });
+    writeTextFile(taskPath(scope, 'task-1', 'events.jsonl'), '{}\n');
+
+    expect(listTaskArtifacts(scope, 'task-1')).toEqual(['design.md', 'prd.md']);
   });
 });

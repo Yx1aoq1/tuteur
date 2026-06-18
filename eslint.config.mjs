@@ -28,7 +28,7 @@ export default defineConfig([
     '**/.next/**',
     '**/dist/**',
     '**/coverage/**',
-    '**/.tuteur/runtime/**',
+    '**/.withy/runtime/**',
     '**/*.tsbuildinfo',
     'packages/app/next-env.d.ts',
   ]),

@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { resolveGlobalScope, runtimeDir, detectTuteur, isDirectory } from '@tuteur/core';
+import { resolveGlobalScope, runtimeDir, detectWithy, isDirectory } from '@withy/core';
 import type { Command } from 'commander';
 import { DASHBOARD_PACKAGE_NAME, DASHBOARD_PROJECT_ROOT_ENV, PRODUCT_DISPLAY_NAME } from '../constants/product.js';
 
@@ -29,11 +29,11 @@ export default function registerDashboardCommand(program: Command): void {
   dashboard.command('stop').description('Stop the dashboard background process').action(stopDashboard);
 }
 
-// dashboard 是多项目管理器:启动只需全局根 ~/.tuteur 存在,不要求 cwd 是已初始化项目。
+// dashboard 是多项目管理器:启动只需全局根 ~/.withy 存在,不要求 cwd 是已初始化项目。
 // 具体项目由 web 端经 ?project= 选择(web.md §2.3);runtime 状态写在全局根下,与 cwd 解绑。
 function startDashboard(): void {
   const global = resolveGlobalScope();
-  assertGlobalInitialized(global.tuteurDir);
+  assertGlobalInitialized(global.withyDir);
 
   const stateDir = runtimeDir(global);
   const statePath = resolve(stateDir, 'dashboard.json');
@@ -47,7 +47,7 @@ function startDashboard(): void {
 
   // cwd 是已初始化项目时,作为默认项目兜底;否则不强加默认,前端从空列表开始添加。
   const cwd = process.cwd();
-  const defaultProject = detectTuteur(cwd) ? cwd : undefined;
+  const defaultProject = detectWithy(cwd) ? cwd : undefined;
   const env: NodeJS.ProcessEnv = { ...process.env };
   if (defaultProject) env[DASHBOARD_PROJECT_ROOT_ENV] = defaultProject;
   else delete env[DASHBOARD_PROJECT_ROOT_ENV];
@@ -123,9 +123,9 @@ function defaultDashboardUrl(): string {
 }
 
 // dashboard 依赖全局根的 config/projects 注册表;缺失则引导先跑 init --global(web.md §7)。
-function assertGlobalInitialized(tuteurDir: string): void {
-  if (!isDirectory(tuteurDir)) {
-    throw new Error(`${PRODUCT_DISPLAY_NAME} global root is not initialized. Run \`ttur init --global\` first.`);
+function assertGlobalInitialized(withyDir: string): void {
+  if (!isDirectory(withyDir)) {
+    throw new Error(`${PRODUCT_DISPLAY_NAME} global root is not initialized. Run \`withy init --global\` first.`);
   }
 }
 

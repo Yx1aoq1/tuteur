@@ -1,6 +1,6 @@
 # Harness 全流程与阶段产物
 
-> 本文回答「Tuteur 从项目初始化、会话开始、任务对话到流程结束如何串起来，以及每个阶段留下什么产物」。
+> 本文回答「Withy 从项目初始化、会话开始、任务对话到流程结束如何串起来，以及每个阶段留下什么产物」。
 > 规则与 schema 仍以 [core.md](./core.md)、[harness.md](./harness.md)、[cli.md](./cli.md) 和 [knowledge.md](./knowledge.md) 为准；本文只做跨域串联，不另立协议。
 
 ---
@@ -10,15 +10,15 @@
 ```text
 用户                 说明目标、回答问题、审批、授权跳过
 agent                执行当前 skill，产出文档/代码/验证结果，报告分支判断
-ttur CLI / hook      统一事件入口，参数解析后调用 core
-@tuteur/core         唯一事实与判定层：读写状态、计算上下文、校验门禁、推进 workflow
+withy CLI / hook      统一事件入口，参数解析后调用 core
+@withy/core         唯一事实与判定层：读写状态、计算上下文、校验门禁、推进 workflow
 workflow             声明当前要做哪一步、需要哪些产物和检查
 skill                说明这一步怎么做
 artifact template    说明这一步的产物长什么样
 web                  展示和编辑，不复制 core 的判定逻辑
 ```
 
-最重要的不变量：**agent 自称完成不等于节点完成；只有 `@tuteur/core` 的门禁通过后，workflow 才推进。**
+最重要的不变量：**agent 自称完成不等于节点完成；只有 `@withy/core` 的门禁通过后，workflow 才推进。**
 
 ---
 
@@ -26,32 +26,32 @@ web                  展示和编辑，不复制 core 的判定逻辑
 
 ```mermaid
 flowchart TD
-  A[首次使用 Tuteur] --> B{全局环境已初始化?}
-  B -- 否 --> B1[ttur init --global]
-  B1 --> B2[产物: ~/.tuteur/config.json<br/>projects.json<br/>workflow 与 knowledge 模板]
+  A[首次使用 Withy] --> B{全局环境已初始化?}
+  B -- 否 --> B1[withy init --global]
+  B1 --> B2[产物: ~/.withy/config.json<br/>projects.json<br/>workflow 与 knowledge 模板]
   B -- 是 --> C
   B2 --> C{当前仓库已初始化?}
 
-  C -- 否 --> C1[ttur init --codex 等]
-  C1 --> C2[core 创建项目级 .tuteur]
+  C -- 否 --> C1[withy init --codex 等]
+  C1 --> C2[core 创建项目级 .withy]
   C2 --> C3[config/context/workflow/knowledge/guide<br/>developer/workspace/runtime]
   C3 --> C4[configurator 安装 canonical skills<br/>并登记平台 hook]
   C4 --> D[用户打开 agent 交互会话]
   C -- 是 --> D
 
-  D --> E[平台触发 ttur hook session-start]
+  D --> E[平台触发 withy hook session-start]
   E --> E1[core 解析项目、身份、git、当前任务]
   E1 --> E2[计算 planned context<br/>guide + workflow + task + knowledge/template]
   E2 --> E3[注入会话并追加 session_start 事件]
   E3 --> F{当前任务定位结果}
 
   F -- 无任务 --> F1[用户描述需求]
-  F1 --> F2[agent: ttur task start]
+  F1 --> F2[agent: withy task start]
   F2 --> F3[产物: task.json/state.json/events.jsonl<br/>currentNode=triage]
   F3 --> G
 
   F -- 多任务歧义 --> F4[列出候选并停止]
-  F4 --> F5[ttur task start 选择任务]
+  F4 --> F5[withy task start 选择任务]
   F5 --> G
 
   F -- 指针失效 --> F6[提示清理失效指针并重新 start]
@@ -66,7 +66,7 @@ flowchart TD
   J -- dev --> Q1
   J -- check --> Q4
   J -- wrapup --> R1
-  H --> H1[ttur next --branch label --reason reason]
+  H --> H1[withy next --branch label --reason reason]
   H1 --> H2{分支合法?}
   H2 -- 否 --> H3[记录失败事件<br/>状态不变并重新判断]
   H3 --> H
@@ -75,7 +75,7 @@ flowchart TD
 
   I -- standard --> P1[规划: brainstorm]
   P1 --> P2[目标产物: prd.md<br/>design.md<br/>implement.md]
-  P2 --> P3[ttur next]
+  P2 --> P3[withy next]
   P3 --> P4[规划: grill-me]
   P4 --> P5[审查产物: prd.md<br/>design.md<br/>implement.md]
   P5 --> P6{三份规划产物存在且非空<br/>并已 approval?}
@@ -85,7 +85,7 @@ flowchart TD
 
   I -- small --> Q1[执行: dev]
   Q1 --> Q2[读取任务上下文并修改生产代码/测试]
-  Q2 --> Q3[ttur next]
+  Q2 --> Q3[withy next]
   Q3 --> Q4[执行: check]
   Q4 --> Q5[审查改动并运行验证<br/>目标产物: check-result.json]
   Q5 --> Q6{workflow checks 退出码均为 0?}
@@ -95,28 +95,28 @@ flowchart TD
 
   I -- research --> R1[收尾: finish]
   R1 --> R2[汇总结果、风险、验证与遗留项<br/>目标产物: final-summary.md]
-  R2 --> R3[ttur next]
+  R2 --> R3[withy next]
   R3 --> R4{next 为 null?}
   R4 -- 否 --> G
   R4 -- 是 --> R5[task.status=completed<br/>completedAt 写入并清当前任务指针]
   R5 --> S{是否归档?}
   S -- 否 --> T[保留在 active tasks 中]
-  S -- 是 --> S1[ttur task archive]
+  S -- 是 --> S1[withy task archive]
   S1 --> S2[整个任务目录移动至<br/>tasks/archive/YYYY-MM/id]
 
-  X1 -. 用户明确授权 .-> K[ttur next --skip --reason]
+  X1 -. 用户明确授权 .-> K[withy next --skip --reason]
   X2 -. 用户明确授权 .-> K
   K --> K1[追加 skip 事件并推进]
   K1 --> G
 
-  H4 -. 后续发现分支判错 .-> W[ttur rewind --to triage]
+  H4 -. 后续发现分支判错 .-> W[withy rewind --to triage]
   W --> W1[清理下游完成态、decision、approval<br/>追加 rewind 事件]
   W1 --> H
 ```
 
 这张图表达三条并行链路：
 
-1. **控制链**：`state.currentNode` → `ttur next` → core 门禁 → 下一节点。
+1. **控制链**：`state.currentNode` → `withy next` → core 门禁 → 下一节点。
 2. **内容链**：knowledge/template/context → session-start 注入 → skill 执行 → task artifact。
 3. **审计链**：每次会话、推进、分支、失败、审批、跳过、回退 → `events.jsonl`。
 
@@ -126,13 +126,13 @@ flowchart TD
 
 ### 3.1 初始化产物
 
-| 阶段       | 产物                                                                           | 性质                                 | 消费方                 |
-| ---------- | ------------------------------------------------------------------------------ | ------------------------------------ | ---------------------- |
-| 全局初始化 | `~/.tuteur/config.json`、`projects.json`、`workflows/`、`knowledge/`           | 本机个人配置与跨项目模板，不保存任务 | CLI、web、新项目初始化 |
-| 项目初始化 | `.tuteur/config.json`、`guide.md`、`context.json`、`workflows/*.workflow.json` | 项目共享 harness 配置                | core、hook、web        |
-| 项目初始化 | `.tuteur/knowledge/{sources,wiki,index.md,log.md}`                             | 项目知识与产物模板库                 | hook、skill、web       |
-| 身份初始化 | `.tuteur/.developer`、`workspace/<slug>/index.md`                              | 本地身份 + 共享成员名册              | task create/list、web  |
-| agent 适配 | agent 原生 skill 目录、hook 声明、`template-hashes.json`                       | 平台接入与模板升级保护               | agent、`ttur update`   |
+| 阶段       | 产物                                                                          | 性质                                 | 消费方                 |
+| ---------- | ----------------------------------------------------------------------------- | ------------------------------------ | ---------------------- |
+| 全局初始化 | `~/.withy/config.json`、`projects.json`、`workflows/`、`knowledge/`           | 本机个人配置与跨项目模板，不保存任务 | CLI、web、新项目初始化 |
+| 项目初始化 | `.withy/config.json`、`guide.md`、`context.json`、`workflows/*.workflow.json` | 项目共享 harness 配置                | core、hook、web        |
+| 项目初始化 | `.withy/knowledge/{sources,wiki,index.md,log.md}`                             | 项目知识与产物模板库                 | hook、skill、web       |
+| 身份初始化 | `.withy/.developer`、`workspace/<slug>/index.md`                              | 本地身份 + 共享成员名册              | task create/list、web  |
+| agent 适配 | agent 原生 skill 目录、hook 声明、`template-hashes.json`                      | 平台接入与模板升级保护               | agent、`withy update`  |
 
 ### 3.2 会话与任务运行产物
 
@@ -198,16 +198,16 @@ workflow gate.artifacts/checks/approval
 
 | 场景                    | 系统行为                           | 状态变化   | 恢复动作                             |
 | ----------------------- | ---------------------------------- | ---------- | ------------------------------------ |
-| 未初始化项目            | 不进入任务流程                     | 无         | `ttur init`                          |
+| 未初始化项目            | 不进入任务流程                     | 无         | `withy init`                         |
 | 无当前任务              | 注入 NO ACTIVE TASK                | 无         | agent 创建任务                       |
-| 多个未完成任务          | 报 AMBIGUOUS，不猜                 | 无         | `ttur task start <id>`               |
+| 多个未完成任务          | 报 AMBIGUOUS，不猜                 | 无         | `withy task start <id>`              |
 | switch 未给/给错 branch | exit 2，列合法分支                 | 不变       | 重新判断并提交合法 branch            |
-| artifact 缺失或为空     | exit 2，列路径                     | 不变       | 补齐产物后重试 `ttur next`           |
-| check 失败              | exit 2，返回失败命令与输出尾部     | 不变       | 修复后重跑验证与 `ttur next`         |
-| 缺 approval             | exit 2                             | 不变       | 用户确认后 `ttur approve`，再 next   |
+| artifact 缺失或为空     | exit 2，列路径                     | 不变       | 补齐产物后重试 `withy next`          |
+| check 失败              | exit 2，返回失败命令与输出尾部     | 不变       | 修复后重跑验证与 `withy next`        |
+| 缺 approval             | exit 2                             | 不变       | 用户确认后 `withy approve`，再 next  |
 | 连续失败超过阈值        | web 标记卡住                       | 不自动放行 | 正常修复，或用户授权 skip            |
 | 门禁配置错误/flaky      | 默认仍拒绝                         | 不变       | 用户授权 `--skip --reason`，留痕推进 |
-| switch 判错且已前进     | 不靠 workflow 回边                 | 显式回退   | `ttur rewind --to <switch>`          |
+| switch 判错且已前进     | 不靠 workflow 回边                 | 显式回退   | `withy rewind --to <switch>`         |
 | workflow 完成           | `currentNode=null`、状态 completed | 完成       | 可继续保留或 archive                 |
 
 ---

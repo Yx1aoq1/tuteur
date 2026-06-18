@@ -1,4 +1,4 @@
-import { appendEvent, renderSessionStart, resolveProjectScope } from '@tuteur/core';
+import { appendEvent, renderSessionStart, resolveProjectScope } from '@withy/core';
 import type { Command } from 'commander';
 
 export default function registerHookCommand(program: Command): void {
@@ -11,10 +11,10 @@ export default function registerHookCommand(program: Command): void {
 function runHook(event: string): void {
   try {
     // kill-switch / non-interactive guard — never pollute scripted sessions.
-    if (process.env.TUTEUR_HOOKS === '0') process.exit(0);
+    if (process.env.WITHY_HOOKS === '0') process.exit(0);
 
     const scope = resolveProjectScope();
-    if (!scope) process.exit(0); // not a Tuteur project — silent no-op
+    if (!scope) process.exit(0); // not a Withy project — silent no-op
 
     if (event === 'session-start') {
       const result = renderSessionStart(scope);
@@ -32,8 +32,8 @@ function runHook(event: string): void {
     // Future events (inject-workflow-state / inject-subagent-context) are no-ops for now.
     process.exit(0);
   } catch (error) {
-    // Soft-fail: hooks must never block the session (Tuteur's hard gate is `ttur next`).
-    process.stderr.write(`tuteur hook error: ${(error as Error).message}\n`);
+    // Soft-fail: hooks must never block the session (Withy's hard gate is `withy next`).
+    process.stderr.write(`withy hook error: ${(error as Error).message}\n`);
     process.exit(0);
   }
 }

@@ -2,7 +2,7 @@ node_modules/
 .next/
 dist/
 coverage/
-.tuteur/runtime/
+.withy/runtime/
 *.tsbuildinfo
 *.log
 .temp/

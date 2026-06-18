@@ -1,4 +1,4 @@
-// 服务端读取层:dashboard 的所有 .tuteur 读取都经此处调用 @tuteur/core,浏览器不碰 fs。
+// 服务端读取层:dashboard 的所有 .withy 读取都经此处调用 @withy/core,浏览器不碰 fs。
 // 仅在 Server Component / route handler 中导入(模块会拉入 node:fs)。
 
 import {
@@ -16,8 +16,8 @@ import {
   nodeById,
   phaseOf,
   isStuck,
-} from '@tuteur/core';
-import type { Scope, Task, TaskStatus } from '@tuteur/core';
+} from '@withy/core';
+import type { Scope, Task, TaskStatus } from '@withy/core';
 import type {
   Phase,
   BoardCard,

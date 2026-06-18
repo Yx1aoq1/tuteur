@@ -1,10 +1,10 @@
 {
-  "name": "@tuteur/cli",
+  "name": "@withy/cli",
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
-    "ttur": "./bin/index.js"
+    "withy": "./bin/index.js"
   },
   "files": [
     "bin",
@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
-    "@tuteur/core": "workspace:*",
+    "@withy/core": "workspace:*",
     "commander": "^12.1.0"
   },
   "devDependencies": {

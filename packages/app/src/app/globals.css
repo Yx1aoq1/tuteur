@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /*
- * Tuteur 设计 token —— 复古水粉(Klee / Gouache / Matisse)双主题。
+ * Withy 设计 token —— 复古水粉(Klee / Gouache / Matisse)双主题。
  * 语义色对齐固定状态语义:通过=teal · 失败/缺失/卡住=terracotta · 待批=mustard · 信息=blue。
  * 用法:页面用工具类(bg-paper / text-ink / border-line / text-teal / rounded-card / shadow-card …),
  *      不再硬编码 hex(单一数据源)。主题切换 = <html data-theme="light|dark">,默认 light。

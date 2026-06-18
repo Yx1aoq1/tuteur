@@ -143,7 +143,7 @@
     "pickUnsupported": "本平台不支持原生目录选择,请手填绝对路径。",
     "detect": "检测并添加",
     "detecting": "检测中…",
-    "needInit": "该目录尚未初始化(无 .tuteur/)。填写下方选项以初始化。",
+    "needInit": "该目录尚未初始化(无 .withy/)。填写下方选项以初始化。",
     "invalidPath": "路径不存在或不是目录。",
     "initTitle": "初始化项目",
     "agents": "配置的 agent 工具",

@@ -1,4 +1,4 @@
-import type { AgentPlatformConfig, ConfigureAgentContext, ConfigureAgentResult } from '@tuteur/core';
+import type { AgentPlatformConfig, ConfigureAgentContext, ConfigureAgentResult } from '@withy/core';
 import { copyAgentTemplates, copyCanonicalSkills, linkSkills } from './shared.js';
 
 export async function configureClaude(

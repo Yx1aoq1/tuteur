@@ -1,7 +1,7 @@
 import { copyFileSync, existsSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ensureDir, type TemplateContext } from '@tuteur/core';
+import { ensureDir, type TemplateContext } from '@withy/core';
 import { getBundledSkillName, PRODUCT_DISPLAY_NAME } from '../constants/product.js';
 
 export interface ResolvedSkillTemplate {

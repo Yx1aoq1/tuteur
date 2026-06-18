@@ -1,4 +1,4 @@
-import { resolveCurrentTask, resolveProjectScope, taskExists, readDeveloper, type Scope } from '@tuteur/core';
+import { resolveCurrentTask, resolveProjectScope, taskExists, readDeveloper, type Scope } from '@withy/core';
 import type { Command } from 'commander';
 
 let jsonOutput = false;
@@ -13,16 +13,16 @@ export function configureOutput(program: Command): void {
     console.log = (...values: unknown[]) => {
       lines.push(values.map(String).join(' '));
     };
-    actionCommand.setOptionValue('__tuteurOutputLines', lines);
-    actionCommand.setOptionValue('__tuteurOriginalLog', log);
+    actionCommand.setOptionValue('__withyOutputLines', lines);
+    actionCommand.setOptionValue('__withyOriginalLog', log);
   });
 
   program.hook('postAction', (_command, actionCommand) => {
-    const log = actionCommand.getOptionValue('__tuteurOriginalLog') as typeof console.log | undefined;
+    const log = actionCommand.getOptionValue('__withyOriginalLog') as typeof console.log | undefined;
     if (!log) return;
 
     console.log = log;
-    const output = actionCommand.getOptionValue('__tuteurOutputLines') as string[];
+    const output = actionCommand.getOptionValue('__withyOutputLines') as string[];
     process.stdout.write(`${JSON.stringify({ ok: process.exitCode !== 1, output })}\n`);
   });
 }
@@ -100,7 +100,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function requireProjectScope(): Scope {
   const scope = resolveProjectScope();
   if (!scope) {
-    emit({ ok: false, error: 'not a Tuteur project — run `ttur init` first' }, 1);
+    emit({ ok: false, error: 'not a Withy project — run `withy init` first' }, 1);
   }
   return scope;
 }
@@ -115,14 +115,14 @@ export function resolveTaskId(scope: Scope, explicit?: string): string {
     emit(
       {
         ok: false,
-        error: 'multiple open tasks — pass --task <id> or run `ttur task start <id>`',
+        error: 'multiple open tasks — pass --task <id> or run `withy task start <id>`',
         tasks: current.ambiguous,
       },
       1,
     );
   }
   if ('stale' in current) {
-    emit({ ok: false, error: `current-task pointer is stale (${current.stale}) — run \`ttur task start <id>\`` }, 1);
+    emit({ ok: false, error: `current-task pointer is stale (${current.stale}) — run \`withy task start <id>\`` }, 1);
   }
   if (!taskExists(scope, current.taskId)) {
     emit({ ok: false, error: `task not found: ${current.taskId}` }, 1);

@@ -1,5 +1,5 @@
 // Workflow subsystem barrel — the state machine in one place: a generic engine
-// (engine.ts), the Tuteur policy that compiles the workflow onto it and reads it
+// (engine.ts), the Withy policy that compiles the workflow onto it and reads it
 // back (interpret.ts), the gate checker registry (gate.ts), the IO shell that
 // persists steps (runtime.ts), and the static-graph validator (validate.ts).
 // Only the host-facing surface is re-exported; engine/compile internals stay in

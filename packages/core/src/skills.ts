@@ -7,14 +7,14 @@ import { readTextFile, isDirectory } from './utils/fs.js';
 import type { Scope } from './paths.js';
 
 export interface DiscoveredSkill {
-  name: string; // logical name (tuteur- prefix stripped)
+  name: string; // logical name (withy- prefix stripped)
   description?: string;
   source: 'project' | 'global';
   /** Directories this logical skill was found in (one logical skill may be installed in several tools). */
   paths: string[];
 }
 
-/** Strip the bundled `tuteur-` prefix to get the logical (workflow-referenced) name. */
+/** Strip the bundled `withy-` prefix to get the logical (workflow-referenced) name. */
 export function logicalSkillName(dirName: string): string {
   const prefix = `${PRODUCT_SLUG}-`;
   return dirName.startsWith(prefix) ? dirName.slice(prefix.length) : dirName;
@@ -65,7 +65,7 @@ export interface ResolvedSkill {
 
 /**
  * Resolve a workflow `skill` name to a concrete SKILL.md directory in the project.
- * Checks the logical name and the bundled `tuteur-<name>` form across skill dirs.
+ * Checks the logical name and the bundled `withy-<name>` form across skill dirs.
  * Throws when nothing resolves (surfaced at validate / run time — harness §5).
  */
 export function resolveSkillRef(scope: Scope, skill: string): ResolvedSkill {

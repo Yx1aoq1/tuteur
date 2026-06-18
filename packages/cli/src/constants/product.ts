@@ -1,4 +1,4 @@
-// Product/runtime constants now live in @tuteur/core (single source). This shim
+// Product/runtime constants now live in @withy/core (single source). This shim
 // keeps existing CLI import sites stable.
 export {
   PRODUCT_DISPLAY_NAME,
@@ -12,4 +12,4 @@ export {
   getBundledSkillName,
   getSlashCommandPrefix,
   toDirectoryName,
-} from '@tuteur/core';
+} from '@withy/core';

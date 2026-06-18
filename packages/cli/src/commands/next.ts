@@ -1,4 +1,4 @@
-import { nextNode, skipNode } from '@tuteur/core';
+import { nextNode, skipNode } from '@withy/core';
 import type { Command } from 'commander';
 import { actorSlug, emit, requireProjectScope, resolveTaskId } from '../harness/runtime.js';
 

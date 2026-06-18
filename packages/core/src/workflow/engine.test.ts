@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { initialCursor, nodeOf, rewind, send } from './engine.js';
 import type { Cursor, MachineDef } from './engine.js';
 
-// A synthetic, non-Tuteur machine: a(guarded) → b(branch) → c → end.
+// A synthetic, non-Withy machine: a(guarded) → b(branch) → c → end.
 //   a: single guarded `go` edge (also default).
 //   b: branch point — `left` (default) → c, `right` → terminal.
 //   c: single `go` edge → terminal.

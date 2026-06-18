@@ -1,15 +1,15 @@
-# Tuteur 项目规范（供 AI agent 与贡献者遵循）
+# Withy 项目规范（供 AI agent 与贡献者遵循）
 
 > 本文是项目私有约定，叠加在全局规范之上；与具体实现冲突时以本文为准。
 > 设计文档见 [`docs/design/INDEX.md`](./docs/design/INDEX.md)。
 
 ## 仓库结构
 
-- `packages/core`（`@tuteur/core`）：唯一的 `.tuteur/` 读写层 + 领域逻辑 + 类型/校验 + 公共工具。
-- `packages/cli`（`@tuteur/cli`，命令 `ttur`）：命令解析与安装器，逻辑全部委托 core。
-- `packages/app`（`@tuteur/app`）：Next.js 控制台，数据读写经 core。
+- `packages/core`（`@withy/core`）：唯一的 `.withy/` 读写层 + 领域逻辑 + 类型/校验 + 公共工具。
+- `packages/cli`（`@withy/cli`，命令 `withy`）：命令解析与安装器，逻辑全部委托 core。
+- `packages/app`（`@withy/app`）：Next.js 控制台，数据读写经 core。
 
-铁律：除 `core/src/store.ts` 等明确的碰盘层外，任何地方不直接 `import 'node:fs'` 操作 `.tuteur/`。
+铁律：除 `core/src/store.ts` 等明确的碰盘层外，任何地方不直接 `import 'node:fs'` 操作 `.withy/`。
 
 ## 模块导出规范
 

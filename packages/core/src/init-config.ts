@@ -9,7 +9,7 @@ export type SkillInstallMode = 'link' | 'copy';
 // The single structured init model. CLI flags, CLI interactive answers, and the
 // web form all produce one of these, then a single executor runs it (core §8).
 export interface InitConfig {
-  // Which root to initialize: a project repo, or the global ~/.tuteur root.
+  // Which root to initialize: a project repo, or the global ~/.withy root.
   scope: 'project' | 'global';
 
   // Selected agent tools to configure; always empty in global scope (core §2.3).
@@ -50,7 +50,7 @@ export function toSkillAdapterMode(skills: SkillInstallMode): SkillAdapterMode {
 }
 
 /**
- * Render an `InitConfig` back to its equivalent `ttur init ...` command line.
+ * Render an `InitConfig` back to its equivalent `withy init ...` command line.
  * The web "initialize" button spawns exactly this (web §2.4); CLI prints it as
  * the copyable equivalent of an interactive run.
  *

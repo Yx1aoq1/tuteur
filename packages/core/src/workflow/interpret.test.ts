@@ -53,7 +53,7 @@ function state(currentNode: string | null, over: Partial<State> = {}): State {
 
 const pass: GuardReport = {};
 const blockPlan: GuardReport = {
-  [gateGuardId('plan')]: { ok: false, reasons: ['needs approval: run "ttur approve"'] },
+  [gateGuardId('plan')]: { ok: false, reasons: ['needs approval: run "withy approve"'] },
 };
 
 describe('compileWorkflow', () => {
@@ -91,7 +91,7 @@ describe('stepWorkflow — skill nodes', () => {
     const r = stepWorkflow(WF, state('plan'), { kind: 'advance' }, blockPlan);
     expect(r.ok).toBe(false);
     expect(r.state).toBeUndefined();
-    expect(r.blocked).toEqual(['needs approval: run "ttur approve"']);
+    expect(r.blocked).toEqual(['needs approval: run "withy approve"']);
     expect(r.events[0]).toMatchObject({ type: 'complete_attempt', node: 'plan', ok: false });
   });
 });
@@ -102,7 +102,7 @@ describe('stepWorkflow — switch nodes', () => {
     expect(r.ok).toBe(false);
     expect(r.needsBranch).toBe(true);
     expect(r.branches?.map(b => b.label)).toEqual(['standard', 'small']);
-    expect(r.nextAction).toContain('ttur next --branch');
+    expect(r.nextAction).toContain('withy next --branch');
   });
 
   it('rejects an unknown branch label', () => {

@@ -19,7 +19,7 @@ export interface SessionStartResult {
  * when `taskId` is non-null.
  */
 export function renderSessionStart(scope: Scope): SessionStartResult {
-  const out: string[] = ['# Tuteur workflow context', ''];
+  const out: string[] = ['# Withy workflow context', ''];
   const guide = readGuide(scope);
   if (guide?.trim()) out.push(guide.trim(), '');
 
@@ -32,13 +32,13 @@ export function renderSessionStart(scope: Scope): SessionStartResult {
   let currentNode = '';
 
   if (current === null) {
-    out.push('- NO ACTIVE TASK · Next-Action: describe your goal and I will run `ttur task start "<title>" --json`');
+    out.push('- NO ACTIVE TASK · Next-Action: describe your goal and I will run `withy task start "<title>" --json`');
   } else if ('ambiguous' in current) {
     out.push(`- AMBIGUOUS: multiple open tasks (${current.ambiguous.join(', ')})`);
-    out.push('- Next-Action: `ttur task start <id> --json` to pick one, or start a new task');
+    out.push('- Next-Action: `withy task start <id> --json` to pick one, or start a new task');
   } else if ('stale' in current) {
     out.push(`- STALE POINTER: current-task points at "${current.stale}" which no longer exists`);
-    out.push('- Next-Action: `ttur task start <id> --json` to reset');
+    out.push('- Next-Action: `withy task start <id> --json` to reset');
   } else {
     taskId = current.taskId;
     const task = readTask(scope, taskId);
@@ -52,15 +52,15 @@ export function renderSessionStart(scope: Scope): SessionStartResult {
     out.push(`- Completed: ${state.completedNodes.join(', ') || '(none)'}`);
 
     if (state.currentNode === null) {
-      out.push('- COMPLETED · Next-Action: `ttur task archive ' + taskId + '`');
+      out.push('- COMPLETED · Next-Action: `withy task archive ' + taskId + '`');
     } else if (node?.type === 'switch') {
       out.push('- DECISION POINT — choose one:');
       for (const b of node.branches) {
         out.push(`    · ${b.label}${b.default ? ' (default)' : ''}${b.criteria ? ` — ${b.criteria}` : ''}`);
       }
-      out.push(`- Next-Action: \`ttur next --branch <label> --reason "..." --json\``);
+      out.push(`- Next-Action: \`withy next --branch <label> --reason "..." --json\``);
     } else {
-      out.push(`- Next-Action: \`ttur next --json\``);
+      out.push(`- Next-Action: \`withy next --json\``);
     }
   }
 

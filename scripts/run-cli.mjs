@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 
-const build = spawnSync('pnpm', ['--silent', '--filter', '@tuteur/cli', 'build'], {
+const build = spawnSync('pnpm', ['--silent', '--filter', '@withy/cli', 'build'], {
   encoding: 'utf8',
 });
 

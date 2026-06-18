@@ -15,7 +15,7 @@ interface SidebarProps {
 
 // 左栏:品牌 + 全局 scope + 项目列表(含 git 分支)。项目身份走 /<name> 路径态。
 // 切项目保持当前功能段(featureSuffix),不跳回看板。
-// 客户端组件不可 import @tuteur/core(会把 node:fs 带进浏览器包),品牌名由上层 prop 传入。
+// 客户端组件不可 import @withy/core(会把 node:fs 带进浏览器包),品牌名由上层 prop 传入。
 export function Sidebar({ projects, productName }: SidebarProps) {
   const t = useTranslations('sidebar');
   const pathname = usePathname();

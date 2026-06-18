@@ -4,6 +4,7 @@ import {
   initialState,
   listTasks,
   readDeveloper,
+  listTaskArtifacts,
   readKnowledgeEntry,
   readState,
   readTask,
@@ -15,7 +16,7 @@ import {
   writeState,
   writeTask,
   type Task,
-} from '@tuteur/core';
+} from '@withy/core';
 import type { Command } from 'commander';
 import { emit, makeTaskId, requireProjectScope, resolveTaskId } from '../harness/runtime.js';
 
@@ -62,7 +63,7 @@ function runStart(titleOrId: string, options: StartOptions): void {
   const developer = readDeveloper(scope);
   const assignee = options.assignee ?? developer?.slug;
   if (!assignee) {
-    emit({ ok: false, error: 'no developer identity — run `ttur init -u <name>` or pass --assignee <slug>' }, 1);
+    emit({ ok: false, error: 'no developer identity — run `withy init -u <name>` or pass --assignee <slug>' }, 1);
   }
   const creator = developer?.slug ?? assignee;
 
@@ -148,6 +149,7 @@ function runStatus(taskArg: string | undefined): void {
     node: state.currentNode,
     completed: state.completedNodes,
     decisions: state.decisions,
+    artifacts: listTaskArtifacts(scope, id),
   });
 }
 
