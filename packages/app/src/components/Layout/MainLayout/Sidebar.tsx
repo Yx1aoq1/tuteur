@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
-import { AddProjectDialog } from './AddProjectDialog';
+import { usePathname } from 'next/navigation';
+import { AddProjectDialog } from '../common/AddProjectDialog';
+import { parseRoute } from '@/constants/views';
 import type { ProjectCard } from '@/types/dashboard';
 
 interface SidebarProps {
@@ -12,13 +13,13 @@ interface SidebarProps {
   productName: string;
 }
 
-// 左栏:品牌 + 全局 scope + 项目列表(含 git 分支)。项目切换走 ?project= URL 态。
+// 左栏:品牌 + 全局 scope + 项目列表(含 git 分支)。项目身份走 /<name> 路径态。
+// 切项目保持当前功能段(featureSuffix),不跳回看板。
 // 客户端组件不可 import @tuteur/core(会把 node:fs 带进浏览器包),品牌名由上层 prop 传入。
 export function Sidebar({ projects, productName }: SidebarProps) {
   const t = useTranslations('sidebar');
-  const params = useSearchParams();
-  const isGlobal = params.get('scope') === 'global';
-  const activeProject = params.get('project') ?? (isGlobal ? null : (projects[0]?.path ?? null));
+  const pathname = usePathname();
+  const { project: activeName, featureSuffix, isGlobal } = parseRoute(pathname);
   const [addOpen, setAddOpen] = useState(false);
 
   return (
@@ -29,7 +30,7 @@ export function Sidebar({ projects, productName }: SidebarProps) {
         <em className="italic text-terracotta">{productName.slice(2).toLowerCase()}</em>
       </div>
 
-      <Link href="/?scope=global" className={scopeClass(isGlobal)}>
+      <Link href="/settings" className={scopeClass(isGlobal)}>
         <span className="flex shrink-0 text-teal">
           <GlobeIcon />
         </span>
@@ -42,29 +43,30 @@ export function Sidebar({ projects, productName }: SidebarProps) {
       <p className="-mb-1 px-1.5 text-[10px] font-bold uppercase tracking-[1.5px] text-ink-faint">{t('projects')}</p>
       <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto">
         {projects.length === 0 && <p className="px-2.5 py-2 text-[12px] text-ink-faint">{t('empty')}</p>}
-        {projects.map(project => (
-          <Link
-            key={project.path}
-            href={`/?project=${encodeURIComponent(project.path)}`}
-            className={projectClass(!isGlobal && activeProject === project.path)}
-          >
-            <span className="flex items-center gap-2.5">
-              <span
-                className={`h-2 w-2 shrink-0 rounded-full ${dotClass(!isGlobal && activeProject === project.path)}`}
-              />
-              <span className="overflow-hidden text-ellipsis whitespace-nowrap text-[13.5px] font-semibold">
-                {project.name}
+        {projects.map(project => {
+          const active = !isGlobal && activeName === project.name;
+          return (
+            <Link
+              key={project.path}
+              href={`/${encodeURIComponent(project.name)}${featureSuffix}`}
+              className={projectClass(active)}
+            >
+              <span className="flex items-center gap-2.5">
+                <span className={`h-2 w-2 shrink-0 rounded-full ${dotClass(active)}`} />
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap text-[13.5px] font-semibold">
+                  {project.name}
+                </span>
+                <span className="ml-auto text-[11px] text-ink-faint">{project.taskCount}</span>
               </span>
-              <span className="ml-auto text-[11px] text-ink-faint">{project.taskCount}</span>
-            </span>
-            {project.branch && (
-              <span className="flex items-center gap-1.5 pl-[17px] font-mono text-[11px] text-ink-faint">
-                <BranchIcon />
-                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{project.branch}</span>
-              </span>
-            )}
-          </Link>
-        ))}
+              {project.branch && (
+                <span className="flex items-center gap-1.5 pl-[17px] font-mono text-[11px] text-ink-faint">
+                  <BranchIcon />
+                  <span className="overflow-hidden text-ellipsis whitespace-nowrap">{project.branch}</span>
+                </span>
+              )}
+            </Link>
+          );
+        })}
         <button
           type="button"
           onClick={() => setAddOpen(true)}

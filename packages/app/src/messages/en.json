@@ -130,6 +130,11 @@
   },
   "addProject": {
     "title": "Add project",
+    "nameLabel": "Project name",
+    "namePlaceholder": "Unique name used in the URL, e.g. app-a",
+    "nameTaken": "That project name is taken — pick a different one.",
+    "nameReserved": "That name is reserved — pick a different one.",
+    "nameRequired": "Enter a project name.",
     "pathLabel": "Project root path",
     "pathPlaceholder": "/absolute/path/to/your/repo",
     "pick": "Choose…",

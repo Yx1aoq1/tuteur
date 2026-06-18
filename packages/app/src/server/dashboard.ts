@@ -44,12 +44,21 @@ const COLUMN_BY_STATUS: Record<TaskStatus, BoardColumn | null> = {
 };
 
 /**
- * 解析本次请求作用的项目 scope。
- * @param project 前端传入的项目根路径(?project=);缺省时回退默认项目。
+ * 按项目名(URL 身份 /<name>)解析 scope:查全局注册表得 path 再解析。
+ * 重名取首个;名不存在或路径已失效返回 null。
+ * @param name 路由段 params.project(已 URL 解码)
  */
-export function resolveScopeForRequest(project?: string): Scope | null {
-  if (project) return resolveProjectScope(project);
-  return getDefaultProjectScope();
+export function resolveScopeByName(name: string): Scope | null {
+  const ref = readProjects(resolveGlobalScope()).projects.find(project => project.name === name);
+  return ref ? resolveProjectScope(ref.path) : null;
+}
+
+// 注册表里第一个可解析项目的名称;供根路由 landing 重定向。
+export function getFirstProjectName(): string | null {
+  for (const project of readProjects(resolveGlobalScope()).projects) {
+    if (resolveProjectScope(project.path)) return project.name;
+  }
+  return null;
 }
 
 // 默认项目:环境变量优先,其次注册表里第一个可解析的项目

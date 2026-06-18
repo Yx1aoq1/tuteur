@@ -130,6 +130,11 @@
   },
   "addProject": {
     "title": "加项目",
+    "nameLabel": "项目名称",
+    "namePlaceholder": "用于地址栏的唯一名,例如 app-a",
+    "nameTaken": "项目名已存在,请改用其他名称。",
+    "nameReserved": "该名称为系统保留,请改用其他名称。",
+    "nameRequired": "请填写项目名称。",
     "pathLabel": "项目根路径",
     "pathPlaceholder": "/绝对/路径/到/你的/仓库",
     "pick": "选择目录",

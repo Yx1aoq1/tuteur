@@ -2,8 +2,6 @@ import type { Metadata } from 'next';
 import { JetBrains_Mono, Fraunces, Inter } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale } from 'next-intl/server';
-import { AppShell } from '@/components/app-shell/AppShell';
-import { getProjects } from '@/server/dashboard';
 import { PRODUCT_DISPLAY_NAME } from '@/product';
 import { THEME_STORAGE_KEY } from '@/hooks/useTheme';
 import './globals.css';
@@ -25,8 +23,8 @@ export const metadata: Metadata = {
 // 首屏防闪烁:渲染前依据 localStorage 设好 data-theme(默认 light)
 const themeScript = `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
 
+// 根布局只提供 html/body/字体/intl/主题;具体布局壳(项目侧栏/全局)由各路由段自带。
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const projects = getProjects();
   const locale = await getLocale();
 
   return (
@@ -40,9 +38,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <NextIntlClientProvider>
-          <AppShell projects={projects}>{children}</AppShell>
-        </NextIntlClientProvider>
+        <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>
   );

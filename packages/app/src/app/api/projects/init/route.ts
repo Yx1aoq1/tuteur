@@ -1,15 +1,16 @@
 import { spawn } from 'node:child_process';
-import { basename } from 'node:path';
 import {
   getInitAgentChoices,
   serializeToCommand,
   resolveGlobalScope,
+  findProjectByName,
   getAgentPlatform,
   upsertProject,
   detectTuteur,
   isDirectory,
 } from '@tuteur/core';
 import type { AgentTool, InitConfig, SkillInstallMode } from '@tuteur/core';
+import { RESERVED_PROJECT_NAMES } from '@/constants/views';
 
 export const runtime = 'nodejs';
 
@@ -29,7 +30,7 @@ export function GET(): Response {
 // web 触发 init(设计 §2.4):校验路径(存在/目录/无 .tuteur)→ spawn ttur init(非交互 per-agent flag)
 // → 回传 exitCode/stdout/stderr;成功则 upsert 进项目列表。
 export async function POST(req: Request): Promise<Response> {
-  let body: { path?: unknown; agents?: unknown; skills?: unknown; user?: unknown };
+  let body: { path?: unknown; name?: unknown; agents?: unknown; skills?: unknown; user?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -42,6 +43,20 @@ export async function POST(req: Request): Promise<Response> {
   }
   if (detectTuteur(path)) {
     return Response.json({ ok: false, error: 'alreadyInitialized' }, { status: 409 });
+  }
+
+  const name = typeof body.name === 'string' ? body.name.trim() : '';
+  if (!name) {
+    return Response.json({ ok: false, error: 'nameRequired' }, { status: 400 });
+  }
+  if (RESERVED_PROJECT_NAMES.includes(name)) {
+    return Response.json({ ok: false, error: 'nameReserved' }, { status: 409 });
+  }
+  const global = resolveGlobalScope();
+  // 名称是唯一 URL 身份;被别的路径占用则在 spawn 前拒绝,避免初始化后才发现重名。
+  const clash = findProjectByName(global, name);
+  if (clash && clash.path !== path) {
+    return Response.json({ ok: false, error: 'nameTaken' }, { status: 409 });
   }
 
   const agents = sanitizeAgents(body.agents);
@@ -70,7 +85,8 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  upsertProject(resolveGlobalScope(), { path, name: basename(path) });
+  // `ttur init` 已用 basename 登记;按 path 去重的 upsert 在此覆盖为用户填写的名称。
+  upsertProject(global, { path, name });
   return Response.json({ ok: true, code: 0, stdout: run.stdout, stderr: run.stderr, command });
 }
 

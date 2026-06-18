@@ -25,6 +25,8 @@ export function AddProjectDialog({ onClose }: AddProjectDialogProps) {
 
   const [stage, setStage] = useState<Stage>('detect');
   const [path, setPath] = useState('');
+  const [name, setName] = useState('');
+  const [nameDirty, setNameDirty] = useState(false); // 用户手改过名称后,选路径不再覆盖
   const [error, setError] = useState<string | null>(null);
   const [log, setLog] = useState<string | null>(null);
 
@@ -32,6 +34,12 @@ export function AddProjectDialog({ onClose }: AddProjectDialogProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [skills, setSkills] = useState<'link' | 'copy'>('link');
   const [user, setUser] = useState('');
+
+  // 选/填路径后自动用末段目录名回填名称(用户未手改过才覆盖),可编辑。
+  const applyPath = (next: string) => {
+    setPath(next);
+    if (!nameDirty) setName(baseName(next));
+  };
 
   // 调起系统原生目录对话框回填路径;非 mac(501 unsupported)时提示手填。
   const pickDir = () => {
@@ -43,7 +51,7 @@ export function AddProjectDialog({ onClose }: AddProjectDialogProps) {
         setError(t('pickUnsupported'));
         return;
       }
-      if (data.ok && data.path) setPath(data.path);
+      if (data.ok && data.path) applyPath(data.path);
     });
   };
 
@@ -53,11 +61,24 @@ export function AddProjectDialog({ onClose }: AddProjectDialogProps) {
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path }),
+        body: JSON.stringify({ path, name }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error === 'invalidPath' ? t('invalidPath') : data.error);
+        const code = data.error;
+        setError(
+          code === 'invalidPath'
+            ? t('invalidPath')
+            : code === 'nameTaken'
+              ? t('nameTaken')
+              : code === 'nameReserved'
+                ? t('nameReserved')
+                : code === 'nameRequired'
+                  ? t('nameRequired')
+                  : typeof code === 'string'
+                    ? code
+                    : 'error',
+        );
         return;
       }
       if (data.status === 'needInit') {
@@ -84,12 +105,17 @@ export function AddProjectDialog({ onClose }: AddProjectDialogProps) {
       const res = await fetch('/api/projects/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path, agents: [...selected], skills, user }),
+        body: JSON.stringify({ path, name, agents: [...selected], skills, user }),
       });
       const data = await res.json();
       if (res.ok) {
         router.refresh();
         onClose();
+        return;
+      }
+      if (res.status === 409 && (data.error === 'nameTaken' || data.error === 'nameReserved')) {
+        setError(data.error === 'nameReserved' ? t('nameReserved') : t('nameTaken'));
+        setStage('detect'); // 回到第一步改名
         return;
       }
       setError(typeof data.code === 'number' ? t('initFailed', { code: data.code }) : (data.error ?? 'init failed'));
@@ -125,11 +151,22 @@ export function AddProjectDialog({ onClose }: AddProjectDialogProps) {
           </button>
         </div>
 
+        <label className="mb-1 block text-[12px] font-semibold text-ink-soft">{t('nameLabel')}</label>
+        <input
+          value={name}
+          onChange={e => {
+            setName(e.target.value);
+            setNameDirty(true);
+          }}
+          placeholder={t('namePlaceholder')}
+          className="mb-3 w-full rounded-lg border border-line-strong bg-paper-sunken px-2.5 py-2 text-[12px] text-ink outline-none focus:border-brand"
+        />
+
         <label className="mb-1 block text-[12px] font-semibold text-ink-soft">{t('pathLabel')}</label>
         <div className="mb-3 flex gap-2">
           <input
             value={path}
-            onChange={e => setPath(e.target.value)}
+            onChange={e => applyPath(e.target.value)}
             placeholder={t('pathPlaceholder')}
             disabled={stage === 'init'}
             className="min-w-0 flex-1 rounded-lg border border-line-strong bg-paper-sunken px-2.5 py-2 font-mono text-[12px] text-ink outline-none focus:border-brand disabled:opacity-60"
@@ -203,7 +240,12 @@ export function AddProjectDialog({ onClose }: AddProjectDialogProps) {
 
         <div className="flex justify-end gap-2">
           {stage === 'detect' ? (
-            <button type="button" disabled={pending || !path.trim()} onClick={detect} className={primaryBtn}>
+            <button
+              type="button"
+              disabled={pending || !path.trim() || !name.trim()}
+              onClick={detect}
+              className={primaryBtn}
+            >
               {pending ? t('detecting') : t('detect')}
             </button>
           ) : (
@@ -219,6 +261,12 @@ export function AddProjectDialog({ onClose }: AddProjectDialogProps) {
 
 const primaryBtn =
   'cursor-pointer rounded-lg bg-brand px-3.5 py-2 text-[13px] font-semibold text-brand-ink disabled:opacity-50';
+
+// 取路径末段目录名作为项目名建议(去尾斜杠,兼容 win 反斜杠)。
+function baseName(path: string): string {
+  const parts = path.replace(/[/\\]+$/, '').split(/[/\\]/);
+  return parts[parts.length - 1] ?? '';
+}
 
 function segClass(active: boolean): string {
   const base = 'cursor-pointer px-2.5 py-1 text-[12px] font-semibold';
