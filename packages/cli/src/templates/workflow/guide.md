@@ -1,9 +1,29 @@
-# 项目须知
+# Project guide
 
-这是一个由 {{PRODUCT_NAME}} 托管的项目。请按本次注入的 workflow 与任务状态推进:
+This project is managed by {{PRODUCT_NAME}}. Work through the injected workflow and task state — don't freelance around it.
 
-- 流转只认 `withy next`;agent 自称完成不等于步骤完成。
-- 声明了产物 / 检查 / 审批的步骤,必须门禁通过才能推进。
-- 不清楚下一步时,以注入的 Next-Action 为准。
+## Rules
 
-> 想改这段开场说明,直接编辑 `{{PROJECT_DIR}}/guide.md`(或在控制台编辑)。
+- The flow advances only via `withy next`. An agent claiming "done" does not advance a step.
+- Steps that declare artifacts / checks / approvals must pass their gate before moving on.
+- When the next move is unclear, follow the injected Next-Action.
+
+## Task commands
+
+```bash
+withy task start "<title>"   # create a task from a title, or focus an existing task id
+withy task status            # show the current task's node and phase
+withy task list --mine       # list your tasks (drop --mine to see everyone's)
+withy next                   # advance the current node — the core flow primitive
+withy approve                # record human approval for a gated node
+```
+
+## Discover more
+
+The list above is just the essentials. For the full surface, ask the CLI — its help always matches the installed version:
+
+```bash
+withy -h            # all top-level commands (task, next, approve, rewind, knowledge, ...)
+withy task -h       # task subcommands: status, list, start, archive
+withy <command> -h  # flags and details for any single command
+```
