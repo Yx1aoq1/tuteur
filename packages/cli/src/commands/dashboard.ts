@@ -1,9 +1,9 @@
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { resolveGlobalScope, runtimeDir, detectWithy, isDirectory } from '@withy/core';
+import { resolveGlobalScope, runtimeDir, detectWithy } from '@withy/core';
 import type { Command } from 'commander';
-import { DASHBOARD_PACKAGE_NAME, DASHBOARD_PROJECT_ROOT_ENV, PRODUCT_DISPLAY_NAME } from '../constants/product.js';
+import { DASHBOARD_PACKAGE_NAME, DASHBOARD_PROJECT_ROOT_ENV } from '../constants/product.js';
 
 const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_PORT = 47321;
@@ -29,11 +29,10 @@ export default function registerDashboardCommand(program: Command): void {
   dashboard.command('stop').description('Stop the dashboard background process').action(stopDashboard);
 }
 
-// dashboard 是多项目管理器:启动只需全局根 ~/.withy 存在,不要求 cwd 是已初始化项目。
-// 具体项目由 web 端经 ?project= 选择(web.md §2.3);runtime 状态写在全局根下,与 cwd 解绑。
+// dashboard 是多项目管理器:启动按需自建全局根 ~/.withy(下方 runtime 目录递归创建即带出根),
+// 不要求先 init,也不要求 cwd 是已初始化项目。具体项目由 web 端经 ?project= 选择(web.md §2.3)。
 function startDashboard(): void {
   const global = resolveGlobalScope();
-  assertGlobalInitialized(global.withyDir);
 
   const stateDir = runtimeDir(global);
   const statePath = resolve(stateDir, 'dashboard.json');
@@ -120,13 +119,6 @@ function readDashboardState(statePath: string): DashboardState | null {
 
 function defaultDashboardUrl(): string {
   return `http://${DEFAULT_HOST}:${DEFAULT_PORT}`;
-}
-
-// dashboard 依赖全局根的 config/projects 注册表;缺失则引导先跑 init --global(web.md §7)。
-function assertGlobalInitialized(withyDir: string): void {
-  if (!isDirectory(withyDir)) {
-    throw new Error(`${PRODUCT_DISPLAY_NAME} global root is not initialized. Run \`withy init --global\` first.`);
-  }
 }
 
 function isProcessAlive(pid: number): boolean {

@@ -278,13 +278,13 @@ withy complete / complete 端点
 
 ## 7. 进程与部署
 
-| 项     | 现状                                                                                          | 目标                                |
-| ------ | --------------------------------------------------------------------------------------------- | ----------------------------------- |
-| 启动   | `withy dashboard start` 门禁=全局根存在;不绑单项目,cwd 是项目时仅作默认兜底                   | standalone server(脱离 monorepo,W9) |
-| 监听   | `127.0.0.1:47321`                                                                             | 不变,不暴露公网                     |
-| 全局根 | 启动须能定位 `~/.withy`(`runtime/dashboard.json` 也写此处);缺失报错引导 `withy init --global` | 不变                                |
+| 项     | 现状                                                                                        | 目标                                |
+| ------ | ------------------------------------------------------------------------------------------- | ----------------------------------- |
+| 启动   | `withy dashboard start` 无门禁:按需自建全局根;不绑单项目,cwd 是项目时仅作默认兜底           | standalone server(脱离 monorepo,W9) |
+| 监听   | `127.0.0.1:47321`                                                                           | 不变,不暴露公网                     |
+| 全局根 | 启动时 `mkdirSync(~/.withy/runtime, {recursive})` 顺带自建;`projects.json` 缺失按空注册表读 | 不变                                |
 
-> 启动不再要求 cwd 是已初始化项目(旧行为会因当前目录无 `.withy/` 报 "not initialized")。门禁改为**全局根**:dashboard 读全局 `projects.json` 注册表渲染项目列表,具体项目是否初始化由 web 端按 §2.1/§2.4 检测与引导 init。`WITHY_PROJECT_ROOT` 仅在 cwd 本身是项目时注入作默认兜底(§2.3)。
+> 启动不再要求 cwd 是已初始化项目,也**不再要求先 `init --global`**:`~/.withy/` 由启动时创建 runtime 目录顺带带出,`projects.json` 缺失时 `readProjects` 返回空注册表(store.ts),项目在 web 端"加项目"时再写入(§2.1)。`init --global` 只负责种 skills 配置与知识库模板,与 dashboard 启动解耦。`WITHY_PROJECT_ROOT` 仅在 cwd 本身是项目时注入作默认兜底(§2.3)。
 
 Next 必须带 Node server(要文件访问 + 调 core),不能纯静态导出。生产改 `next build` + standalone。
 
