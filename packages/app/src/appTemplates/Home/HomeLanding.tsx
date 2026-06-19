@@ -12,15 +12,17 @@ export function HomeLanding() {
   const [addOpen, setAddOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen flex-1 flex-col items-center justify-center gap-4">
-      <EmptyState title={t('unselectedTitle')} hint={t('unselectedHint')} />
-      <button
-        type="button"
-        onClick={() => setAddOpen(true)}
-        className="cursor-pointer rounded-lg bg-brand px-3.5 py-2 text-[13px] font-semibold text-brand-ink"
-      >
-        {tSidebar('addProject')}
-      </button>
+    <div className="flex min-h-screen flex-1 flex-col items-center justify-center">
+      <div className="flex flex-col items-center gap-2">
+        <EmptyState title={t('unselectedTitle')} hint={t('unselectedHint')} />
+        <button
+          type="button"
+          onClick={() => setAddOpen(true)}
+          className="cursor-pointer rounded-lg bg-brand px-3.5 py-2 text-[13px] font-semibold text-brand-ink"
+        >
+          {tSidebar('addProject')}
+        </button>
+      </div>
       {addOpen && <AddProjectDialog onClose={() => setAddOpen(false)} />}
     </div>
   );
