@@ -40,14 +40,14 @@ Every `wiki/<id>.md` begins with frontmatter that drives navigation, the web lis
 
 ```yaml
 ---
-id: api-conventions          # stable identifier — injection and [[links]] resolve by id, so a rename or move never breaks references
+id: api-conventions # stable identifier — injection and [[links]] resolve by id, so a rename or move never breaks references
 title: API conventions
-kind: summary                # summary | entity | concept | comparison | spec | overview | template
+kind: summary # summary | entity | concept | comparison | spec | overview | template
 tags: [backend, convention]
-summary: REST naming, error codes, pagination rules.   # one line; what the index and index-mode injection show
-inject: index                # index (default) injects title + summary + path; full injects the whole body
-injectByDefault: false       # whether it joins the default injection set
-sources: [sources/rest-rfc.md]   # which raw sources this page synthesizes (traceable)
+summary: REST naming, error codes, pagination rules. # one line; what the index and index-mode injection show
+inject: index # index (default) injects title + summary + path; full injects the whole body
+injectByDefault: false # whether it joins the default injection set
+sources: [sources/rest-rfc.md] # which raw sources this page synthesizes (traceable)
 updated: 2026-06-19
 ---
 ```
