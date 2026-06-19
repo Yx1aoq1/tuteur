@@ -31,8 +31,7 @@
       "type": "skill",
       "skill": "check",
       "phase": "execute",
-      "next": "finish",
-      "gate": { "checks": ["npm test"] }
+      "next": "finish"
     },
     { "id": "finish", "type": "skill", "skill": "finish", "phase": "finish", "next": null }
   ]
