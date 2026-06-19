@@ -1,0 +1,8 @@
+# Developer identity and local runtime state
+# (workspace/ is committed — its subdirs are the project member roster)
+.developer
+runtime/
+
+# Temporary files
+*.tmp
+*.new
