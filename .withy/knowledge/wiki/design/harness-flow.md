@@ -1,7 +1,19 @@
+---
+id: harness-flow
+title: 'Harness 全流程与阶段产物'
+scope: project
+kind: overview
+tags: [withy, flow, end-to-end, artifacts, recovery]
+summary: '端到端串联:初始化→会话注入→任务分支→三阶段执行→完成/归档,每阶段产物与异常恢复路径。'
+inject: index
+injectByDefault: false
+updated: 2026-06-19
+---
+
 # Harness 全流程与阶段产物
 
 > 本文回答「Withy 从项目初始化、会话开始、任务对话到流程结束如何串起来，以及每个阶段留下什么产物」。
-> 规则与 schema 仍以 [core.md](./core.md)、[harness.md](./harness.md)、[cli.md](./cli.md) 和 [knowledge.md](./knowledge.md) 为准；本文只做跨域串联，不另立协议。
+> 规则与 schema 仍以 [core.md](./core.md)、[harness.md](./harness.md)、[cli.md](./cli.md) 和 [knowledge-base.md](./knowledge-base.md) 为准；本文只做跨域串联，不另立协议。
 
 ---
 
@@ -147,14 +159,14 @@ flowchart TD
 
 ### 3.3 默认 workflow 业务产物
 
-| 路径/节点       | 输入                                | 目标产物                                         | 当前硬门禁                              | 建议模板 id                            |
-| --------------- | ----------------------------------- | ------------------------------------------------ | --------------------------------------- | -------------------------------------- |
-| `triage`        | 用户需求、任务元数据、分支 criteria | `state.decisions.triage` + `decision` 事件       | 合法 branch label                       | 无独立文件模板                         |
-| `brainstorm`    | 原始需求、项目知识                  | `prd.md`、`design.md`、`implement.md`            | `prd.md` + `design.md` + `implement.md` | `prd-template`、`design-template`      |
-| `grill-me`      | 三份规划产物、用户澄清、项目规范    | 审查并回写 `prd.md`、`design.md`、`implement.md` | 三份规划产物 + approval                 | `design-template`                      |
-| `dev`           | 规划产物、上下文清单、代码库        | 生产代码、测试代码、必要迁移/文档                | **当前无 artifact/check gate**          | 通常不需要文档模板                     |
+| 路径/节点       | 输入                                | 目标产物                                         | 当前硬门禁                                                | 建议模板 id                            |
+| --------------- | ----------------------------------- | ------------------------------------------------ | --------------------------------------------------------- | -------------------------------------- |
+| `triage`        | 用户需求、任务元数据、分支 criteria | `state.decisions.triage` + `decision` 事件       | 合法 branch label                                         | 无独立文件模板                         |
+| `brainstorm`    | 原始需求、项目知识                  | `prd.md`、`design.md`、`implement.md`            | `prd.md` + `design.md` + `implement.md`                   | `prd-template`、`design-template`      |
+| `grill-me`      | 三份规划产物、用户澄清、项目规范    | 审查并回写 `prd.md`、`design.md`、`implement.md` | 三份规划产物 + approval                                   | `design-template`                      |
+| `dev`           | 规划产物、上下文清单、代码库        | 生产代码、测试代码、必要迁移/文档                | **当前无 artifact/check gate**                            | 通常不需要文档模板                     |
 | `check`         | git diff、设计与实施计划、测试命令  | `check-result.json`                              | **当前无 gate**(实施清单完成度改由归档内置校验,core §9.2) | `check-result-template` 或 JSON schema |
-| `wrapup/finish` | 全部产物、`git diff`、验证结果      | 无文件产物(口头 recap + 知识库沉淀)              | **当前无 artifact gate**                | 无                                     |
+| `wrapup/finish` | 全部产物、`git diff`、验证结果      | 无文件产物(口头 recap + 知识库沉淀)              | **当前无 artifact gate**                                  | 无                                     |
 
 上表的“目标产物”来自现有 skill 正文和设计文档；除明确标注的当前硬门禁外，其他产物还没有被 workflow 强制要求。
 
@@ -240,3 +252,9 @@ workflow gate.artifacts/checks/approval
 5. 跑 standard/small/research 三条端到端样例
    验证: 正常、门禁失败、approval、skip、rewind、完成与归档路径均有事件记录
 ```
+
+---
+
+## 关联页
+
+- [[core]] · [[harness]] · [[cli]] · [[knowledge-base]]

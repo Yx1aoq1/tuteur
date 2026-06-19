@@ -1,7 +1,19 @@
+---
+id: prd
+title: 'Withy 产品需求文档(PRD)'
+scope: project
+kind: overview
+tags: [withy, prd, requirements, scope, mvp]
+summary: '做什么/为什么/边界/MVP 验收口径——本地优先的 AI coding agent 工作流 harness。'
+inject: index
+injectByDefault: false
+updated: 2026-06-19
+---
+
 # Withy 产品需求文档(PRD)
 
 > 本文是需求分析文档,回答 **做什么 / 为什么 / 边界在哪 / MVP 验收口径**,不写具体实现。
-> 实现规格(数据结构、命令、API、门禁算法等)见 [`docs/design/`](./design/INDEX.md)。两者分工:PRD 定义需求与边界,design 定义如何落地。
+> 实现规格(数据结构、命令、API、门禁算法等)见 [`docs/design/`](../design/decisions.md)。两者分工:PRD 定义需求与边界,design 定义如何落地。
 
 ---
 
@@ -178,7 +190,7 @@ Withy 不启动 agent 进程,执行发生在用户的交互会话中;系统以**
 
 ### 7.12 知识库(Knowledge Base)
 
-可积累、可复用的本地知识源,分**全局**(跨项目个人知识)与**项目**(本仓库特定知识)两级,路径同构。借鉴「LLM 维护的 wiki」理念:**人负责选源、提问、审阅;agent 负责把源读进来、写摘要、维护交叉引用与索引**——知识被编译一次并持续保鲜,而非每次问答重新检索。知识库为会话注入(§7.7)提供「必要索引」,agent 按需读全文。实现规格见 [`docs/design/knowledge.md`](./design/knowledge.md)。
+可积累、可复用的本地知识源,分**全局**(跨项目个人知识)与**项目**(本仓库特定知识)两级,路径同构。借鉴「LLM 维护的 wiki」理念:**人负责选源、提问、审阅;agent 负责把源读进来、写摘要、维护交叉引用与索引**——知识被编译一次并持续保鲜,而非每次问答重新检索。知识库为会话注入(§7.7)提供「必要索引」,agent 按需读全文。实现规格见 [`docs/design/knowledge-base.md`](../design/knowledge-base.md)。
 
 ---
 
@@ -318,9 +330,15 @@ MVP 完成的判断标准:
 
 ## 14. 关联文档
 
-- 实现总览与导航:[`docs/design/INDEX.md`](./design/INDEX.md)
-- 数据与领域模型(事实源):[`docs/design/core.md`](./design/core.md)
-- CLI 与初始化、适配:[`docs/design/cli.md`](./design/cli.md)
-- Harness:工作流、门禁、上下文、任务定位:[`docs/design/harness.md`](./design/harness.md)
-- 知识库:全局/项目知识库、注入接入:[`docs/design/knowledge.md`](./design/knowledge.md)
-- 可视化控制台:[`docs/design/web.md`](./design/web.md)
+- 实现总览与导航:[`docs/design/decisions.md`](../design/decisions.md)
+- 数据与领域模型(事实源):[`docs/design/core.md`](../design/core.md)
+- CLI 与初始化、适配:[`docs/design/cli.md`](../design/cli.md)
+- Harness:工作流、门禁、上下文、任务定位:[`docs/design/harness.md`](../design/harness.md)
+- 知识库:全局/项目知识库、注入接入:[`docs/design/knowledge-base.md`](../design/knowledge-base.md)
+- 可视化控制台:[`docs/design/web.md`](../design/web.md)
+
+---
+
+## 关联页
+
+- [[decisions]] · [[core]] · [[harness]] · [[knowledge-base]] · [[web]]

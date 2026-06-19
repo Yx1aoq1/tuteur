@@ -1,9 +1,21 @@
+---
+id: knowledge-base
+title: '知识库设计(Knowledge Base)'
+scope: project
+kind: spec
+tags: [withy, knowledge, wiki, injection, karpathy]
+summary: '全局/项目同构 knowledge(karpathy LLM Wiki 三层)、条目 frontmatter schema、ingest/query/lint、多级索引、context.json 注入接入、web 管理。'
+inject: index
+injectByDefault: false
+updated: 2026-06-19
+---
+
 # 知识库设计(Knowledge Base)
 
 > 适用范围:`.withy/knowledge/`(项目)与 `~/.withy/knowledge/`(全局)两级知识库,及其与上下文注入、skill、hook、web 的衔接。
 > 定位:实施规格级。数据读写仍走 [@withy/core](./core.md)(铁律:除 `core/store/*` 外不碰盘);本文定义 KB 的目录模型、条目 schema、维护操作与注入接入。
 > 设计来源:karpathy「LLM Wiki」模式(`gist.github.com/karpathy/442a6bf555914893e9891c11519de94f`)—— LLM 增量维护一个持久、复利的 wiki,而非每次 RAG 重检索;**人选源/提问/审阅,agent 做全部 bookkeeping**。
-> 先读 [INDEX.md](./INDEX.md);注入策略与 hook 见 [harness.md §4/§6](./harness.md);web 管理界面见 [web.md](./web.md)。
+> 先读 [decisions.md](./decisions.md);注入策略与 hook 见 [harness.md §4/§6](./harness.md);web 管理界面见 [web.md](./web.md)。
 
 ---
 
@@ -59,7 +71,7 @@ Withy 的关键改写:karpathy 把 schema 放在 `CLAUDE.md`;Withy 把它放进*
 
 ```yaml
 ---
-id: api-conventions # 稳定标识(注入/`[[链接]]` 按 id 引用,文件改名或移子目录不破)
+id: api-conventions # 稳定标识(注入/`双链` 按 id 引用,文件改名或移子目录不破)
 title: API 设计约定
 scope: global | project # 来源层(由所在 scope 根决定,落盘冗余以便聚合展示)
 kind: summary | entity | concept | comparison | spec | overview | log | template
@@ -114,7 +126,7 @@ updated: 2026-06-13
 - **无 frontmatter**:`index.md` 本身不带 frontmatter,纯导航(对齐 OKF)。
 - **确定性生成**:各级 `index.md` 由 `withy knowledge index` 据 frontmatter **重算**(§9),不手维护——多级手维护必漏页。
 - **何时开子目录**:**默认全平铺在 `wiki/` 根**;只有某领域页数多到根索引扫不动时,才收进一个 `wiki/<topic>/`(避免过度设计)。
-- **id 与路径解耦**:页移进/移出子目录,frontmatter `id` 与正文 `[[id]]` 引用都不破(按 id 解析,§4/§5);只有 `index.md` 的相对路径变,而它由命令重算,无需人管。
+- **id 与路径解耦**:页移进/移出子目录,frontmatter `id` 与正文 `双链` 引用都不破(按 id 解析,§4/§5);只有 `index.md` 的相对路径变,而它由命令重算,无需人管。
 
 ### 6.2 `log.md`(时间线)
 
@@ -132,7 +144,7 @@ updated: 2026-06-13
 
 1. 读根 `index.md` 定位(session-start 已告知知识库位置并注入根索引摘要)。
 2. 下钻相关页 / 子目录 `index.md`。
-3. 顺正文 `[[id]]` 链接跳邻居(一两跳)。
+3. 顺正文 `双链` 链接跳邻居(一两跳)。
 4. 需要时用 agent 自带 grep 在 `knowledge/` 内补刀。
 
 > **两个 index 别混**:`context.json`(§7)是**注入集**(push,会话起点推给 agent 的策划子集);`index.md` 是**目录索引**(pull,agent 据此发现并按需读其余页)。前者是必读的少数,后者是全量地图。
@@ -185,7 +197,7 @@ agent 维护知识库以**直接写文件**为主(karpathy 模型,协议在 `wit
 
 | 命令                                                   | 作用                                                                                                                      | scope                                        |
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `withy knowledge graph [--global] [--merged] [--json]` | 从 `[[链接]]`+frontmatter `sources` **派生**文档关系图(节点/边);供 web 图谱视图 + lint                                    | 默认项目;`--global` 全局;`--merged` 全景(下) |
+| `withy knowledge graph [--global] [--merged] [--json]` | 从 `双链`+frontmatter `sources` **派生**文档关系图(节点/边);供 web 图谱视图 + lint                                        | 默认项目;`--global` 全局;`--merged` 全景(下) |
 | `withy knowledge index [--global]`                     | 据各页 frontmatter **确定性重算各级 `index.md`**(根 catalog + 各 `wiki/` 子目录索引);agent ingest 后调,避免多级手维护漏页 | 默认项目;`--global` 全局                     |
 | `withy knowledge lint [--global]`                      | 机械体检:孤儿页(入度 0)、断链(指向不存在的页)、`injectByDefault` 引用悬空                                                 | 默认项目;`--global` 全局                     |
 
@@ -242,4 +254,10 @@ agent 维护知识库以**直接写文件**为主(karpathy 模型,协议在 `wit
 - 注入解析与 hook 三阶段:[harness.md §4/§6](./harness.md)
 - `withy-knowledge` skill 正文与发现:[harness.md §5](./harness.md)、[cli.md §8.6](./cli.md)
 - 知识库管理 / 注入编排器 / 计划vs实际:[web.md](./web.md)
-- 需求侧(上下文管理、事件):[../PRD.md §7.7/§7.9](../PRD.md)
+- 需求侧(上下文管理、事件):[../product/prd.md §7.7/§7.9](../product/prd.md)
+
+---
+
+## 关联页
+
+- [[core]] · [[harness]] · [[web]] · [[cli]]

@@ -1,3 +1,15 @@
+---
+id: react-patterns
+title: 'React 开发模式与逻辑规范'
+scope: project
+kind: spec
+tags: [guide, frontend, react, hooks, convention]
+summary: '前端规范指南:React 组件设计与组合、状态管理选型、自定义 Hooks 与 useEffect 陷阱、常见反例。'
+inject: index
+injectByDefault: false
+updated: 2026-06-19
+---
+
 # React 开发模式与逻辑规范
 
 ## 2. 组件设计
@@ -363,3 +375,9 @@ useEffect(() => {
 
 - [React 文档](https://react.dev/)
 - [Zustand](https://zustand-demo.pmnd.rs/)
+
+---
+
+## 关联页
+
+- [[nextjs-architecture]] · [[web]]

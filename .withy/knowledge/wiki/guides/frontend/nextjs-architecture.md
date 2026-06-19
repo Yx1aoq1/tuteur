@@ -1,3 +1,15 @@
+---
+id: nextjs-architecture
+title: 'Next.js 核心架构规范'
+scope: project
+kind: spec
+tags: [guide, frontend, nextjs, app-router, convention]
+summary: '前端规范指南:Next.js App Router 项目分层目录、appTemplates 页面模块结构、命名约定、文件路由、next-intl 国际化、错误边界。'
+inject: index
+injectByDefault: false
+updated: 2026-06-19
+---
+
 # Next.js 核心架构规范
 
 ## 1. 项目结构
@@ -462,3 +474,9 @@ function useCreateHabit() {
 
 - [Next.js 文档](https://nextjs.org/docs)
 - [next-intl](https://next-intl.dev/)
+
+---
+
+## 关联页
+
+- [[react-patterns]] · [[web]]

@@ -1,9 +1,21 @@
+---
+id: core
+title: 'Core 设计(@withy/core)'
+scope: project
+kind: spec
+tags: [withy, core, data-model, workflow, schema, store, archive]
+summary: '唯一 .withy 读写层与领域/类型事实源:双层模型、用户模型、数据结构、Store API、门禁状态机、数据契约、InitConfig、归档。'
+inject: index
+injectByDefault: false
+updated: 2026-06-19
+---
+
 # Core 设计(@withy/core)
 
 > 定位:实施规格级。`@withy/core` 是**唯一**的 `.withy/` 读写层、领域逻辑层与类型/校验事实源。CLI、app、hook 全经它访问数据。
 > 本文是 [cli.md](./cli.md)、[harness.md](./harness.md)、[web.md](./web.md) 的共同底座 —— 双层数据格式、用户模型、InitConfig、归档、数据契约都在此定义。
 > 参考实现:Trellis(`mindfold-ai/Trellis`)的注册表+configurator+shared 三层、归档移目录、身份文件 gitignore 等做法。**关键分歧**:Trellis 不做全局且禁止在 home 运行;我们要做全局,故对全局安装设了安全边界(§2.3)。
-> 状态:**P0 已落地**(types/paths/store/workflow〔engine/interpret/gate/runtime/validate〕/task/context/skills/hook/utils/agents 已实现并接入 CLI;全局 scope、InitConfig、discoverSkills 富化、worktree 等仍为推荐设计)。逐项见 [INDEX §3 实现状态矩阵](./INDEX.md#3-实现状态矩阵)。
+> 状态:**P0 已落地**(types/paths/store/workflow〔engine/interpret/gate/runtime/validate〕/task/context/skills/hook/utils/agents 已实现并接入 CLI;全局 scope、InitConfig、discoverSkills 富化、worktree 等仍为推荐设计)。逐项见 [INDEX §3 实现状态矩阵](./decisions.md#3-实现状态矩阵)。
 
 ---
 
@@ -30,13 +42,13 @@
 
 ### 2.1 全局根 `~/.withy/`(单人,不过滤用户)
 
-| 路径                        | 格式 | git        | 内容                                                                                                  | 谁用                               |
-| --------------------------- | ---- | ---------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `config.yaml`               | YAML | —(在 home) | 全局默认:默认 agent/workflow、dashboard 偏好、skills 默认落地方式                                     | web 全局设置页读写;CLI init 读默认 |
-| `projects.json`             | JSON | —          | 已知项目注册表 `[{path,name,addedAt}]`                                                                | web 多项目看板的列表源             |
-| `workflows/*.workflow.json` | JSON | —          | **可选**:跨项目复用的 workflow 模板                                                                   | 新项目 init 时作为模板候选         |
-| `knowledge/`                | 目录 | —          | **可选**:跨项目复用的全局知识库(条目模型见 [knowledge.md](./knowledge.md));新项目 init 时作为模板候选 | 注入候选;web 知识库管理            |
-| `workspace/`                | 任意 | —          | 全局个人草稿                                                                                          | 本人                               |
+| 路径                        | 格式 | git        | 内容                                                                                                            | 谁用                               |
+| --------------------------- | ---- | ---------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `config.yaml`               | YAML | —(在 home) | 全局默认:默认 agent/workflow、dashboard 偏好、skills 默认落地方式                                               | web 全局设置页读写;CLI init 读默认 |
+| `projects.json`             | JSON | —          | 已知项目注册表 `[{path,name,addedAt}]`                                                                          | web 多项目看板的列表源             |
+| `workflows/*.workflow.json` | JSON | —          | **可选**:跨项目复用的 workflow 模板                                                                             | 新项目 init 时作为模板候选         |
+| `knowledge/`                | 目录 | —          | **可选**:跨项目复用的全局知识库(条目模型见 [knowledge-base.md](./knowledge-base.md));新项目 init 时作为模板候选 | 注入候选;web 知识库管理            |
+| `workspace/`                | 任意 | —          | 全局个人草稿                                                                                                    | 本人                               |
 
 全局根**没有** tasks(已定,§10)、没有 workspace 名册、没有 `.developer`(全局即本人,无需过滤)。worktree 并行已移出 MVP(§9.1 方案存档)。
 
@@ -60,22 +72,22 @@ dashboard:
 
 ### 2.2 项目根 `<repo>/.withy/`(协作,过滤用户)
 
-| 路径                            | 格式    | git                 | 内容                                                                                                                             | 谁用                                    |
-| ------------------------------- | ------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| `config.yaml`                   | YAML    | 共享                | 项目配置:默认 workflow/agent、任务过滤、dashboard 端口                                                                           | web/CLI 读                              |
-| `guide.md`                      | MD      | 共享                | **会话开场说明**(项目须知/Withy 介绍);session-start 注全文,用户直接编辑(harness §6.4)                                            | hook 注入;web 编辑                      |
-| `context.json`                  | JSON    | 共享                | 默认注入上下文配置                                                                                                               | harness 注入;web context 页编辑         |
-| `workflows/*.workflow.json`     | JSON    | 共享                | workflow 定义(门禁依据)                                                                                                          | harness 门禁;web workflow 页            |
-| `knowledge/`                    | 目录    | 共享                | 项目知识库(`sources/`+`wiki/`(可分子目录)+ 每级 `index.md`+`log.md`,karpathy 模式;条目 schema 见 [knowledge.md](./knowledge.md)) | hook 注入(注索引);web 知识库管理        |
-| `tasks/<id>/task.json`          | JSON    | 共享                | 任务元数据                                                                                                                       | web 看板/详情;CLI/门禁                  |
-| `tasks/<id>/state.json`         | JSON    | 共享                | workflow 进度游标(currentNode/completedNodes/decisions/**approvals**)                                                            | web 进度;门禁推进                       |
-| `tasks/<id>/<artifact>`         | MD/JSON | 共享                | agent 产物(design.md 等,**按需**)                                                                                                | web artifact 查看;门禁 `gate.artifacts` |
-| `tasks/<id>/events.jsonl`       | JSONL   | 共享                | 事件流水:验收尝试/会话注入/跳过(§4.4)                                                                                            | web 事件时间线与统计;CLI/hook 追加      |
-| `tasks/archive/<YYYY-MM>/<id>/` | 目录    | 共享                | 归档任务(整目录迁入,按归档月分桶,§9)                                                                                             | web 归档视图                            |
-| `template-hashes.json`          | JSON    | 共享                | skill 模板哈希(update 用)                                                                                                        | CLI update                              |
-| `workspace/<slug>/`             | 任意    | **共享(提交)**      | 用户级内容(草稿/笔记);**子目录名即项目成员名册**(§3)                                                                             | 本人写;web/CLI 读名册                   |
-| `.developer`                    | JSON    | **本地(gitignore)** | 当前开发者身份(对齐 Trellis `.developer`)                                                                                        | web 默认过滤;CLI mine                   |
-| `runtime/`                      | JSON    | **本地(gitignore)** | dashboard pid/port、当前任务指针 `current-task.json`(harness §7.1)                                                               | CLI dashboard/hook                      |
+| 路径                            | 格式    | git                 | 内容                                                                                                                                       | 谁用                                    |
+| ------------------------------- | ------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| `config.yaml`                   | YAML    | 共享                | 项目配置:默认 workflow/agent、任务过滤、dashboard 端口                                                                                     | web/CLI 读                              |
+| `guide.md`                      | MD      | 共享                | **会话开场说明**(项目须知/Withy 介绍);session-start 注全文,用户直接编辑(harness §6.4)                                                      | hook 注入;web 编辑                      |
+| `context.json`                  | JSON    | 共享                | 默认注入上下文配置                                                                                                                         | harness 注入;web context 页编辑         |
+| `workflows/*.workflow.json`     | JSON    | 共享                | workflow 定义(门禁依据)                                                                                                                    | harness 门禁;web workflow 页            |
+| `knowledge/`                    | 目录    | 共享                | 项目知识库(`sources/`+`wiki/`(可分子目录)+ 每级 `index.md`+`log.md`,karpathy 模式;条目 schema 见 [knowledge-base.md](./knowledge-base.md)) | hook 注入(注索引);web 知识库管理        |
+| `tasks/<id>/task.json`          | JSON    | 共享                | 任务元数据                                                                                                                                 | web 看板/详情;CLI/门禁                  |
+| `tasks/<id>/state.json`         | JSON    | 共享                | workflow 进度游标(currentNode/completedNodes/decisions/**approvals**)                                                                      | web 进度;门禁推进                       |
+| `tasks/<id>/<artifact>`         | MD/JSON | 共享                | agent 产物(design.md 等,**按需**)                                                                                                          | web artifact 查看;门禁 `gate.artifacts` |
+| `tasks/<id>/events.jsonl`       | JSONL   | 共享                | 事件流水:验收尝试/会话注入/跳过(§4.4)                                                                                                      | web 事件时间线与统计;CLI/hook 追加      |
+| `tasks/archive/<YYYY-MM>/<id>/` | 目录    | 共享                | 归档任务(整目录迁入,按归档月分桶,§9)                                                                                                       | web 归档视图                            |
+| `template-hashes.json`          | JSON    | 共享                | skill 模板哈希(update 用)                                                                                                                  | CLI update                              |
+| `workspace/<slug>/`             | 任意    | **共享(提交)**      | 用户级内容(草稿/笔记);**子目录名即项目成员名册**(§3)                                                                                       | 本人写;web/CLI 读名册                   |
+| `.developer`                    | JSON    | **本地(gitignore)** | 当前开发者身份(对齐 Trellis `.developer`)                                                                                                  | web 默认过滤;CLI mine                   |
+| `runtime/`                      | JSON    | **本地(gitignore)** | dashboard pid/port、当前任务指针 `current-task.json`(harness §7.1)                                                                         | CLI dashboard/hook                      |
 
 `.withy/.gitignore` 固定忽略:`.developer`、`runtime/`、`*.tmp`、`*.new`。**`workspace/` 提交进仓库**(对齐 Trellis)——其子目录 `workspace/<slug>/` 的集合就是项目成员名册,无需单独 `members.json`(§3)。
 
@@ -130,7 +142,7 @@ export function isOwnedBy(task: Task, user: LocalUser): boolean {
 export function listDevelopers(scope: Scope): { slug: string; name: string }[]; // 读 workspace/*/ 目录名 + index.md H1
 ```
 
-不引入用户级 context 覆盖层(个性化靠全局/项目知识库,knowledge.md §7),也不引入名册文件,保持简单。
+不引入用户级 context 覆盖层(个性化靠全局/项目知识库,knowledge-base.md §7),也不引入名册文件,保持简单。
 
 ### 3.1 user ↔ task 关联(参考 Trellis)
 
@@ -290,7 +302,7 @@ workflow 由**三个固定的阶段**(planning / 执行 / 收尾,不可增删,§
 
 三项全可选,没 `gate` 的节点做完直接 complete。**产物只核"存在 + 非空"(L1)**——挡住忘产出/空文件,确定性、便宜、不误判;**内容对不对不由门禁判**(避免引入模型不确定性/schema 引擎),交给 `approval`(人看)或 `checks`(校验命令)。
 
-**artifact 项的两种写法(`ArtifactSpec`)**:可为纯路径字符串(向后兼容),或对象 `{ path, title?, template? }`。`title` 是 web 展示名(画布节点列「本步产出:设计文档」);`template` 引用一条 `kind:template` 的知识 id(knowledge.md §4.1),供 session-start 把模板正文注给 agent、web 预览/编辑模板。**门禁只看 `path`(存在+非空)**——`title`/`template` 纯展示与注入用,不参与放行,红线不动。产物「长什么样」归模板(knowledge),「怎么做出来」归 skill,workflow 只声明「要哪些产物 + 引哪个模板」,不内联 prompt 正文(职责分离,harness §5)。
+**artifact 项的两种写法(`ArtifactSpec`)**:可为纯路径字符串(向后兼容),或对象 `{ path, title?, template? }`。`title` 是 web 展示名(画布节点列「本步产出:设计文档」);`template` 引用一条 `kind:template` 的知识 id(knowledge-base.md §4.1),供 session-start 把模板正文注给 agent、web 预览/编辑模板。**门禁只看 `path`(存在+非空)**——`title`/`template` 纯展示与注入用,不参与放行,红线不动。产物「长什么样」归模板(knowledge),「怎么做出来」归 skill,workflow 只声明「要哪些产物 + 引哪个模板」,不内联 prompt 正文(职责分离,harness §5)。
 
 #### 4.3.2 节点类型内置描述(core 常量,不写进 workflow.json)
 
@@ -328,7 +340,7 @@ run 模式已移除(交互模式唯一,Withy 不启动/托管 agent 进程),`eve
 ### 4.5 context.json
 
 ```jsonc
-// context.json —— 默认注入上下文(harness §4、knowledge.md §7);按知识 id 引用,分两层(项目共享,不分用户)
+// context.json —— 默认注入上下文(harness §4、knowledge-base.md §7);按知识 id 引用,分两层(项目共享,不分用户)
 {
   "default": { "required": ["api-conventions"], "optional": ["db-schema"], "disabled": [] },
   "nodes": { "dev": { "required": ["api-conventions", "test-policy"] } },
@@ -337,7 +349,7 @@ run 模式已移除(交互模式唯一,Withy 不启动/托管 agent 进程),`eve
 
 > 人工确认记录(approvals)已并入 `state.json` 的 `approvals` 字段(§4.2),不再有独立 `approvals.json`。
 > 无 `members.json`:成员名册由提交的 `workspace/<slug>/` 子目录派生(`listDevelopers`,§3),对齐 Trellis。
-> **注全文 vs 注索引**:`context.json` 只说「注哪些知识 id、按哪步」,**注入形态(全文/索引)由各知识条目的 `inject: full | index` 字段决定**(knowledge.md §4/§7)——产物模板、必读短规范等注全文,规范库等长文档注索引(`title+summary+路径`),`resolvePlannedContext` 据此返回带形态的清单(harness §4/§6.4)。**会话须知(guide.md)不在此列**——它是工具文件 `.withy/guide.md`,session-start 直接读取注全文,不走 context.json/知识库(§2.2、harness §6.4)。
+> **注全文 vs 注索引**:`context.json` 只说「注哪些知识 id、按哪步」,**注入形态(全文/索引)由各知识条目的 `inject: full | index` 字段决定**(knowledge-base.md §4/§7)——产物模板、必读短规范等注全文,规范库等长文档注索引(`title+summary+路径`),`resolvePlannedContext` 据此返回带形态的清单(harness §4/§6.4)。**会话须知(guide.md)不在此列**——它是工具文件 `.withy/guide.md`,session-start 直接读取注全文,不走 context.json/知识库(§2.2、harness §6.4)。
 
 ### 4.6 分支判定记录(已并入 state.decisions,不再有 decision.json 产物)
 
@@ -424,7 +436,7 @@ nextNode(scope, taskId, opts?): NextResult;                   // 唯一推进入
 compileWorkflow(wf): MachineDef;              // interpret:把 Workflow 编译为通用 engine 定义;engine.send 做转移(switch=无匹配事件→停)
 rewindTo(scope, taskId, nodeId): State;       // switch 判错恢复:`withy rewind --to <node>` 退游标回目标节点、清下游 completed+approvals、记 rewind 事件(harness §3.1)
 approveCurrentNode(scope, taskId, by): State; // 写 state.approvals[currentNode] + 追加 approval 事件(harness §2.6)
-resolvePlannedContext(scope, taskId, nodeId): PlannedEntry[];  // 合并 global injectByDefault→项目 default→node(knowledge.md §7);每项带 {id, mode:'full'|'index', ...}(§4.5)
+resolvePlannedContext(scope, taskId, nodeId): PlannedEntry[];  // 合并 global injectByDefault→项目 default→node(knowledge-base.md §7);每项带 {id, mode:'full'|'index', ...}(§4.5)
 resolveSkillRef(scope, skill): { path: string };        // 名→具体 skill;解析不到则抛错(harness §5,缺则报错)
 resolveCurrentTask(scope, explicit?): string | null;    // --task > 指针 > 唯一未完成兜底;多个未完成→AMBIGUOUS(harness §7.1)
 phaseOf(wf, nodeId): string | null;           // 节点的阶段归属(读 node.phase);驱动 task.status(hook/complete/task 共用)
@@ -583,3 +595,9 @@ withy task archive <id> [--cancelled]  /  web 归档按钮
 - ~~归档分桶~~ → **已定:按 `archive/<YYYY-MM>/` 分桶**,MVP 直接做,不走平铺过渡。
 - 身份/配置用 JSON 还是 Trellis 式 key=value/YAML?**推荐**:统一 JSON(web 读写一致),不引入 YAML 解析。
 - core 是否独立发包?**推荐**:内部私有包,随 cli/app 构建。
+
+---
+
+## 关联页
+
+- [[cli]] · [[harness]] · [[harness-flow]] · [[web]] · [[knowledge-base]] · [[decisions]]
