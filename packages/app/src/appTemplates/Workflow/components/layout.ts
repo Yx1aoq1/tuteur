@@ -3,7 +3,7 @@ import type { Edge, Node } from '@xyflow/react';
 import type { CanvasNode, CanvasWorkflow } from '@/types/dashboard';
 
 // workflow(纯数据图)→ React Flow 节点/边。自由画布 + 横向软泳道(web §3.3):
-// 三条横带(规划/执行/收尾)按 phases 顺序自上而下平铺为背景,**按内容自动长高**、首尾相接无缝隙。
+// 三条横带(按 phase 划分,带名取 phase.label,缺省回退 phase id)按 phases 顺序自上而下平铺为背景,**按内容自动长高**、首尾相接无缝隙。
 // 节点的 pos 是「带内相对坐标」(x 自由、y 相对所在带顶);全局 y = 带顶 + max(HEADER_H, pos.y),
 // 故节点恒在所属带内、不出带也不夹缝。phase 是权威字段(拖停时按命中带写回,CanvasView);缺省/未知归第一条带。
 

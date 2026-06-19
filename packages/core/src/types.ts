@@ -111,7 +111,7 @@ export type WorkflowNode = z.infer<typeof WorkflowNodeSchema>;
 
 export const PhaseSchema = z.object({
   id: z.string(),
-  label: z.string(),
+  label: z.string().optional(), // 缺省时 UI 以 phase id 作为展示名,模板可不带语言文案
   entry: z.string().optional(),
 });
 export type Phase = z.infer<typeof PhaseSchema>;

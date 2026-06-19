@@ -136,10 +136,10 @@ export interface CanvasSwitchNode {
 
 export type CanvasNode = CanvasSkillNode | CanvasSwitchNode;
 
-// 固定三阶段(规划/执行/收尾):id 对齐 core PHASE_*,label 取 workflow 声明
+// 固定三阶段:id 对齐 core 的 phase id;label 可选,缺省时画布以 id 作展示名
 export interface CanvasPhase {
   id: string;
-  label: string;
+  label?: string;
   entry?: string;
 }
 
