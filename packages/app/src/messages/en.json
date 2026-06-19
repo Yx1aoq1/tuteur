@@ -18,9 +18,8 @@
     "globalScope": "Global scope",
     "unselected": "No project selected",
     "theme": "Theme",
-    "themeLight": "Light",
-    "themeDark": "Dark",
-    "language": "Language"
+    "language": "Language",
+    "deleteProject": "Delete project"
   },
   "views": {
     "board": "Board",
@@ -156,5 +155,16 @@
     "running": "Initializing…",
     "initFailed": "Init failed (exit code {code}).",
     "selectAgent": "Select at least one agent tool."
+  },
+  "deleteProject": {
+    "title": "Delete project",
+    "body": "Remove “{name}” from the dashboard? By default only the project entry is removed — the files on disk stay untouched.",
+    "uninstallLabel": "Also uninstall withy files",
+    "uninstallHint": "Runs withy uninstall: removes .withy/ and managed skill directories from the project.",
+    "cancel": "Cancel",
+    "confirm": "Remove",
+    "confirmUninstall": "Remove & uninstall",
+    "deleting": "Removing…",
+    "uninstallFailed": "Uninstall failed (exit code {code})."
   }
 }

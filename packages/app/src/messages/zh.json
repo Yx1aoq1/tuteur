@@ -18,9 +18,8 @@
     "globalScope": "全局作用域",
     "unselected": "未选择项目",
     "theme": "主题",
-    "themeLight": "亮色",
-    "themeDark": "暗色",
-    "language": "语言"
+    "language": "语言",
+    "deleteProject": "删除项目"
   },
   "views": {
     "board": "看板",
@@ -156,5 +155,16 @@
     "running": "初始化中…",
     "initFailed": "初始化失败(退出码 {code})。",
     "selectAgent": "至少选择一个 agent 工具。"
+  },
+  "deleteProject": {
+    "title": "删除项目",
+    "body": "从控制台移除「{name}」?默认仅移除项目记录,磁盘上的文件保持不变。",
+    "uninstallLabel": "同时卸载 withy 文件",
+    "uninstallHint": "执行 withy uninstall:删除项目里的 .withy/ 与受管 skill 目录。",
+    "cancel": "取消",
+    "confirm": "移除",
+    "confirmUninstall": "移除并卸载",
+    "deleting": "移除中…",
+    "uninstallFailed": "卸载失败(退出码 {code})。"
   }
 }

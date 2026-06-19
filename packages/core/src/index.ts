@@ -101,6 +101,7 @@ export {
   readImplementation,
   readDeveloper,
   findProjectByName,
+  removeProject,
   upsertProject,
   readProjects,
   writeWorkflow,

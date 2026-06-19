@@ -2,7 +2,6 @@ import { Suspense } from 'react';
 import { RealtimeRefresher } from './RealtimeRefresher';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
-import { GlobalSettingsFab } from '../common/GlobalSettingsFab';
 import { PRODUCT_DISPLAY_NAME } from '@/product';
 import type { ProjectCard } from '@/types/dashboard';
 
@@ -11,7 +10,7 @@ interface MainLayoutProps {
   children: React.ReactNode;
 }
 
-// 主布局壳(项目作用域,服务端):左栏(scope 导航)+ 顶栏(视图切换)+ 悬浮全局设置 + 主内容槽。
+// 主布局壳(项目作用域,服务端):左栏(scope 导航 + 主题/语言/设置)+ 顶栏(视图切换 + 删除项目)+ 主内容槽。
 // Sidebar/Topbar/Realtime 用 usePathname 解析 /<name>/<feature> 路由态(仍包 Suspense,无害)。
 // 高度:整体撑满视口(h-screen)并设 600px 最小高度(过矮时整页滚动);主列 min-h-0 让其服从
 // 网格轨道高度,把溢出交给左/右面板各自的内部滚动区,中间区域恒满高、不引发整页滚动。
@@ -27,7 +26,6 @@ export function MainLayout({ projects, children }: MainLayoutProps) {
         </Suspense>
         <div className="relative flex min-h-0 flex-1">{children}</div>
       </div>
-      <GlobalSettingsFab />
       <Suspense fallback={null}>
         <RealtimeRefresher projects={projects} />
       </Suspense>

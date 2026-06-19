@@ -346,6 +346,25 @@ export function upsertProject(scope: Scope, project: { path: string; name: strin
   return registry;
 }
 
+/**
+ * Drop a project from the global registry by path. The dashboard delete flow
+ * calls this whether or not it also ran `withy uninstall` — uninstall removes
+ * the project's `.withy/` but never touches this global registry (core.md §2.1).
+ *
+ * @param scope global scope holding the registry
+ * @param path absolute project path to unregister
+ * @return the registry after removal (unchanged when the path was absent)
+ */
+export function removeProject(scope: Scope, path: string): ProjectsRegistry {
+  const registry = readProjects(scope);
+  const next = registry.projects.filter(entry => entry.path !== path);
+  if (next.length !== registry.projects.length) {
+    registry.projects = next;
+    writeJsonFile(projectsRegistryPath(scope), registry);
+  }
+  return registry;
+}
+
 // ── Current-task pointer (runtime/current-task.json) ─────────────────────────
 
 export function readCurrentTaskPointer(scope: Scope): string | null {
