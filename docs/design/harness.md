@@ -132,8 +132,8 @@ const branchGate = (m: string, extra: Pick<NextResult, 'branches' | 'nextAction'
 **命令只给 agent 读,输出简单 JSON**(人看进度去 web)。`withy next` 成功不是干巴巴的 exit 0:stdout 吐一段结构化「下一步」让 agent 自己解析、敲下一条命令——交互模式下 session-start 本会话不会再触发,这段就是 agent 继续推进的线索。**不重复注入上下文**(规范/背景在会话开始已注入一次,§4)。
 
 ```jsonc
-// 推进到普通 skill 节点
-{ "ok": true, "done": "grill-me", "next": { "node": "dev", "type": "skill", "skill": "dev" } }
+// 推进到普通 skill 节点(next.skill 为真实安装名,经 describeNext 归一,core §5.1)
+{ "ok": true, "done": "grill-me", "next": { "node": "dev", "type": "skill", "skill": "withy-dev" } }
 
 // 推进到 switch 节点:列出各分支 criteria(含 default)让 agent 判定
 { "ok": true, "done": "brainstorm",

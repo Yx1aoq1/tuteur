@@ -101,7 +101,7 @@ flowchart TD
   R4 -- 是 --> R5[task.status=completed<br/>completedAt 写入并清当前任务指针]
   R5 --> S{是否归档?}
   S -- 否 --> T[保留在 active tasks 中]
-  S -- 是 --> S1[withy task archive]
+  S -- 是 --> S1[withy task archive<br/>校验 completed + 实施清单全勾选]
   S1 --> S2[整个任务目录移动至<br/>tasks/archive/YYYY-MM/id]
 
   X1 -. 用户明确授权 .-> K[withy next --skip --reason]
@@ -153,7 +153,7 @@ flowchart TD
 | `brainstorm`    | 原始需求、项目知识                  | `prd.md`、`design.md`、`implement.md`            | `prd.md` + `design.md` + `implement.md` | `prd-template`、`design-template`      |
 | `grill-me`      | 三份规划产物、用户澄清、项目规范    | 审查并回写 `prd.md`、`design.md`、`implement.md` | 三份规划产物 + approval                 | `design-template`                      |
 | `dev`           | 规划产物、上下文清单、代码库        | 生产代码、测试代码、必要迁移/文档                | **当前无 artifact/check gate**          | 通常不需要文档模板                     |
-| `check`         | git diff、设计与实施计划、测试命令  | `check-result.json`                              | **当前仅 `npm test`**                   | `check-result-template` 或 JSON schema |
+| `check`         | git diff、设计与实施计划、测试命令  | `check-result.json`                              | **当前无 gate**(实施清单完成度改由归档内置校验,core §9.2) | `check-result-template` 或 JSON schema |
 | `wrapup/finish` | 全部产物、`git diff`、验证结果      | 无文件产物(口头 recap + 知识库沉淀)              | **当前无 artifact gate**                | 无                                     |
 
 上表的“目标产物”来自现有 skill 正文和设计文档；除明确标注的当前硬门禁外，其他产物还没有被 workflow 强制要求。
@@ -181,7 +181,7 @@ workflow gate.artifacts/checks/approval
 {
   "id": "brainstorm",
   "type": "skill",
-  "skill": "brainstorm",
+  "skill": "withy-brainstorm",
   "phase": "planning",
   "next": "grill-me",
   "gate": {
@@ -190,7 +190,7 @@ workflow gate.artifacts/checks/approval
 }
 ```
 
-门禁仍只检查 `path` 存在且非空；模板负责结构，skill 负责内容质量，必要时由 `checks` 或 `approval` 补足内容验收。
+门禁仍只检查 `path` 存在且非空；模板负责结构，skill 负责内容质量，必要时由 `checks` 或 `approval` 补足内容验收。节点 `skill` 存真实安装名(`withy-<base>`，core §5.1）。
 
 ---
 

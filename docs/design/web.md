@@ -139,7 +139,7 @@ web 表单与 CLI 交互**同源**:都读 `INIT_QUESTIONS`、产出同一个 `In
 - **连线 = 端口拖拽**:skill 一个出口、switch 每分支一个出口;从出口拖到目标入口即写回 `next` / `branch.next`,改连 / 删连同步更新,**不用下拉选 next**;渲染**贝塞尔自由走线**(取代正交 smoothstep)、**统一同一种实线**(墨灰,分支靠 `label` 区分、不用虚线),`zIndex` 高于泳道背景故不被遮挡。
 - **入口 / 终点标识**:入口节点(`entry`)标「入口」徽标、终点节点(skill `next:null`)标「终点」徽标(纯文字、纯展示;支持多终点)。
 - **连线约束(保存时校验)**:连线/拖动当下**不拦、不实时标红**;保存时经 core 校验阶段单调 + 无环 + switch default,非法 → 422 + 顶部 issues 面板提示(本轮无画布内联红线,后置)。
-- **节点来源(右栏列表,可拖入)**:特殊「分支(switch)」节点 + `discoverSkills` 发现的 skill(按逻辑名去重、带 `source` tag,core §5.1)。拖一项到画布即新建节点,落点泳道决定其初始 `phase`。
+- **节点来源(右栏列表,可拖入)**:特殊「分支(switch)」节点 + `discoverSkills` 发现的 skill(按真实安装名去重、带 `source` tag,core §5.1)。拖一项到画布即新建节点(节点 `skill` 存真实安装名,如 `withy-dev`),落点泳道决定其初始 `phase`。
 - **skill 节点**:`skill` 在建节点时即固定、**只读不可改**;配可选 `gate`(artifacts/checks/approval)。产物/检查为可增删的行编辑(编辑期允许空行即时可输入,保存前 `sanitizeWorkflow` 清理空行 / 空 gate)。`gate.artifacts` 仍支持 `{path,title?,template?}` 对象(编辑只改 path,保留 title/template)。
 - **switch 节点**:编辑各 `branches`(`label` + `criteria` 判断说明 + `default` 单选,恰好一个);**靠 agent 判断**,无布尔表达式(core §4.3、harness §2.5)。
 - **右侧面板(docked,宽度对齐看板详情 336px)**:未选中=可拖入的节点列表;选中=该节点配置表单,顶部「返回」回列表(非悬浮)。
@@ -201,7 +201,7 @@ web 表单与 CLI 交互**同源**:都读 `INIT_QUESTIONS`、产出同一个 `In
 | `GET /api/tasks/:id?project`                              | 任务详情                                                                                           | `{ task,state,artifacts,events }`                                                                            |
 | `GET /api/tasks/:id/events?project`                       | 事件时间线(events.jsonl)                                                                           | 注入对比/重试/跳步/跳过                                                                                      |
 | `POST /api/tasks/:id/nodes/:node/complete?project`        | 触发节点门禁                                                                                       | 见 §4.1                                                                                                      |
-| `POST /api/tasks/:id/archive?project`                     | 归档任务                                                                                           | core.archiveTask:移目录(YYYY-MM 分桶)、默认不改状态(可标 cancelled)、不绑产物(core §9)                       |
+| `POST /api/tasks/:id/archive?project`                     | 归档任务                                                                                           | core.archiveTask:校验已完成 + 实施清单全勾选后移目录(YYYY-MM 分桶),校验而非改状态(可 `--cancelled` 标取消并跳过校验)(core §9)                       |
 | `POST /api/tasks/:id/approvals/:node?project`             | 写 approval                                                                                        | §6                                                                                                           |
 | dashboard server 读取层                                   | 读实施计划(只读;解析 `implement.md` 复选框算进度 + unparsed)                                       | core §4.7;§3.4(无独立 API 写回,agent/人直接编辑文件)                                                         |
 | `GET /api/tasks/:id/session-preview?project`              | 预览该任务当前会注入的 session-start 内容(段落 + planned 形态)                                     | 调 `renderSessionStart`;让用户在 web 看到「下次注入长这样」                                                  |
