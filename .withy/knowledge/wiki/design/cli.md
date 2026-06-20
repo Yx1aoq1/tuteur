@@ -78,7 +78,7 @@ updated: 2026-06-19
 
 | 命令              | 说明                                                                                                                                                                                                                                                                              | 可选参数                                                                                                                                                                                                  | 执行后返回                                                                                |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `init`            | 项目模式:建 `.withy/` 结构 + 写 config/context/默认 workflow + 装 canonical skill + 配选中 agent + 写本地身份;存在全局根则登记进 `projects.json`。全局模式(`--global`):只在 `~/.withy/` 落 config + projects 注册表 + workflow/knowledge 模板,**不配 agent、不建身份**(core §2.3) | `-y, --yes`(用默认勾选)<br>`-u, --user <name>`(缺省取 `git config user.name`)<br>`--global`<br>`--copy`(skill 独立副本,缺省软链)<br>`--codex` / `--claude` / `--gemini`…(每 agent 一个 flag,由注册表派生) | 文本:安装路径、选中 agent、skill 模式、当前用户、等价命令;取消 exitCode 1                 |
+| `init`            | 项目模式:建 `.withy/` 结构 + 写 config/context/默认 workflow + 装 canonical skill + 配选中 agent + 写本地身份;存在全局根则登记进 `projects.json`。全局模式(`--global`):只在 `~/.withy/` 落 config + projects 注册表 + workflow/knowledge 模板,**不配 agent、不建身份**(core §2.3) | `-y, --yes`(用默认勾选)<br>`-u, --user <name>`(缺省取 `git config user.name`)<br>`--global`<br>`--copy`(skill 独立副本,缺省软链)<br>`--codex` / `--claude`(每 agent 一个 flag,由注册表派生) | 文本:安装路径、选中 agent、skill 模式、当前用户、等价命令;取消 exitCode 1                 |
 | `dashboard start` | 后台拉起控制台(多项目管理器);无门禁,启动时按需自建全局根,状态写 `~/.withy/runtime/dashboard.json`。cwd 若是已初始化项目则作默认项目兜底                                                                                                                                           | ——                                                                                                                                                                                                        | 文本:启动 URL,或"已在运行"                                                                |
 | `dashboard stop`  | 据全局 runtime 状态结束进程,任意目录可执行                                                                                                                                                                                                                                        | ——                                                                                                                                                                                                        | 文本:已停止 / 未运行                                                                      |
 | `knowledge graph` | 从双链(正文 wiki 内链)+ frontmatter 派生文档关系图                                                                                                                                                                                                                                | `--global`<br>`--merged`(全局+项目全景)                                                                                                                                                                   | `{ ok, scope, nodes, edges, graph }`                                                      |
@@ -154,7 +154,7 @@ analyzeTemplateChange:
   哈希匹配(用户没改)→ auto-update     否则 → conflict
 ```
 
-`create`/`auto-update` 直接写;`conflict` 按 flag 或交互选 overwrite(备份后覆盖)/ skip / create-new(`.new` 副本)。哈希(sha256)清单存 `template-hashes.json`,扫描范围为 `.agent/skill` 与 `.claude/skills`(copy 副本计入,symlink 跳过)。**铁律(Trellis 教训)**:init 写盘与 update 收集必须用同一组 resolve/copy helper,否则升级会丢文件。
+`create`/`auto-update` 直接写;`conflict` 按 flag 或交互选 overwrite(备份后覆盖)/ skip / create-new(`.new` 副本)。哈希(sha256)清单存 `template-hashes.json`,扫描范围为 `.agents/skills` 与 `.claude/skills`(copy 副本计入,symlink 跳过)。**铁律(Trellis 教训)**:init 写盘与 update 收集必须用同一组 resolve/copy helper,否则升级会丢文件。
 
 ---
 
@@ -181,7 +181,6 @@ analyzeTemplateChange:
 | ------ | -------------------------------- | ----------------------- | ----------------------- |
 | codex  | `templates/codex/hooks.json`     | `SessionStart`          | `.codex/hooks.json`     |
 | claude | `templates/claude/settings.json` | `SessionStart`          | `.claude/settings.json` |
-| gemini | `templates/gemini/settings.json` | 待核实(per-turn 名待定) | `.gemini/settings.json` |
 
 per-turn breadcrumb 与子 agent 注入是后续事件,届时在同一声明文件追加 event 段即可——仍是"改模板、零适配器代码"。
 

@@ -97,7 +97,7 @@ Trellis 禁止在 home 运行,因为它会在项目根建 `.claude`/`.codex`,而
 
 - 全局根用**自有命名空间 `~/.withy/`**,绝不在 home 直接建 `.claude`/`.codex`/`.agent`。
 - **`withy init --global` 只装 workflow 模板 + 全局 config + projects 注册表,不做任何 agent 平台适配**(不在 home 建 skill 目录)。agent 适配只在项目级发生。
-- 因此 §2.1 全局根没有 `.agent/skill`、没有平台目录。skill 适配是项目级概念。
+- 因此 §2.1 全局根没有 `.agents/skills`、没有平台目录。skill 适配是项目级概念。
 
 ### 2.4 路径解析 API
 
@@ -417,7 +417,7 @@ export function discoverSkills(scope: Scope): DiscoveredSkill[]; // 项目 scope
 export function resolveSkillRef(scope: Scope, skill: string): { name: string; path: string }; // 解析不到则抛错
 ```
 
-> 富化项(待补,P1):每条按 `agent`(canonical/codex/claude/gemini)再细分 tag,供 web 画布按工具分组——当前基础版只给 `source` + 合并的 `paths`。
+> 富化项(待补,P1):每条按 `agent`(canonical/codex/claude)再细分 tag,供 web 画布按工具分组——当前基础版只给 `source` + 合并的 `paths`。
 
 机制:目录来源由 `agents/registry.ts` 的 `getProjectSkillDirs()`/`getGlobalSkillDirs()` 从 `AGENT_PLATFORMS.skillDirs` 派生(**单一数据源**,不在 skills.ts 再抄一份);project 组相对项目根解析,global 组相对用户 home 解析。扫描 + 解析 frontmatter 的逻辑落在 **core(`skills.ts`)**,不在 configurator(cli.md §8.6)。
 
