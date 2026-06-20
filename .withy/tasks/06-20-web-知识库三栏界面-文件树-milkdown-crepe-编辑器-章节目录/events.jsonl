@@ -1,0 +1,10 @@
+{"ts":"2026-06-19T16:23:20.571Z","type":"complete_attempt","node":"brainstorm","ok":true}
+{"ts":"2026-06-19T16:34:04.334Z","type":"complete_attempt","node":"grill-me","ok":false,"reason":"needs approval: run \"withy approve --json\""}
+{"ts":"2026-06-19T16:34:11.478Z","type":"approval","node":"grill-me","by":"yan"}
+{"ts":"2026-06-19T16:34:11.559Z","type":"complete_attempt","node":"grill-me","ok":true}
+{"ts":"2026-06-19T16:35:10.375Z","type":"session_start","injected":[]}
+{"ts":"2026-06-19T16:35:30.365Z","type":"complete_attempt","node":"dev","ok":true}
+{"ts":"2026-06-19T16:36:07.701Z","type":"rewind","node":"dev","by":"yan","reason":"dev 实现尚未完成,误推进到 check,回退继续实现"}
+{"ts":"2026-06-20T05:13:25.389Z","type":"complete_attempt","node":"dev","ok":true}
+{"ts":"2026-06-20T05:17:04.534Z","type":"complete_attempt","node":"check","ok":true}
+{"ts":"2026-06-20T05:22:27.875Z","type":"complete_attempt","node":"finish","ok":true}
