@@ -1,5 +1,5 @@
 import { getBundledSkillName, PHASE_PLANNING } from '../constants.js';
-import { logicalSkillName } from '../skills.js';
+import { logicalSkillName } from '../agents/skills.js';
 import { nowIso } from '../utils/index.js';
 import { rewind, send } from './engine.js';
 import type { Cursor, GuardReport, MachineDef } from './engine.js';

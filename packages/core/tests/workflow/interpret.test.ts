@@ -9,9 +9,9 @@ import {
   compileWorkflow,
   nodeById,
   phaseOf,
-} from './interpret.js';
-import type { GuardReport } from './engine.js';
-import type { State, Workflow } from '../types.js';
+} from '../../src/workflow/interpret.js';
+import type { GuardReport } from '../../src/workflow/engine.js';
+import type { State, Workflow } from '../../src/types.js';
 
 // triage(switch) → standard:plan → dev → finish, or small → dev. plan has an
 // approval gate so the skill-gate path is exercised.

@@ -1,6 +1,7 @@
-import { getInitAgentChoices, getAgentPlatform } from './agents/index.js';
-import { CLI_COMMAND_NAME } from './constants.js';
-import type { SkillAdapterMode, AgentTool } from './agents/index.js';
+import { getInitAgentChoices, getAgentPlatform } from './registry.js';
+import { CLI_COMMAND_NAME } from '../constants.js';
+import type { SkillAdapterMode } from './types.js';
+import type { AgentTool } from './registry.js';
 
 // Skill landing mode in the public init surface (CLI flag / web form). Maps to
 // the internal `SkillAdapterMode` at the cli boundary via `toSkillAdapterMode`.

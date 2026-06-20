@@ -9,7 +9,7 @@ import {
   readState,
   writeTask,
   readTask,
-} from '../store.js';
+} from '../store/index.js';
 import { existsNonEmpty, nowIso } from '../utils/index.js';
 import {
   approveState,
@@ -32,6 +32,11 @@ import type { State, Task, Workflow, SkillNode } from '../types.js';
 // persists the returned state + events. No transition/branch/gate *logic* lives
 // here — that's engine.ts (mechanics), interpret.ts (Withy policy), gate.ts
 // (checkers). This file only does fs/spawn + bookkeeping.
+//
+// Naming note: "runtime" is overloaded across the repo. THIS file is the
+// workflow state-machine IO shell. It is unrelated to the `.withy/runtime/`
+// transient-state directory (paths.ts `runtimeDir`) and to the CLI's
+// `harness/runtime.ts` output layer. See design/core.md ("三处 runtime 命名").
 // ──────────────────────────────────────────────────────────────────────────
 
 export interface NextResult {

@@ -118,11 +118,17 @@ export {
   listTasks,
   readTask,
   readGuide,
-} from './store.js';
-export type { ListTasksOptions, KnowledgeFile, WikiEntry } from './store.js';
+} from './store/index.js';
+export type { ListTasksOptions, KnowledgeFile, WikiEntry } from './store/index.js';
 
-export { countConsecutiveFailures, resolveCurrentTask, implementationProgress, archiveTask, isStuck } from './task.js';
-export type { ArchiveOptions, CurrentTask } from './task.js';
+export {
+  countConsecutiveFailures,
+  resolveCurrentTask,
+  implementationProgress,
+  archiveTask,
+  isStuck,
+} from './task/index.js';
+export type { ArchiveOptions, CurrentTask } from './task/index.js';
 
 export {
   approveCurrentNode,
@@ -144,8 +150,8 @@ export type {
   NextStep,
 } from './workflow/index.js';
 
-export { resolvePlannedContext } from './context.js';
-export type { PlannedEntry } from './context.js';
+export { resolvePlannedContext } from './session/index.js';
+export type { PlannedEntry } from './session/index.js';
 
 export {
   readKnowledgePageContent,
@@ -162,7 +168,7 @@ export {
   readKnowledgeEntry,
   KnowledgeError,
   lintKnowledge,
-} from './knowledge.js';
+} from './knowledge/index.js';
 export type {
   KnowledgePageContent,
   KnowledgeGraphEdge,
@@ -173,16 +179,16 @@ export type {
   KnowledgeIssue,
   KnowledgePage,
   InjectMode,
-} from './knowledge.js';
+} from './knowledge/index.js';
 
-export { logicalSkillName, resolveSkillRef, discoverSkills, skillExists } from './skills.js';
-export type { DiscoveredSkill, ResolvedSkill } from './skills.js';
+export { logicalSkillName, resolveSkillRef, discoverSkills, skillExists } from './agents/index.js';
+export type { DiscoveredSkill, ResolvedSkill } from './agents/index.js';
 
-export { renderSessionStart } from './hook.js';
-export type { SessionStartResult } from './hook.js';
+export { renderSessionStart } from './session/index.js';
+export type { SessionStartResult } from './session/index.js';
 
-export { serializeToCommand, toSkillAdapterMode, INIT_QUESTIONS } from './init-config.js';
-export type { SkillInstallMode, InitQuestion, InitChoice, InitConfig } from './init-config.js';
+export { serializeToCommand, toSkillAdapterMode, INIT_QUESTIONS } from './agents/index.js';
+export type { SkillInstallMode, InitQuestion, InitChoice, InitConfig } from './agents/index.js';
 
 export {
   CANONICAL_SKILL_DIR,

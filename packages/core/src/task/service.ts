@@ -1,5 +1,5 @@
-import { DEFAULT_STUCK_THRESHOLD } from './constants.js';
-import { type Scope, archiveDir, taskDir } from './paths.js';
+import { DEFAULT_STUCK_THRESHOLD } from '../constants.js';
+import { type Scope, archiveDir, taskDir } from '../paths.js';
 import {
   clearCurrentTaskPointer,
   readCurrentTaskPointer,
@@ -9,13 +9,14 @@ import {
   listTasks,
   writeTask,
   readTask,
-} from './store.js';
-import { moveDir, nowIso } from './utils/index.js';
+} from '../store/index.js';
+import { moveDir, nowIso } from '../utils/index.js';
 
 // ── Task lifecycle + derived metrics ──────────────────────────────────────────
 // Task-level concerns that sit beside the workflow state machine (workflow/):
 // current-task resolution, archiving, and read-only metrics derived from events
 // and the implementation plan. No cursor transitions here — those live in workflow/.
+// Landing is via the store layer only; this module performs no direct file I/O.
 
 // ── Current-task resolution (harness §7.1) ───────────────────────────────────
 

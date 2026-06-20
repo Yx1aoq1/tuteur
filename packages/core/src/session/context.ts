@@ -1,7 +1,7 @@
-import { readKnowledgeEntry } from './knowledge.js';
-import { readContextConfig } from './store.js';
-import type { InjectMode } from './knowledge.js';
-import type { Scope } from './paths.js';
+import { readKnowledgeEntry } from '../knowledge/index.js';
+import { readContextConfig } from '../store/index.js';
+import type { InjectMode } from '../knowledge/index.js';
+import type { Scope } from '../paths.js';
 
 // 一条已解析的计划注入项(resolvePlannedContext 输出);形态决定 session-start 注正文还是注索引
 export interface PlannedEntry {

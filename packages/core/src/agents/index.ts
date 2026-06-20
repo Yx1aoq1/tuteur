@@ -16,3 +16,9 @@ export type {
   SkillAdapterMode,
   TemplateContext,
 } from './types.js';
+
+export { logicalSkillName, resolveSkillRef, discoverSkills, skillExists } from './skills.js';
+export type { DiscoveredSkill, ResolvedSkill } from './skills.js';
+
+export { serializeToCommand, toSkillAdapterMode, INIT_QUESTIONS } from './init-config.js';
+export type { SkillInstallMode, InitQuestion, InitChoice, InitConfig } from './init-config.js';

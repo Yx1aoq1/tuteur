@@ -70,6 +70,13 @@ export function workflowPath(scope: Scope, id: string): string {
   return resolve(workflowsDir(scope), `${id}.workflow.json`);
 }
 
+// `.withy/runtime/` — the on-disk *transient* state dir (gitignored, core.md §2.2):
+// the project-level current-task pointer (cleared by clearCurrentTaskPointer when a
+// workflow finishes) and the global-level dashboard daemon state. "runtime" names
+// three unrelated things in this repo — see the design wiki (design/core.md, the
+// "三处 runtime 命名" 节) for the full distinction. The other two ("runtime" code
+// shells) are `workflow/runtime.ts` (state-machine IO shell) and the CLI's
+// `harness/runtime.ts` (output layer); neither is related to this directory.
 export function runtimeDir(scope: Scope): string {
   return resolve(scope.withyDir, 'runtime');
 }
@@ -86,6 +93,9 @@ export function knowledgeWikiPath(scope: Scope, id: string): string {
   return resolve(knowledgeDir(scope), 'wiki', `${id}.md`);
 }
 
+// Project-level transient pointer under `.withy/runtime/` (see runtimeDir): the
+// "current task" cursor that `withy task start`/hook resolve and that
+// clearCurrentTaskPointer drops when the workflow finishes.
 export function currentTaskPointerPath(scope: Scope): string {
   return resolve(runtimeDir(scope), 'current-task.json');
 }

@@ -2,8 +2,8 @@ import { mkdtempSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { knowledgeDir, type Scope } from './paths.js';
-import { listWikiEntries, readWikiFile, writeWikiFile } from './store.js';
+import { knowledgeDir, type Scope } from '../../src/paths.js';
+import { listWikiEntries, readWikiFile, writeWikiFile } from '../../src/store/index.js';
 import {
   readKnowledgePageContent,
   createKnowledgeFolder,
@@ -14,8 +14,8 @@ import {
   listKnowledgePages,
   assertInsideWiki,
   KnowledgeError,
-} from './knowledge.js';
-import { nowIso } from './utils/index.js';
+} from '../../src/knowledge/index.js';
+import { nowIso } from '../../src/utils/index.js';
 
 const dirs: string[] = [];
 

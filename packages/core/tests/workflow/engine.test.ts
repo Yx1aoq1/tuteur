@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { initialCursor, nodeOf, rewind, send } from './engine.js';
-import type { Cursor, MachineDef } from './engine.js';
+import { initialCursor, nodeOf, rewind, send } from '../../src/workflow/engine.js';
+import type { Cursor, MachineDef } from '../../src/workflow/engine.js';
 
 // A synthetic, non-Withy machine: a(guarded) → b(branch) → c → end.
 //   a: single guarded `go` edge (also default).

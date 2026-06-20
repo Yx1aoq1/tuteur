@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getProjectSkillDirs, getGlobalSkillDirs, AGENT_PLATFORMS } from './registry.js';
+import { getProjectSkillDirs, getGlobalSkillDirs, AGENT_PLATFORMS } from '../../src/agents/registry.js';
 
 describe('agent skill directories', () => {
   it('registers only the supported Codex and Claude agents', () => {

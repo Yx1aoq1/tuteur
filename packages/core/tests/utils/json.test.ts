@@ -2,8 +2,8 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { writeJsonFile, readJsonFile } from './json.js';
-import { writeTextFile } from './fs.js';
+import { writeJsonFile, readJsonFile } from '../../src/utils/json.js';
+import { writeTextFile } from '../../src/utils/fs.js';
 
 const dirs: string[] = [];
 

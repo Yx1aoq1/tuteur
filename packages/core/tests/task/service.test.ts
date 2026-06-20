@@ -2,11 +2,11 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { taskPath, type Scope } from './paths.js';
-import { listTaskArtifacts, readImplementation, writeTask, readTask } from './store.js';
-import { implementationProgress, archiveTask } from './task.js';
-import { writeTextFile, writeJsonFile, nowIso } from './utils/index.js';
-import type { Task } from './types.js';
+import { taskPath, type Scope } from '../../src/paths.js';
+import { listTaskArtifacts, readImplementation, writeTask, readTask } from '../../src/store/index.js';
+import { implementationProgress, archiveTask } from '../../src/task/index.js';
+import { writeTextFile, writeJsonFile, nowIso } from '../../src/utils/index.js';
+import type { Task } from '../../src/types.js';
 
 const dirs: string[] = [];
 

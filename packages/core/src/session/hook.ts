@@ -1,10 +1,10 @@
 import { resolvePlannedContext } from './context.js';
-import { resolveCurrentTask } from './task.js';
-import { nodeById } from './workflow/index.js';
-import { readGuide, readDeveloper, readState, readTask, readWorkflow } from './store.js';
-import { readGitStatus } from './utils/index.js';
+import { resolveCurrentTask } from '../task/index.js';
+import { nodeById } from '../workflow/index.js';
+import { readGuide, readDeveloper, readState, readTask, readWorkflow } from '../store/index.js';
+import { readGitStatus } from '../utils/index.js';
 import type { PlannedEntry } from './context.js';
-import type { Scope } from './paths.js';
+import type { Scope } from '../paths.js';
 
 export interface SessionStartResult {
   text: string;
