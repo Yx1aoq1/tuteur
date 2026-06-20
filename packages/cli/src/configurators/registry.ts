@@ -10,14 +10,12 @@ import {
 } from '@withy/core';
 import { configureClaude } from './claude.js';
 import { configureCodex } from './codex.js';
-import { configureGemini } from './gemini.js';
 
 // Platform DATA lives in @withy/core (single source). This module only owns
 // the per-agent BEHAVIOR table and the dispatch over it.
 const PLATFORM_CONFIGURATORS: Record<AgentTool, PlatformConfigurator> = {
   codex: configureCodex,
   claude: configureClaude,
-  gemini: configureGemini,
 };
 
 export function configureAgentPlatform(

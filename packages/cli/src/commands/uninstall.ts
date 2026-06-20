@@ -111,7 +111,11 @@ function buildUninstallPlan(projectRoot: string): UninstallPlan {
   const skillPaths: string[] = [];
 
   for (const skillName of getBundledSkillNames()) {
-    for (const relativePath of [`.agent/skill/${skillName}`, `.claude/skills/${skillName}`]) {
+    for (const relativePath of [
+      `.agents/skills/${skillName}`,
+      `.claude/skills/${skillName}`,
+      `.agent/skill/${skillName}`,
+    ]) {
       const absolutePath = resolve(projectRoot, relativePath);
       if (pathExists(absolutePath) && isRemovablePath(absolutePath)) {
         skillPaths.push(relativePath);

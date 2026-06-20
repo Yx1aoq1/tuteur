@@ -94,7 +94,7 @@ export const INIT_QUESTIONS: InitQuestion[] = [
     choices: [
       {
         value: 'link',
-        label: 'Symlink to .agent/skill',
+        label: 'Symlink to .agents/skills',
         description: 'One canonical skill copy; agent directories point to it.',
       },
       {

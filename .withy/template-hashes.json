@@ -1,8 +1,8 @@
 {
-  ".agent/skill/withy-brainstorm/SKILL.md": "eba33105d9fe3ee04a97f0d356e2d731be2b468ec7ff879fb0b4ee05a03e31d3",
-  ".agent/skill/withy-check/SKILL.md": "9fef7be93e5f7a3c37bd87cdb46a8fac8766cdef4e3c31a921643b83a09cac83",
-  ".agent/skill/withy-dev/SKILL.md": "0463f151e7d2c3fa36c92d00852b49d38196021a9ec426e023d1da8a1dcb26b5",
-  ".agent/skill/withy-finish/SKILL.md": "53e8b14176cf4a97aa1bfc7ac1e9bb871ec8651cad4ec6fafa6628df78238883",
-  ".agent/skill/withy-grill-me/SKILL.md": "cd1a0f30c7f362cf9e62b33f8ff784812d7c084aa87990c4d11310036b50bcb7",
-  ".agent/skill/withy-knowledge/SKILL.md": "40ff7471a02aae181808d48da4887d138b6e31d8c88d9d904e8dbed614866255"
+  ".agents/skills/withy-brainstorm/SKILL.md": "eba33105d9fe3ee04a97f0d356e2d731be2b468ec7ff879fb0b4ee05a03e31d3",
+  ".agents/skills/withy-check/SKILL.md": "9fef7be93e5f7a3c37bd87cdb46a8fac8766cdef4e3c31a921643b83a09cac83",
+  ".agents/skills/withy-dev/SKILL.md": "0463f151e7d2c3fa36c92d00852b49d38196021a9ec426e023d1da8a1dcb26b5",
+  ".agents/skills/withy-finish/SKILL.md": "53e8b14176cf4a97aa1bfc7ac1e9bb871ec8651cad4ec6fafa6628df78238883",
+  ".agents/skills/withy-grill-me/SKILL.md": "cd1a0f30c7f362cf9e62b33f8ff784812d7c084aa87990c4d11310036b50bcb7",
+  ".agents/skills/withy-knowledge/SKILL.md": "40ff7471a02aae181808d48da4887d138b6e31d8c88d9d904e8dbed614866255"
 }

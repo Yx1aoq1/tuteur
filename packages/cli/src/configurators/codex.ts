@@ -1,4 +1,4 @@
-import type { AgentPlatformConfig, ConfigureAgentContext, ConfigureAgentResult } from '@withy/core';
+import type { ConfigureAgentContext, ConfigureAgentResult, AgentPlatformConfig } from '@withy/core';
 import { copyAgentTemplates } from './shared.js';
 
 export async function configureCodex(

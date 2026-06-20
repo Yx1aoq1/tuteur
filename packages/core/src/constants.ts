@@ -28,7 +28,7 @@ export function getBundledSkillName(baseName: string): string {
   return `${SKILL_NAME_PREFIX}-${toDirectoryName(baseName)}`;
 }
 
-/** Slash-command prefix used by Claude/Gemini skill invocation, e.g. `/withy:`. */
+/** Slash-command prefix used by Claude skill invocation, e.g. `/withy:`. */
 export function getSlashCommandPrefix(): string {
   return `/${PRODUCT_SLUG}:`;
 }

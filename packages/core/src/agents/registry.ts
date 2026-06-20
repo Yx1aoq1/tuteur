@@ -15,7 +15,10 @@ export const AGENT_PLATFORMS = defineAgentPlatforms({
     defaultChecked: true,
     skillTarget: null,
     supportsAgentSkills: true,
-    skillDirs: { project: ['.agent/skill', '.codex/skills'], global: ['.codex/skills'] },
+    skillDirs: {
+      project: ['.agents/skills'],
+      global: ['.agents/skills'],
+    },
     templateContext: {
       cmdRefPrefix: '$',
       userActionLabel: 'Skills',
@@ -36,21 +39,6 @@ export const AGENT_PLATFORMS = defineAgentPlatforms({
       cliFlag: 'claude',
     },
   },
-  gemini: {
-    id: 'gemini',
-    name: 'Gemini CLI',
-    configDir: '.gemini',
-    cliFlag: 'gemini',
-    defaultChecked: false,
-    skillTarget: null,
-    supportsAgentSkills: true,
-    skillDirs: { project: ['.agent/skill'], global: ['.gemini/skills'] },
-    templateContext: {
-      cmdRefPrefix: getSlashCommandPrefix(),
-      userActionLabel: 'Slash commands',
-      cliFlag: 'gemini',
-    },
-  },
 });
 
 export type AgentTool = keyof typeof AGENT_PLATFORMS;
@@ -65,7 +53,7 @@ export function getInitAgentChoices(): RegisteredAgentPlatformConfig[] {
 }
 
 /** Canonical (cross-agent) skill directory, relative to the project root. */
-export const CANONICAL_SKILL_DIR = '.agent/skill';
+export const CANONICAL_SKILL_DIR = '.agents/skills';
 
 /** Project-relative skill dirs to scan, deduped across all platforms + canonical. */
 export function getProjectSkillDirs(): string[] {

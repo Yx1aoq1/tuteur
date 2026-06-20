@@ -23,7 +23,8 @@ export interface ManagedTemplate {
 export type TemplateHashes = Record<string, string>;
 
 const hashManifestRelativePath = join(PROJECT_DIR_NAME, 'template-hashes.json');
-const canonicalSkillsRelativeRoot = '.agent/skill';
+const canonicalSkillsRelativeRoot = '.agents/skills';
+const legacyCanonicalSkillsRelativeRoot = '.agent/skill';
 const claudeSkillsRelativeRoot = '.claude/skills';
 
 export function getHashManifestPath(projectRoot: string): string {
@@ -117,6 +118,12 @@ export function recordCurrentTemplateHashes(
 ): TemplateHashes {
   const hashes = loadTemplateHashes(projectRoot);
 
+  for (const relativePath of Object.keys(hashes)) {
+    if (relativePath.startsWith(`${legacyCanonicalSkillsRelativeRoot}/`)) {
+      delete hashes[relativePath];
+    }
+  }
+
   for (const template of templates) {
     if (!existsSync(template.absolutePath) || isSymlink(template.absolutePath)) {
       continue;
@@ -138,7 +145,7 @@ export function hashContent(content: string): string {
 
 export function removeKnownWorkflowSkillPaths(projectRoot: string): number {
   let removed = 0;
-  const relativeRoots = [claudeSkillsRelativeRoot, canonicalSkillsRelativeRoot];
+  const relativeRoots = [claudeSkillsRelativeRoot, canonicalSkillsRelativeRoot, legacyCanonicalSkillsRelativeRoot];
 
   for (const skillName of getBundledSkillNames()) {
     for (const relativeRoot of relativeRoots) {
@@ -167,6 +174,7 @@ export function cleanupEmptyManagedDirs(projectRoot: string): number {
     resolve(projectRoot, claudeSkillsRelativeRoot),
     resolve(projectRoot, '.claude'),
     resolve(projectRoot, canonicalSkillsRelativeRoot),
+    resolve(projectRoot, legacyCanonicalSkillsRelativeRoot),
     resolve(projectRoot, '.agent'),
   ];
 

@@ -1,8 +1,18 @@
-import { copyFileSync, existsSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
-import { dirname, relative, resolve } from 'node:path';
+import {
+  writeFileSync,
+  copyFileSync,
+  readFileSync,
+  readlinkSync,
+  readdirSync,
+  symlinkSync,
+  existsSync,
+  lstatSync,
+  rmSync,
+} from 'node:fs';
+import { relative, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ensureDir, type TemplateContext } from '@withy/core';
-import { getBundledSkillName, PRODUCT_DISPLAY_NAME } from '../constants/product.js';
+import { type ConfigureAgentContext, type TemplateContext, ensureDir } from '@withy/core';
+import { PRODUCT_DISPLAY_NAME, getBundledSkillName } from '../constants/product.js';
 
 export interface ResolvedSkillTemplate {
   name: string;
@@ -11,7 +21,7 @@ export interface ResolvedSkillTemplate {
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const templateRoot = resolve(currentDir, '../templates');
-const canonicalSkillsDir = '.agent/skill';
+const canonicalSkillsDir = '.agents/skills';
 
 export function getCanonicalSkillsDir(projectRoot: string): string {
   return resolve(projectRoot, canonicalSkillsDir);
@@ -26,6 +36,26 @@ export function installCanonicalWorkflowSkills(input: { projectRoot: string; cre
       cliFlag: 'codex',
     }),
     createdPaths: input.createdPaths,
+  });
+}
+
+export function installAgentSkills(context: ConfigureAgentContext, skillTarget: string | null): string[] {
+  if (!skillTarget) {
+    return [];
+  }
+
+  if (context.skillAdapterMode === 'copy') {
+    return copyCanonicalSkills({
+      projectRoot: context.projectRoot,
+      targetRoot: skillTarget,
+      createdPaths: context.createdPaths,
+    });
+  }
+
+  return linkSkills({
+    projectRoot: context.projectRoot,
+    linkRoot: skillTarget,
+    createdPaths: context.createdPaths,
   });
 }
 
@@ -61,6 +91,11 @@ export function writeSkills(input: {
   for (const skill of input.skills) {
     const skillDir = resolve(input.skillsRoot, skill.name);
     const skillFile = resolve(skillDir, 'SKILL.md');
+
+    if (isSymlink(skillDir)) {
+      rmSync(skillDir, { recursive: true, force: true });
+    }
+
     ensureDir(skillDir, input.createdPaths, writtenPaths);
 
     if (existsSync(skillFile)) {
@@ -92,11 +127,16 @@ export function linkSkills(input: { projectRoot: string; linkRoot: string; creat
 
     const source = resolve(canonicalRoot, entry.name);
     const target = resolve(targetRoot, entry.name);
-    if (existsSync(target)) {
+    const relativeSource = relative(dirname(target), source);
+
+    if (pathExists(target) && (!isSymlink(target) || readlinkSync(target) === relativeSource)) {
       continue;
     }
 
-    const relativeSource = relative(dirname(target), source);
+    if (pathExists(target)) {
+      rmSync(target, { recursive: true, force: true });
+    }
+
     symlinkSync(relativeSource, target, process.platform === 'win32' ? 'junction' : 'dir');
     input.createdPaths.push(target);
     writtenPaths.push(target);
@@ -227,5 +267,22 @@ function copyDirIfMissing(source: string, target: string, createdPaths: string[]
     copyFileSync(from, to);
     createdPaths.push(to);
     writtenPaths.push(to);
+  }
+}
+
+function pathExists(path: string): boolean {
+  try {
+    lstatSync(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function isSymlink(path: string): boolean {
+  try {
+    return lstatSync(path).isSymbolicLink();
+  } catch {
+    return false;
   }
 }

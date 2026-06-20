@@ -1,5 +1,5 @@
-import type { AgentPlatformConfig, ConfigureAgentContext, ConfigureAgentResult } from '@withy/core';
-import { copyAgentTemplates, copyCanonicalSkills, linkSkills } from './shared.js';
+import type { ConfigureAgentContext, ConfigureAgentResult, AgentPlatformConfig } from '@withy/core';
+import { copyAgentTemplates, installAgentSkills } from './shared.js';
 
 export async function configureClaude(
   context: ConfigureAgentContext,
@@ -13,30 +13,10 @@ export async function configureClaude(
     createdPaths: context.createdPaths,
   });
 
-  writtenPaths.push(...configureClaudeSkills(context, platform.skillTarget));
+  writtenPaths.push(...installAgentSkills(context, platform.skillTarget));
 
   return {
     configured: true,
     writtenPaths,
   };
-}
-
-function configureClaudeSkills(context: ConfigureAgentContext, skillTarget: string | null): string[] {
-  if (!skillTarget) {
-    return [];
-  }
-
-  if (context.skillAdapterMode === 'copy') {
-    return copyCanonicalSkills({
-      projectRoot: context.projectRoot,
-      targetRoot: skillTarget,
-      createdPaths: context.createdPaths,
-    });
-  }
-
-  return linkSkills({
-    projectRoot: context.projectRoot,
-    linkRoot: skillTarget,
-    createdPaths: context.createdPaths,
-  });
 }
