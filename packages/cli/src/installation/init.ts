@@ -1,5 +1,4 @@
-import { basename, dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { basename, resolve } from 'node:path';
 import { readdirSync } from 'node:fs';
 import {
   writeJsonFileIfMissing,
@@ -9,7 +8,6 @@ import {
   writeTextIfMissing,
   globalConfigPath,
   upsertProject,
-  readJsonFile,
   readTextFile,
   workflowPath,
   dirExists,
@@ -24,37 +22,9 @@ import {
   type SkillAdapterMode,
 } from '../configurators/index.js';
 import { PRODUCT_DISPLAY_NAME, PROJECT_DIR_NAME } from '../constants/product.js';
-import { getInstalledWorkflowSkillTemplates, recordCurrentTemplateHashes } from './managed-templates.js';
-import type { SkillInstallMode, InitConfig, Workflow } from '@withy/core';
-
-// CLI 模板根目录(由 copy-assets 拷到 dist/templates)。按子目录分工:
-//   workflow/   Withy 专属工程配置(config.yaml / guide.md / workflow.json)
-//   knowledge/  知识库种子(index.md / log.md)
-//   common/     skill 与 agent 通用配置
-// init.ts 只负责编排与变量替换,内容全部外置到这些模板文件。
-const TEMPLATES_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../templates');
-
-// 读模板文件(路径相对 TEMPLATES_ROOT)并做 {{TOKEN}} 文本替换。模板含占位符,
-// 渲染前不是合法 YAML/MD,故不进 prettier(见 .prettierignore)。
-function renderTemplate(relativePath: string, tokens: Record<string, string> = {}): string {
-  let out = readTextFile(resolve(TEMPLATES_ROOT, relativePath));
-  for (const [token, value] of Object.entries(tokens)) {
-    out = out.replaceAll(token, value);
-  }
-  return out;
-}
-
-// Default coding workflow seeded into both project and global roots (core §4.3):
-// the linear chain brainstorm → grill-me → dev → check → finish lives in
-// templates/workflow/workflow.json, the single on-disk source shared by project
-// init and the global template.
-const DEFAULT_WORKFLOW = readJsonFile(resolve(TEMPLATES_ROOT, 'workflow/workflow.json')) as Workflow;
-
-// 会话开场说明种子(.withy/guide.md):用户可直接编辑,session-start 注入文本开头注全文。
-const GUIDE_TEMPLATE = renderTemplate('workflow/guide.md', {
-  '{{PRODUCT_NAME}}': PRODUCT_DISPLAY_NAME,
-  '{{PROJECT_DIR}}': PROJECT_DIR_NAME,
-});
+import { getInstalledManagedTemplates, recordCurrentTemplateHashes } from './managed-templates.js';
+import { DEFAULT_WORKFLOW, GUIDE_TEMPLATE, TEMPLATES_ROOT, renderTemplate } from './templates.js';
+import type { SkillInstallMode, InitConfig } from '@withy/core';
 
 // 全局配置种子(~/.withy/config.yaml)。用 YAML 是为了允许用户手编时写注释;
 // 将来 web 设置页写回须走 yaml 的 Document/CST 模式做保留式 round-trip,勿整体重写。
@@ -245,11 +215,7 @@ export async function initProject(options: InitProjectOptions): Promise<InitProj
     }
   }
 
-  recordCurrentTemplateHashes(
-    options.projectRoot,
-    getInstalledWorkflowSkillTemplates(options.projectRoot),
-    createdPaths,
-  );
+  recordCurrentTemplateHashes(options.projectRoot, getInstalledManagedTemplates(options.projectRoot), createdPaths);
 
   return {
     projectRoot: options.projectRoot,

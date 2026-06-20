@@ -4,5 +4,7 @@
   ".agents/skills/withy-dev/SKILL.md": "0463f151e7d2c3fa36c92d00852b49d38196021a9ec426e023d1da8a1dcb26b5",
   ".agents/skills/withy-finish/SKILL.md": "53e8b14176cf4a97aa1bfc7ac1e9bb871ec8651cad4ec6fafa6628df78238883",
   ".agents/skills/withy-grill-me/SKILL.md": "cd1a0f30c7f362cf9e62b33f8ff784812d7c084aa87990c4d11310036b50bcb7",
-  ".agents/skills/withy-knowledge/SKILL.md": "40ff7471a02aae181808d48da4887d138b6e31d8c88d9d904e8dbed614866255"
+  ".agents/skills/withy-knowledge/SKILL.md": "40ff7471a02aae181808d48da4887d138b6e31d8c88d9d904e8dbed614866255",
+  ".withy/guide.md": "cd50c2b8d03f83cb237fac0e91886da6c47f9f86441d59906f812f1c9e352b26",
+  ".withy/workflows/default.workflow.json": "de02380f6c5643ac87900df1ce95ff49200d840a11168db2bf4c02a8a6314b35"
 }

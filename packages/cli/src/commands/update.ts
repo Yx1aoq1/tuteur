@@ -6,7 +6,7 @@ import type { Command } from 'commander';
 import { PRODUCT_DISPLAY_NAME, PROJECT_DIR_NAME } from '../constants/product.js';
 import {
   copyTemplateBackup,
-  getInstalledWorkflowSkillTemplates,
+  getInstalledManagedTemplates,
   hashContent,
   loadTemplateHashes,
   recordCurrentTemplateHashes,
@@ -43,7 +43,7 @@ interface UpdateStats {
 export default function registerUpdateCommand(program: Command): void {
   program
     .command('update')
-    .description(`Update ${PRODUCT_DISPLAY_NAME}-managed workflow skills to the current CLI templates`)
+    .description(`Update ${PRODUCT_DISPLAY_NAME}-managed files to the current CLI templates`)
     .option('--dry-run', 'Preview changes without applying them')
     .option('-f, --force', `Overwrite changed ${PRODUCT_DISPLAY_NAME}-managed files without prompting`)
     .option('-s, --skip-all', 'Skip all changed files without prompting')
@@ -58,7 +58,7 @@ async function runUpdateCommand(options: UpdateCommandOptions): Promise<void> {
     throw new Error(`${PRODUCT_DISPLAY_NAME} is not initialized in this project. Run withy init first.`);
   }
 
-  const templates = getInstalledWorkflowSkillTemplates(projectRoot);
+  const templates = getInstalledManagedTemplates(projectRoot);
   const hashes = loadTemplateHashes(projectRoot);
   const changes = templates.map(template => analyzeTemplateChange(template, hashes));
 

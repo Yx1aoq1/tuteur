@@ -13,6 +13,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { ensureDir } from '@withy/core';
 import { resolveWorkflowSkills } from '../configurators/shared.js';
 import { PROJECT_DIR_NAME } from '../constants/product.js';
+import { DEFAULT_WORKFLOW_CONTENT, GUIDE_TEMPLATE } from './templates.js';
 
 export interface ManagedTemplate {
   relativePath: string;
@@ -54,10 +55,42 @@ export function getManagedWorkflowSkillTemplates(projectRoot: string): ManagedTe
   });
 }
 
-export function getInstalledWorkflowSkillTemplates(projectRoot: string): ManagedTemplate[] {
-  const templates = getManagedWorkflowSkillTemplates(projectRoot);
+/**
+ * Resolve project-level workflow files managed by the CLI.
+ *
+ * @param projectRoot project root containing the `.withy` directory
+ *
+ * @example
+ * getManagedProjectTemplates('/path/to/project');
+ */
+export function getManagedProjectTemplates(projectRoot: string): ManagedTemplate[] {
+  return [
+    {
+      relativePath: `${PROJECT_DIR_NAME}/guide.md`,
+      absolutePath: resolve(projectRoot, PROJECT_DIR_NAME, 'guide.md'),
+      content: GUIDE_TEMPLATE,
+    },
+    {
+      relativePath: `${PROJECT_DIR_NAME}/workflows/default.workflow.json`,
+      absolutePath: resolve(projectRoot, PROJECT_DIR_NAME, 'workflows/default.workflow.json'),
+      content: DEFAULT_WORKFLOW_CONTENT,
+    },
+  ];
+}
 
-  for (const template of templates) {
+/**
+ * Resolve every managed template installed in a project.
+ *
+ * @param projectRoot project root containing Withy-managed files
+ *
+ * @example
+ * getInstalledManagedTemplates('/path/to/project');
+ */
+export function getInstalledManagedTemplates(projectRoot: string): ManagedTemplate[] {
+  const skillTemplates = getManagedWorkflowSkillTemplates(projectRoot);
+  const templates = [...getManagedProjectTemplates(projectRoot), ...skillTemplates];
+
+  for (const template of skillTemplates) {
     const skillName = template.relativePath.split('/').at(-2);
     if (!skillName) {
       continue;
