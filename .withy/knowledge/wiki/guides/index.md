@@ -4,4 +4,4 @@
 
 ## Subdirectories
 
-- [frontend/](frontend/) — 2 entries
+- [frontend/](frontend/) — 3 entries
