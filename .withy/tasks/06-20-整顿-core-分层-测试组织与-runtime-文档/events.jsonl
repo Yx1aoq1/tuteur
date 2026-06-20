@@ -1,0 +1,11 @@
+{"ts":"2026-06-20T10:00:17.503Z","type":"complete_attempt","node":"brainstorm","ok":true}
+{"ts":"2026-06-20T10:15:40.075Z","type":"complete_attempt","node":"grill-me","ok":false,"reason":"needs approval: run \"withy approve --json\""}
+{"ts":"2026-06-20T10:15:47.327Z","type":"approval","node":"grill-me","by":"yan"}
+{"ts":"2026-06-20T10:15:47.408Z","type":"complete_attempt","node":"grill-me","ok":true}
+{"ts":"2026-06-20T10:16:27.650Z","type":"session_start","injected":[]}
+{"ts":"2026-06-20T10:18:14.205Z","type":"complete_attempt","node":"dev","ok":true}
+{"ts":"2026-06-20T10:18:33.716Z","type":"rewind","node":"dev","by":"yan","reason":"误触 withy next 跳过了 dev 实际开发,回退重新执行开发"}
+{"ts":"2026-06-20T11:07:21.449Z","type":"session_start","injected":[]}
+{"ts":"2026-06-20T11:08:19.727Z","type":"complete_attempt","node":"dev","ok":true}
+{"ts":"2026-06-20T13:05:09.438Z","type":"complete_attempt","node":"check","ok":true}
+{"ts":"2026-06-20T13:09:26.247Z","type":"complete_attempt","node":"finish","ok":true}
