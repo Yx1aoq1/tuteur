@@ -1,0 +1,19 @@
+{
+  "taskId": "06-20-优化-board-完成态与任务详情展示",
+  "currentNode": null,
+  "completedNodes": [
+    "brainstorm",
+    "grill-me",
+    "dev",
+    "check",
+    "finish"
+  ],
+  "decisions": {},
+  "approvals": {
+    "grill-me": {
+      "approvedAt": "2026-06-20T05:57:12.010Z",
+      "by": "yan"
+    }
+  },
+  "updatedAt": "2026-06-20T06:01:18.054Z"
+}

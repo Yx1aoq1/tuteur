@@ -18,17 +18,19 @@ export function TaskCard({ card, selected, onSelect }: TaskCardProps) {
   const { done, total } = card.implementation;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
-  // accent = 左侧色条颜色:卡住=terracotta,否则阶段色,无阶段=line。选中边框/ring 复用同色,与色条一致。
-  const accent = card.stuck
-    ? { strip: 'bg-terracotta', border: 'border-terracotta', ring: 'ring-terracotta' }
-    : (meta ?? { strip: 'bg-line', border: 'border-line', ring: 'ring-line' });
+  // 已完成卡片始终使用 teal;其余卡片按卡住状态或阶段取强调色。
+  const accent = isDone
+    ? { strip: 'bg-teal', border: 'border-teal', ring: 'ring-teal' }
+    : card.stuck
+      ? { strip: 'bg-terracotta', border: 'border-terracotta', ring: 'ring-terracotta' }
+      : (meta ?? { strip: 'bg-line', border: 'border-line', ring: 'ring-line' });
 
   return (
     <article
       onClick={onSelect}
       className={`relative cursor-pointer overflow-hidden rounded-xl border bg-paper p-3 shadow-card transition-transform hover:-translate-y-0.5 ${
-        selected ? `${accent.border} ring-1 ${accent.ring}` : 'border-line'
-      }`}
+        isDone || selected ? accent.border : 'border-line'
+      } ${selected ? `ring-1 ${accent.ring}` : ''}`}
     >
       <span className={`absolute inset-y-0 left-0 w-1 ${accent.strip}`} />
 

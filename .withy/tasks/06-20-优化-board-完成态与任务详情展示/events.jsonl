@@ -1,0 +1,7 @@
+{"ts":"2026-06-20T05:55:48.522Z","type":"session_start","injected":[]}
+{"ts":"2026-06-20T05:57:11.693Z","type":"complete_attempt","node":"brainstorm","ok":true}
+{"ts":"2026-06-20T05:57:12.015Z","type":"approval","node":"grill-me","by":"yan"}
+{"ts":"2026-06-20T05:57:12.574Z","type":"complete_attempt","node":"grill-me","ok":true}
+{"ts":"2026-06-20T06:01:17.000Z","type":"complete_attempt","node":"dev","ok":true}
+{"ts":"2026-06-20T06:01:17.331Z","type":"complete_attempt","node":"check","ok":true}
+{"ts":"2026-06-20T06:01:18.056Z","type":"complete_attempt","node":"finish","ok":true}

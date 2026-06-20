@@ -38,13 +38,13 @@ export function ViewDetail({ card, project }: ViewDetailProps) {
   };
 
   return (
-    <aside className="flex w-[336px] shrink-0 flex-col overflow-y-auto border-l border-line-strong bg-[color-mix(in_srgb,var(--paper)_40%,transparent)]">
+    <aside className="flex w-[336px] min-w-0 shrink-0 flex-col overflow-x-hidden overflow-y-auto border-l border-line-strong bg-[color-mix(in_srgb,var(--paper)_40%,transparent)]">
       <div className="flex items-center px-4 pt-3.5 pb-2.5">
         <span className="font-serif text-[15px] font-semibold">{t('title')}</span>
       </div>
 
       <div className="px-4 pb-[18px]">
-        <h2 className="mt-0.5 mb-4 font-serif text-[20px] font-semibold leading-tight">{card.title}</h2>
+        <h2 className="mt-0.5 mb-4 break-words font-serif text-[20px] font-semibold leading-tight">{card.title}</h2>
 
         <Layer label={t('phaseLayer')}>
           <PhaseStepper current={card.phase} completed={card.column === 'done'} />
@@ -81,16 +81,25 @@ export function ViewDetail({ card, project }: ViewDetailProps) {
           {items.length === 0 ? (
             <p className="text-[12px] text-ink-faint">{t('implementationEmpty')}</p>
           ) : (
-            <ul className="flex flex-col gap-1.5">
-              {items.map(item => (
-                <li key={item.id} className="flex items-start gap-2 text-[12.5px] leading-snug">
-                  <span className={`mt-0.5 text-[11px] ${item.done ? 'text-teal' : 'text-ink-faint'}`}>
-                    {item.done ? '✓' : '○'}
-                  </span>
-                  <span className={item.done ? 'text-ink-faint line-through' : 'text-ink-soft'}>{item.text}</span>
-                </li>
-              ))}
-            </ul>
+            <details className="rounded-lg border border-line bg-paper/60 px-2.5 py-2">
+              <summary className="cursor-pointer text-[12px] font-semibold text-ink-soft">
+                {t('implementationSteps', { count: items.length })}
+              </summary>
+              <ul className="mt-2.5 flex min-w-0 flex-col gap-1.5 border-t border-dashed border-line pt-2.5">
+                {items.map(item => (
+                  <li key={item.id} className="flex min-w-0 items-start gap-2 text-[12.5px] leading-snug">
+                    <span className={`mt-0.5 shrink-0 text-[11px] ${item.done ? 'text-teal' : 'text-ink-faint'}`}>
+                      {item.done ? '✓' : '○'}
+                    </span>
+                    <span
+                      className={`min-w-0 break-words ${item.done ? 'text-ink-faint line-through' : 'text-ink-soft'}`}
+                    >
+                      {item.text}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
           )}
           {unparsed > 0 && (
             <p className="mt-2 text-[11px] text-terracotta">{t('implementationUnparsed', { count: unparsed })}</p>
