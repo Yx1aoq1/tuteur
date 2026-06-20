@@ -5,8 +5,10 @@
 - [x] 在 `@withy/app` 装入 `@milkdown/crepe`、`@milkdown/kit`、`@milkdown/react`、`github-slugger`,并在知识库页临时挂一个最小 Crepe 实例(client-only / 动态导入) — Verify: `pnpm --filter @withy/app build` 通过(✓ compiled + TS + static gen 全绿;`/[project]/knowledge` 路由正常产出)
 - [x] 在该 spike 验证 `[[wikilink]]` 往返保真 — 结论:**裸 Crepe 会破坏**。Milkdown 经 `mdast-util-to-markdown@2` 序列化,把 `[[foo]]` 转义成 `\[\[foo]]`(两个 `[` 间插入 `\`,连 `extractLinks` 正则都匹配不到)。已在 lib 层证实。
 - [x] R1 通过;R5 裸态失败 → 按 design R5 回退路径(**自定义节点/插件**,非回 brainstorm)处理 — 已证实修复方案:自定义 `wikiLink` mdast 节点 + 原样 `toMarkdown` handler(handler 输出绕过转义),`toMarkdown` 实测产出 `[[foo]]` 与 `[[foo|别名]]` 逐字不变。Crepe 经 `crepe.editor.use()` 可注入插件。spike 实例已移除。
-  - 备注:本阶段未跑 agent-browser(ssr:false 动态导入结构性消除 SSR;build 已覆盖编译/类型/静态产出)。运行时挂载的浏览器验收并入阶段 4 端到端环节。
-  - 采用方案:**自研 Milkdown 插件(文本切分 → `wikiLink` 节点 → 原样 handler + inputRule)**,不引第三方 wikilink 库(`mdast-util-wiki-link@0.1` 仅兼容 to-markdown v1;`@portaljs/remark-wiki-link` 产出 link 节点非 `[[]]`)。
+
+备注:本阶段未跑 agent-browser(ssr:false 动态导入结构性消除 SSR;build 已覆盖编译/类型/静态产出)。运行时挂载的浏览器验收并入阶段 4 端到端环节。
+
+采用方案:**自研 Milkdown 插件(文本切分 → `wikiLink` 节点 → 原样 handler + inputRule)**,不引第三方 wikilink 库(`mdast-util-wiki-link@0.1` 仅兼容 to-markdown v1;`@portaljs/remark-wiki-link` 产出 link 节点非 `[[]]`)。
 
 ## 阶段 1:core 写入面与校验(领域逻辑 + 测试先行)
 
