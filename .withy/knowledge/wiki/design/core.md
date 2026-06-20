@@ -7,7 +7,7 @@ tags: [withy, core, data-model, workflow, schema, store, archive]
 summary: '唯一 .withy 读写层与领域/类型事实源:双层模型、用户模型、数据结构、Store API、门禁状态机、数据契约、InitConfig、归档。'
 inject: index
 injectByDefault: false
-updated: 2026-06-19
+updated: 2026-06-20
 ---
 
 # Core 设计(@withy/core)
@@ -115,6 +115,18 @@ export function taskDir(scope: Scope, id: string): string;
 ```
 
 `resolveProjectScope` 优先级:显式 `from` > `WITHY_PROJECT_ROOT` > `INIT_CWD` > `cwd`,逐级向上找(吸收已删 `context.ts` 职责)。仓库根探测同 Trellis 的「向上找 `.withy/`」,支持嵌套仓库。
+
+### 2.5 三处 "runtime" 命名(一名三义,不重命名,仅厘清)
+
+"runtime" 在本仓覆盖**三件互不相干**的事,历史命名巧合;本轮只补文档、不改名(避免无谓的接口/路径变更)。三者区别:
+
+| 名称                          | 是什么                         | 语义                                                                                                                                                                       |
+| ----------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.withy/runtime/`(目录)      | 磁盘上的**瞬态状态目录**       | gitignore(§2.2);项目级存当前任务指针 `current-task.json`(workflow 走完由 `clearCurrentTaskPointer` 主动清除),全局级存 dashboard 守护态(pid/port)。换机/清理可丢,不是事实源。 |
+| `workflow/runtime.ts`(代码) | 工作流状态机的 **IO 外壳**     | 读写 `.withy/`、算 gate、落盘 state/events,驱动 `stepWorkflow`;不含转移/分支/门禁*逻辑*(那在 engine/interpret/gate)。属 core,与上面的目录无关。                            |
+| `cli/harness/runtime.ts`(代码) | CLI 的**输出层**             | JSON/人读格式化、`emit`/退出、scope/task/actor 解析;每条命令共用。属 cli,与上面两者均无关。                                                                                |
+
+要点:`.withy/runtime/` 是**瞬态**的——两个已完成任务在该目录无产物属设计预期(任务产物落在 `tasks/<id>/`,§2.2),指针在 workflow 完成时被清。代码侧两个 `runtime.ts` 只是恰好同名的「壳」,一个是状态机 IO 壳、一个是 CLI 输出壳;读码时按所在包/路径区分,勿混。
 
 ---
 
@@ -600,4 +612,4 @@ withy task archive <id> [--cancelled]  /  web 归档按钮
 
 ## 关联页
 
-- [[cli]] · [[harness]] · [[harness-flow]] · [[web]] · [[knowledge-base]] · [[decisions]]
+- [[cli]] · [[harness]] · [[harness-flow]] · [[web]] · [[knowledge-base]] · [[decisions]] · [[testing-build-conventions]]

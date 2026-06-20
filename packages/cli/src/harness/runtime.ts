@@ -1,3 +1,8 @@
+// CLI output layer ("harness runtime"): JSON-vs-human formatting, the emit/exit
+// helper, and scope/task/actor resolution shared by every command. Despite the
+// file name, this is unrelated to core's `workflow/runtime.ts` (state-machine IO
+// shell) and to the `.withy/runtime/` transient-state directory (core paths.ts
+// `runtimeDir`). See design/core.md ("三处 runtime 命名") for the distinction.
 import { resolveCurrentTask, resolveProjectScope, taskExists, readDeveloper, type Scope } from '@withy/core';
 import type { Command } from 'commander';
 

@@ -5,5 +5,5 @@
 ## Subdirectories
 
 - [design/](wiki/design/) — 8 entries
-- [guides/](wiki/guides/) — 3 entries
+- [guides/](wiki/guides/) — 4 entries
 - [product/](wiki/product/) — 1 entry
