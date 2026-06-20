@@ -19,6 +19,7 @@
     "copy:assets": "node scripts/copy-assets.mjs",
     "dev": "tsx src/index.ts",
     "prepack": "pnpm build",
+    "test": "tsx --test src/configurators/*.test.ts src/installation/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
