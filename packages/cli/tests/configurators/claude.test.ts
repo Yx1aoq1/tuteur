@@ -1,10 +1,9 @@
-import { strict as assert } from 'node:assert';
 import { writeFileSync, readlinkSync, symlinkSync, mkdtempSync, lstatSync, mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { afterEach, describe, it } from 'node:test';
+import { afterEach, describe, expect, it } from 'vitest';
 import { type SkillAdapterMode, AGENT_PLATFORMS } from '@withy/core';
-import { configureClaude } from './claude.js';
+import { configureClaude } from '../../src/configurators/claude.js';
 
 const temporaryRoots: string[] = [];
 
@@ -18,17 +17,17 @@ describe('configureClaude', () => {
   it('links Claude skills to the canonical repository skill directory', async () => {
     const { root, skillPath } = await configure('symlink');
 
-    assert.equal(lstatSync(skillPath).isSymbolicLink(), true);
-    assert.equal(readlinkSync(skillPath), '../../.agents/skills/withy-test');
-    assert.equal(skillPath, resolve(root, '.claude/skills/withy-test'));
+    expect(lstatSync(skillPath).isSymbolicLink()).toBe(true);
+    expect(readlinkSync(skillPath)).toBe('../../.agents/skills/withy-test');
+    expect(skillPath).toBe(resolve(root, '.claude/skills/withy-test'));
   });
 
   it('copies canonical skills into the Claude skill directory when requested', async () => {
     const { root, skillPath } = await configure('copy');
 
-    assert.equal(lstatSync(skillPath).isDirectory(), true);
-    assert.equal(lstatSync(skillPath).isSymbolicLink(), false);
-    assert.equal(skillPath, resolve(root, '.claude/skills/withy-test'));
+    expect(lstatSync(skillPath).isDirectory()).toBe(true);
+    expect(lstatSync(skillPath).isSymbolicLink()).toBe(false);
+    expect(skillPath).toBe(resolve(root, '.claude/skills/withy-test'));
   });
 
   it('repairs a Claude symlink that still targets the legacy canonical directory', async () => {
@@ -47,7 +46,7 @@ describe('configureClaude', () => {
 
     await configureClaude({ projectRoot: root, createdPaths: [], skillAdapterMode: 'symlink' }, AGENT_PLATFORMS.claude);
 
-    assert.equal(readlinkSync(skillPath), '../../.agents/skills/withy-test');
+    expect(readlinkSync(skillPath)).toBe('../../.agents/skills/withy-test');
   });
 });
 

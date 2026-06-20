@@ -1,9 +1,8 @@
-import { strict as assert } from 'node:assert';
 import { readlinkSync, readdirSync, existsSync, mkdtempSync, lstatSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { afterEach, describe, it } from 'node:test';
-import { initProject } from './init.js';
+import { afterEach, describe, expect, it } from 'vitest';
+import { initProject } from '../../src/installation/init.js';
 
 const temporaryRoots: string[] = [];
 
@@ -31,18 +30,18 @@ describe('initProject agent skills', () => {
     const claudeRoot = resolve(root, '.claude/skills');
     const skillNames = readdirSync(canonicalRoot).filter(name => name.startsWith('withy-'));
 
-    assert.deepEqual(result.installedAgents, ['codex', 'claude']);
-    assert.equal(existsSync(resolve(root, '.agent')), false);
-    assert.equal(existsSync(resolve(root, '.gemini')), false);
-    assert.equal(skillNames.length, 6);
+    expect(result.installedAgents).toEqual(['codex', 'claude']);
+    expect(existsSync(resolve(root, '.agent'))).toBe(false);
+    expect(existsSync(resolve(root, '.gemini'))).toBe(false);
+    expect(skillNames.length).toBe(6);
 
     for (const skillName of skillNames) {
       const canonicalSkill = resolve(canonicalRoot, skillName);
       const claudeSkill = resolve(claudeRoot, skillName);
-      assert.equal(lstatSync(canonicalSkill).isDirectory(), true);
-      assert.equal(lstatSync(canonicalSkill).isSymbolicLink(), false);
-      assert.equal(lstatSync(claudeSkill).isSymbolicLink(), true);
-      assert.equal(readlinkSync(claudeSkill), `../../.agents/skills/${skillName}`);
+      expect(lstatSync(canonicalSkill).isDirectory()).toBe(true);
+      expect(lstatSync(canonicalSkill).isSymbolicLink()).toBe(false);
+      expect(lstatSync(claudeSkill).isSymbolicLink()).toBe(true);
+      expect(readlinkSync(claudeSkill)).toBe(`../../.agents/skills/${skillName}`);
     }
   });
 });

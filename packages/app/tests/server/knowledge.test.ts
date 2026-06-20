@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildKnowledgeTree, adaptKnowledgeGraph } from './knowledge';
+import { buildKnowledgeTree, adaptKnowledgeGraph } from '../../src/server/knowledge';
 import type { WikiEntry, KnowledgeGraph } from '@withy/core';
 
 describe('buildKnowledgeTree', () => {

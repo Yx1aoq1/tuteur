@@ -1,8 +1,10 @@
 import { defineConfig, configDefaults } from 'vitest/config';
 
-// 仅排除 Next 构建产物(standalone 会复制 src,含 *.test.ts);其余沿用 vitest 默认。
+// Tests live in tests/ mirroring src/ (CLAUDE.md test layout). Scope discovery there;
+// keep excluding Next build output (standalone may copy src) as a belt-and-suspenders guard.
 export default defineConfig({
   test: {
+    include: ['tests/**/*.test.ts'],
     exclude: [...configDefaults.exclude, '**/.next/**'],
   },
 });

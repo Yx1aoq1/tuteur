@@ -1,9 +1,8 @@
-import { strict as assert } from 'node:assert';
 import { writeFileSync, readFileSync, symlinkSync, mkdtempSync, lstatSync, mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { afterEach, describe, it } from 'node:test';
-import { writeSkills } from './shared.js';
+import { afterEach, describe, expect, it } from 'vitest';
+import { writeSkills } from '../../src/configurators/shared.js';
 
 const temporaryRoots: string[] = [];
 
@@ -31,8 +30,8 @@ describe('writeSkills', () => {
       createdPaths: [],
     });
 
-    assert.equal(lstatSync(canonicalSkill).isDirectory(), true);
-    assert.equal(lstatSync(canonicalSkill).isSymbolicLink(), false);
-    assert.equal(readFileSync(resolve(canonicalSkill, 'SKILL.md'), 'utf8'), 'canonical');
+    expect(lstatSync(canonicalSkill).isDirectory()).toBe(true);
+    expect(lstatSync(canonicalSkill).isSymbolicLink()).toBe(false);
+    expect(readFileSync(resolve(canonicalSkill, 'SKILL.md'), 'utf8')).toBe('canonical');
   });
 });
