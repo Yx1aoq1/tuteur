@@ -1,0 +1,37 @@
+/*
+ * Crepe 主题 → 砚墨(Ink-stone)设计 token 的覆盖,作用域限知识库编辑区。
+ * 仅把 Crepe 的颜色/字体变量映射到 globals.css 的语义 token(单一数据源),不改 Crepe 结构。
+ */
+
+.milkdown {
+  --crepe-color-background: transparent;
+  --crepe-color-on-background: var(--ink);
+  --crepe-color-surface: var(--paper);
+  --crepe-color-surface-low: var(--paper-sunken);
+  --crepe-color-on-surface: var(--ink);
+  --crepe-color-on-surface-variant: var(--ink-soft);
+  --crepe-color-outline: var(--line);
+  --crepe-color-primary: var(--teal);
+  --crepe-color-secondary: var(--teal-bg);
+  --crepe-color-hover: var(--paper-sunken);
+  --crepe-color-selected: var(--teal-bg);
+  --crepe-color-inline-code: var(--terracotta);
+  --crepe-font-title: var(--font-serif);
+  --crepe-font-default: var(--font-sans);
+  --crepe-font-code: var(--font-mono);
+}
+
+.milkdown .ProseMirror {
+  padding: 20px 24px;
+  color: var(--ink);
+}
+
+/* 双链 [[id]] / [[id|别名]] 内联节点:与正文区分、可点感(不破坏行高) */
+.milkdown .wikilink {
+  color: var(--teal);
+  background: var(--teal-bg);
+  border-radius: 4px;
+  padding: 0 3px;
+  font-size: 0.95em;
+  white-space: nowrap;
+}

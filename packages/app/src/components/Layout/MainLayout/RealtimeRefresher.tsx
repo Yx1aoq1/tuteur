@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { parseRoute } from '@/constants/views';
+import { withinEchoWindow } from '@/lib/knowledgeEcho';
 import type { ProjectCard } from '@/types/dashboard';
 
 interface RealtimeRefresherProps {
@@ -21,7 +22,11 @@ export function RealtimeRefresher({ projects }: RealtimeRefresherProps) {
     if (!path) return;
     const url = `/api/events?project=${encodeURIComponent(path)}`;
     const source = new EventSource(url);
-    source.addEventListener('task-updated', () => router.refresh());
+    // 本地知识库写盘也会触发 task-updated;抑制窗口内跳过刷新,避免打断正在编辑的编辑器(echo 抑制)。
+    source.addEventListener('task-updated', () => {
+      if (withinEchoWindow()) return;
+      router.refresh();
+    });
     return () => source.close();
   }, [path, router]);
 
