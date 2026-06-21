@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { taskPath, type Scope } from '../../src/paths.js';
-import { listTaskArtifacts, readImplementation, readTaskArtifact, writeTask, readTask } from '../../src/store/index.js';
+import { listTaskArtifacts, readTaskArtifact, writeChecklist, writeTask, readTask } from '../../src/store/index.js';
 import { implementationProgress, archiveTask } from '../../src/task/index.js';
 import { writeTextFile, writeJsonFile, nowIso } from '../../src/utils/index.js';
 import type { Task } from '../../src/types.js';
@@ -37,41 +37,22 @@ function seedTask(scope: Scope, status: Task['status']): void {
   });
 }
 
-describe('markdown implementation plan', () => {
-  it('returns empty progress when implement.md is absent', () => {
-    expect(implementationProgress(createScope(), 'task-1')).toEqual({ done: 0, total: 0, unparsed: 0 });
+describe('implementation progress (checklist.json)', () => {
+  it('returns empty progress when checklist.json is absent', () => {
+    expect(implementationProgress(createScope(), 'task-1')).toEqual({ done: 0, total: 0 });
   });
 
-  it('parses checkbox bullets and reports other bullet lines', () => {
+  it('counts done/total from checklist.json', () => {
     const scope = createScope();
-    writeTextFile(
-      taskPath(scope, 'task-1', 'implement.md'),
-      [
-        '# Implementation Plan',
-        '- [ ] first',
-        '  * [X] nested done',
-        '- plain bullet',
-        '+ [x] final',
-        'paragraph',
-      ].join('\n'),
-    );
-
-    expect(readImplementation(scope, 'task-1')).toEqual({
+    writeChecklist(scope, 'task-1', {
+      nextId: 4,
       items: [
-        { id: 'line-2', text: 'first', done: false },
-        { id: 'line-3', text: 'nested done', done: true },
-        { id: 'line-5', text: 'final', done: true },
+        { id: '1', text: 'first', done: false },
+        { id: '2', text: 'second', done: true },
+        { id: '3', text: 'third', done: true },
       ],
-      unparsed: 1,
     });
-    expect(implementationProgress(scope, 'task-1')).toEqual({ done: 2, total: 3, unparsed: 1 });
-  });
-
-  it('counts malformed checkbox bullets as unparsed instead of silently dropping them', () => {
-    const scope = createScope();
-    writeTextFile(taskPath(scope, 'task-1', 'implement.md'), '- [maybe] unclear\n- [ ]\n');
-
-    expect(implementationProgress(scope, 'task-1')).toEqual({ done: 0, total: 0, unparsed: 2 });
+    expect(implementationProgress(scope, 'task-1')).toEqual({ done: 2, total: 3 });
   });
 });
 
@@ -136,21 +117,33 @@ describe('archiveTask gate', () => {
   it('blocks archiving a completed task whose implementation checklist is unfinished', () => {
     const scope = createScope();
     seedTask(scope, 'completed');
-    writeTextFile(taskPath(scope, 't', 'implement.md'), '- [x] done\n- [ ] still open\n');
+    writeChecklist(scope, 't', {
+      nextId: 3,
+      items: [
+        { id: '1', text: 'done', done: true },
+        { id: '2', text: 'still open', done: false },
+      ],
+    });
     expect(() => archiveTask(scope, 't')).toThrow(/unchecked implementation step/);
   });
 
   it('archives a completed task once every implementation step is checked', () => {
     const scope = createScope();
     seedTask(scope, 'completed');
-    writeTextFile(taskPath(scope, 't', 'implement.md'), '- [x] one\n- [x] two\n');
+    writeChecklist(scope, 't', {
+      nextId: 3,
+      items: [
+        { id: '1', text: 'one', done: true },
+        { id: '2', text: 'two', done: true },
+      ],
+    });
     expect(() => archiveTask(scope, 't')).not.toThrow();
   });
 
   it('abandons an unfinished task as cancelled with the explicit cancel option, skipping the checklist', () => {
     const scope = createScope();
     seedTask(scope, 'in_progress');
-    writeTextFile(taskPath(scope, 't', 'implement.md'), '- [ ] not done\n');
+    writeChecklist(scope, 't', { nextId: 2, items: [{ id: '1', text: 'not done', done: false }] });
     expect(() => archiveTask(scope, 't', { markCancelled: true })).not.toThrow();
     expect(readTask(scope, 't').status).toBe('cancelled');
   });
