@@ -8,9 +8,13 @@ import {
   readGitStatus,
   listTaskArtifacts,
   readKnowledgeEntry,
+  sweepPendingInjections,
+  claimPendingInjection,
+  resolveSessionId,
   readState,
   readTask,
   readWorkflow,
+  appendEvent,
   skillExists,
   taskExists,
   validateWorkflow,
@@ -18,6 +22,7 @@ import {
   writeState,
   writeTask,
   type NextStep,
+  type Scope,
   type Task,
 } from '@withy/core';
 import type { Command } from 'commander';
@@ -114,7 +119,31 @@ function runStart(titleOrId: string, options: StartOptions): void {
   writeState(scope, state);
   writeCurrentTaskPointer(scope, id);
 
+  // Timeline origin: an explicit task_created event stamped at creation time.
+  appendEvent(scope, id, { ts: now, type: 'task_created', by: creator });
+  backfillSessionInjection(scope, id);
+
   emit({ ok: true, task: id, created: true, status: task.status, node: state.currentNode, warnings });
+}
+
+// Claim this session's parked SessionStart injection (if any) and record it as the
+// creating session's session_start, preserving the original session-start timestamp
+// and snapshot. Best-effort: no session id or no pending entry → nothing to backfill.
+function backfillSessionInjection(scope: Scope, taskId: string): void {
+  sweepPendingInjections(scope);
+
+  const sessionId = resolveSessionId();
+  if (!sessionId) return;
+
+  const pending = claimPendingInjection(scope, sessionId);
+  if (!pending) return;
+
+  appendEvent(scope, taskId, {
+    ts: pending.ts,
+    type: 'session_start',
+    injected: pending.injected,
+    snapshot: pending.snapshot,
+  });
 }
 
 interface ListOptions {
