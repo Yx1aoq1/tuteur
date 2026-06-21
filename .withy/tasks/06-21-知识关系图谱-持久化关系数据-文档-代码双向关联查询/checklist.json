@@ -1,0 +1,77 @@
+{
+  "nextId": 13,
+  "items": [
+    {
+      "id": "1",
+      "text": "core: frontmatter 加 covers 字段(pages.ts KnowledgePage + asArray 解析,缺省 [])",
+      "verify": "pnpm --filter @withy/core test pages",
+      "done": true
+    },
+    {
+      "id": "2",
+      "text": "core: graph.ts 派生 cover 边 + code 节点(每页每条 covers glob 产 from:页 to:glob type:cover)",
+      "verify": "pnpm --filter @withy/core test graph",
+      "done": true
+    },
+    {
+      "id": "3",
+      "text": "core: 加 fast-glob(lint 展开用)+picomatch(--path 匹配用)依赖,写 query.ts(relatedDocs 双向去重+仅同scope+未知id抛错 / coverageForDoc 返声明 globs 不展开 / docsCoveringPath picomatch 单向匹配)",
+      "verify": "pnpm --filter @withy/core test knowledge",
+      "done": true
+    },
+    {
+      "id": "4",
+      "text": "core: cache.ts —— graph.json{meta:{generatedAt,maxMtime,pageCount},nodes,edges} + readGraphCached 指纹校验/重建 + writeGraphCache;接进 rebuildKnowledgeIndexes(eager);graph 命令/web 改读 readGraphCached",
+      "verify": "pnpm --filter @withy/core test knowledge",
+      "done": true
+    },
+    {
+      "id": "5",
+      "text": "core: lint.ts 加悬空 covers checker(glob 零命中报 issue,同断链级别)",
+      "verify": "pnpm --filter @withy/core test lint",
+      "done": true
+    },
+    {
+      "id": "6",
+      "text": "core: 按项目规范显式具名导出新 API(knowledge/index.ts + core index.ts,禁 export *),值/类型分组",
+      "verify": "pnpm --filter @withy/core typecheck && pnpm --filter @withy/core build",
+      "done": true
+    },
+    {
+      "id": "7",
+      "text": "cli: knowledge.ts 加 related <id> 与 coverage(--doc/--path 二选一)两子命令,薄壳调 core,继承 --json",
+      "verify": "pnpm --filter @withy/cli build && node packages/cli/dist/index.js knowledge related core --json && node packages/cli/dist/index.js knowledge coverage --doc core --json && node packages/cli/dist/index.js knowledge coverage --path packages/core/src/store/checklist.ts --json",
+      "done": true
+    },
+    {
+      "id": "8",
+      "text": "repo: .withy/.gitignore 追加 knowledge/graph.json",
+      "verify": "node packages/cli/dist/index.js knowledge graph >/dev/null 2>&1; test -z \"$(git status --porcelain .withy/knowledge/graph.json)\"",
+      "done": true
+    },
+    {
+      "id": "9",
+      "text": "app: KnowledgeGraph.tsx 换 react-force-graph-2d(dynamic ssr:false,nodeVal 按 inDegree,仅 link 边+文档节点,onNodeClick 打开文档,保留选中高亮)+ 加依赖",
+      "verify": "pnpm --filter @withy/app build",
+      "done": true
+    },
+    {
+      "id": "10",
+      "text": "data: 给既有页加 covers(core->packages/core/src/**、cli->packages/cli/src/**、harness/node-gate-checkers/task-event-timeline/web/knowledge-base 映射各自代码),提供真实关联数据",
+      "verify": "node packages/cli/dist/index.js knowledge coverage --doc core --json && node packages/cli/dist/index.js knowledge lint",
+      "done": true
+    },
+    {
+      "id": "11",
+      "text": "docs: knowledge-base.md 记 covers/related/coverage/graph.json 缓存语义;cli.md/core.md 补命令面与 cover 边;重算 index",
+      "verify": "node packages/cli/dist/index.js knowledge lint && node packages/cli/dist/index.js knowledge index",
+      "done": true
+    },
+    {
+      "id": "12",
+      "text": "全量校验:typecheck + lint(0 warning) + 三包 build",
+      "verify": "pnpm typecheck && pnpm lint && pnpm --filter @withy/core build && pnpm --filter @withy/cli build && pnpm --filter @withy/app build",
+      "done": true
+    }
+  ]
+}
