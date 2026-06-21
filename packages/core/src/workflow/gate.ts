@@ -15,6 +15,10 @@ export interface GateContext {
   runCheck(cmd: string): { code: number; output: string };
   // Has the current node been approved? (bound to the node by the caller)
   isApproved(): boolean;
+  // Has a node summary been recorded for the current round of this node?
+  hasNote(): boolean;
+  // Does a non-empty implementation plan exist (checklist.json)?
+  hasProgress(): boolean;
 }
 
 type GateChecker = (gate: Gate, ctx: GateContext) => string[];
@@ -34,7 +38,13 @@ const checksChecker: GateChecker = (gate, ctx) =>
 const approvalChecker: GateChecker = (gate, ctx) =>
   gate.approval && !ctx.isApproved() ? ['needs approval: run "withy approve --json"'] : [];
 
-const CHECKERS: GateChecker[] = [artifactsChecker, checksChecker, approvalChecker];
+const noteChecker: GateChecker = (gate, ctx) =>
+  gate.note && !ctx.hasNote() ? ['record a node summary: run "withy note \\"<summary>\\""'] : [];
+
+const progressChecker: GateChecker = (gate, ctx) =>
+  gate.progress && !ctx.hasProgress() ? ['missing implementation plan: run "withy checklist add \\"<step>\\""'] : [];
+
+const CHECKERS: GateChecker[] = [artifactsChecker, checksChecker, approvalChecker, noteChecker, progressChecker];
 
 /** Evaluate a skill node's gate. Empty `reasons` = pass; reasons block the step. */
 export function evaluateGate(node: SkillNode, ctx: GateContext): { ok: boolean; reasons: string[] } {

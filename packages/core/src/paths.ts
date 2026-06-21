@@ -100,6 +100,17 @@ export function currentTaskPointerPath(scope: Scope): string {
   return resolve(runtimeDir(scope), 'current-task.json');
 }
 
+// Per-session pending-injection files under `.withy/runtime/sessions/<sid>.json`
+// (transient, gitignored): a SessionStart injection parked when no task is active,
+// later claimed by `withy task start` to backfill the creating session's session_start.
+export function sessionsDir(scope: Scope): string {
+  return resolve(runtimeDir(scope), 'sessions');
+}
+
+export function pendingInjectionPath(scope: Scope, sessionId: string): string {
+  return resolve(sessionsDir(scope), `${sessionId}.json`);
+}
+
 // ── Global root files (config + project registry — core.md §2.1) ─────────────
 
 export function globalConfigPath(scope: Scope): string {

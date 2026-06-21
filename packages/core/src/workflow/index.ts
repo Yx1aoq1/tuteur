@@ -5,7 +5,7 @@
 // Only the host-facing surface is re-exported; engine/compile internals stay in
 // the directory. Explicit named re-exports only (CLAUDE.md).
 
-export { approveCurrentNode, nextNode, rewindTo, skipNode } from './runtime.js';
+export { approveCurrentNode, recordNote, nextNode, rewindTo, skipNode } from './runtime.js';
 export type { NextOptions, NextResult } from './runtime.js';
 
 export { describeNext, deriveStatus, initialState, nodeById, phaseOf } from './interpret.js';

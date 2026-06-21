@@ -4,7 +4,9 @@ import {
   clearCurrentTaskPointer,
   readWorkflow,
   appendEvent,
+  readProgress,
   isApproved,
+  readEvents,
   writeState,
   readState,
   writeTask,
@@ -24,7 +26,7 @@ import { evaluateGate } from './gate.js';
 import type { StepResult, NextStep, WorkflowAction } from './interpret.js';
 import type { GateContext } from './gate.js';
 import type { GuardReport } from './engine.js';
-import type { State, Task, Workflow, SkillNode } from '../types.js';
+import type { State, Task, Workflow, SkillNode, TaskEvent } from '../types.js';
 
 // ──────────────────────────────────────────────────────────────────────────
 // IO shell over the state machine. Loads `.withy/`, computes the current node's
@@ -93,12 +95,31 @@ export function skipNode(scope: Scope, taskId: string, by: string | undefined, r
 
 // Evaluate the current skill node's gate into a guard report keyed for the engine.
 function skillGuards(scope: Scope, taskId: string, node: SkillNode): GuardReport {
+  const events = readEvents(scope, taskId);
   const ctx: GateContext = {
     artifactExists: rel => existsNonEmpty(taskPath(scope, taskId, rel)),
     runCheck: cmd => runCommand(cmd, scope.root),
     isApproved: () => isApproved(scope, taskId, node.id),
+    hasNote: () => hasFreshNote(events, node.id),
+    hasProgress: () => readProgress(scope, taskId).source !== 'none',
   };
   return { [gateGuardId(node.id)]: evaluateGate(node, ctx) };
+}
+
+// A note is "fresh" when it post-dates this node's freshness floor — the latest of
+// (last rewind to it, last successful completion). The append-only log keeps prior
+// completions, so re-traversing a node after a rewind-to-ancestor correctly invalidates
+// the stale note. No floor (first entry) → any note for the node counts.
+// Exported (not in the barrel) for direct unit testing with crafted event streams.
+export function hasFreshNote(events: TaskEvent[], node: string): boolean {
+  let floor = '';
+  for (const event of events) {
+    const isFloor =
+      (event.type === 'rewind' && event.node === node) ||
+      (event.type === 'complete_attempt' && event.node === node && event.ok);
+    if (isFloor && event.ts > floor) floor = event.ts;
+  }
+  return events.some(event => event.type === 'note' && event.node === node && event.ts >= floor);
 }
 
 // Append the step's events, persist its state on success, map to a NextResult.
@@ -153,6 +174,20 @@ export function approveCurrentNode(scope: Scope, taskId: string, by: string): St
   writeState(scope, next);
   appendEvent(scope, taskId, { ts: nowIso(), type: 'approval', node: state.currentNode, by });
   return next;
+}
+
+// ── note (node summary; the note gate's evidence — §note gate) ────────────────
+
+/** Append a node summary for the current node. Throws on empty summary or no current node. */
+export function recordNote(scope: Scope, taskId: string, summary: string, by?: string): string {
+  const trimmed = summary.trim();
+  if (!trimmed) throw new Error('note summary must not be empty');
+
+  const state = readState(scope, taskId);
+  if (state.currentNode === null) throw new Error(`task "${taskId}" has no current node to annotate`);
+
+  appendEvent(scope, taskId, { ts: nowIso(), type: 'note', node: state.currentNode, summary: trimmed, by });
+  return state.currentNode;
 }
 
 // ── Task status sync + pointer cleanup ───────────────────────────────────────

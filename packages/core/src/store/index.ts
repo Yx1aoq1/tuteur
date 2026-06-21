@@ -12,6 +12,11 @@ export { isApproved, writeState, readState } from './state.js';
 
 export { appendEvent, readEvents } from './events.js';
 
+export { sweepPendingInjections, claimPendingInjection, writePendingInjection } from './sessions.js';
+export type { PendingInjection } from './sessions.js';
+
+export { readChecklistOrEmpty, writeChecklist, readChecklist, readProgress } from './checklist.js';
+
 export { writeWorkflow, readWorkflow } from './workflows.js';
 
 export {
@@ -24,14 +29,7 @@ export {
   readProjects,
 } from './projects.js';
 
-export {
-  listTaskArtifacts,
-  readContextConfig,
-  readImplementation,
-  readTaskArtifact,
-  readDeveloper,
-  readGuide,
-} from './meta.js';
+export { listTaskArtifacts, readContextConfig, readTaskArtifact, readDeveloper, readGuide } from './meta.js';
 
 export {
   listKnowledgeFiles,

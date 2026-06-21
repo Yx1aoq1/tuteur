@@ -1,8 +1,10 @@
 export {
+  sessionIdFromHookPayload,
   CANONICAL_SKILL_DIR,
   getInitAgentChoices,
   getProjectSkillDirs,
   getGlobalSkillDirs,
+  resolveSessionId,
   getAgentPlatform,
   AGENT_PLATFORMS,
 } from './registry.js';

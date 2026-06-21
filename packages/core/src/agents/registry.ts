@@ -33,6 +33,8 @@ export const AGENT_PLATFORMS = defineAgentPlatforms({
     defaultChecked: true,
     skillTarget: '.claude/skills',
     skillDirs: { project: ['.claude/skills'], global: ['.claude/skills'] },
+    sessionIdEnv: 'CLAUDE_CODE_SESSION_ID',
+    hookSessionIdField: 'session_id',
     templateContext: {
       cmdRefPrefix: getSlashCommandPrefix(),
       userActionLabel: 'Slash commands',
@@ -46,6 +48,35 @@ export type RegisteredAgentPlatformConfig = (typeof AGENT_PLATFORMS)[AgentTool];
 
 export function getAgentPlatform(id: AgentTool): RegisteredAgentPlatformConfig {
   return AGENT_PLATFORMS[id];
+}
+
+/**
+ * Resolve the current agent session id from whichever platform env var is set
+ * (e.g. Claude's CLAUDE_CODE_SESSION_ID). Returns null when none is present —
+ * callers degrade (skip injection backfill) rather than fail.
+ * @param env Environment to read (defaults to process.env; injectable for tests).
+ */
+export function resolveSessionId(env: NodeJS.ProcessEnv = process.env): string | null {
+  for (const platform of Object.values(AGENT_PLATFORMS)) {
+    const key = platform.sessionIdEnv;
+    const value = key ? env[key] : undefined;
+    if (value) return value;
+  }
+  return null;
+}
+
+/**
+ * Extract the session id from a hook's stdin JSON payload, trying each platform's
+ * declared field (e.g. Claude's `session_id`). Returns null when absent.
+ * @param payload Parsed hook stdin JSON object.
+ */
+export function sessionIdFromHookPayload(payload: Record<string, unknown>): string | null {
+  for (const platform of Object.values(AGENT_PLATFORMS)) {
+    const field = platform.hookSessionIdField;
+    const value = field ? payload[field] : undefined;
+    if (typeof value === 'string' && value) return value;
+  }
+  return null;
 }
 
 export function getInitAgentChoices(): RegisteredAgentPlatformConfig[] {

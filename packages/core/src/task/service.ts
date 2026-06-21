@@ -3,8 +3,8 @@ import { type Scope, archiveDir, taskDir } from '../paths.js';
 import {
   clearCurrentTaskPointer,
   readCurrentTaskPointer,
-  readImplementation,
   taskExists,
+  readProgress,
   readEvents,
   listTasks,
   writeTask,
@@ -54,11 +54,13 @@ export function archiveTask(scope: Scope, taskId: string, options: ArchiveOption
           `or abandon it with "withy task archive ${taskId} --cancelled"`,
       );
     }
-    const undone = readImplementation(scope, taskId).items.filter(item => !item.done).length;
+    const progress = readProgress(scope, taskId);
+    const undone = progress.items.filter(item => !item.done).length;
     if (undone > 0) {
       throw new Error(
-        `task "${taskId}" has ${undone} unchecked implementation step(s) in implement.md — ` +
-          `check them all off before archiving, or abandon with "withy task archive ${taskId} --cancelled"`,
+        `task "${taskId}" has ${undone} unchecked implementation step(s) in checklist.json — ` +
+          `check them all off with "withy checklist done <id>" before archiving, or abandon with ` +
+          `"withy task archive ${taskId} --cancelled"`,
       );
     }
   }
@@ -92,10 +94,7 @@ export function isStuck(scope: Scope, taskId: string, node: string, threshold = 
 
 // ── Implementation progress (derived; web third tier — §4.7) ─────────────────
 
-export function implementationProgress(
-  scope: Scope,
-  taskId: string,
-): { done: number; total: number; unparsed: number } {
-  const { items, unparsed } = readImplementation(scope, taskId);
-  return { done: items.filter(item => item.done).length, total: items.length, unparsed };
+export function implementationProgress(scope: Scope, taskId: string): { done: number; total: number } {
+  const { done, total } = readProgress(scope, taskId);
+  return { done, total };
 }

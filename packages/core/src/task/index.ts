@@ -9,3 +9,6 @@ export {
   isStuck,
 } from './service.js';
 export type { ArchiveOptions, CurrentTask } from './service.js';
+
+export { removeChecklistItems, editChecklistItem, addChecklistItems, markChecklist } from './checklist.js';
+export type { ChecklistEntry } from './checklist.js';

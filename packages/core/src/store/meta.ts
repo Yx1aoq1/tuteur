@@ -1,35 +1,10 @@
 import { readdirSync, existsSync } from 'node:fs';
 import { dirname, resolve, basename } from 'node:path';
 import { type Scope, taskDir, archiveDir, guidePath } from '../paths.js';
-import {
-  type ContextConfig,
-  type ImplementationPlan,
-  type Developer,
-  ContextConfigSchema,
-  DeveloperSchema,
-} from '../types.js';
+import { type ContextConfig, type Developer, ContextConfigSchema, DeveloperSchema } from '../types.js';
 import { readTextFileIfExists, existsNonEmpty } from '../utils/index.js';
 import { readValidated } from './errors.js';
 import { taskReadPath } from './tasks.js';
-
-// ── Implementation plan (tasks/<id>/implement.md — agent-maintained, §4.7) ──
-
-export function readImplementation(scope: Scope, taskId: string): ImplementationPlan {
-  const content = readTextFileIfExists(taskReadPath(scope, taskId, 'implement.md'));
-  if (content === null) return { items: [], unparsed: 0 };
-
-  const items: ImplementationPlan['items'] = [];
-  let unparsed = 0;
-  for (const [index, line] of content.split('\n').entries()) {
-    const checkbox = /^\s*[-*+]\s+\[([ xX])\]\s+(.+?)\s*$/.exec(line);
-    if (checkbox) {
-      items.push({ id: `line-${index + 1}`, text: checkbox[2], done: checkbox[1].toLowerCase() === 'x' });
-    } else if (/^\s*[-*+]\s+/.test(line)) {
-      unparsed += 1;
-    }
-  }
-  return { items, unparsed };
-}
 
 // ── Task artifacts (tasks/<id>/*.md — agent-authored planning docs) ──────────
 

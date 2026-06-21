@@ -16,6 +16,12 @@ export interface AgentPlatformConfig<TAgentTool extends string = string> {
   skillDirs: { project: string[]; global: string[] };
   supportsAgentSkills?: boolean;
   templateContext: TemplateContext<TAgentTool>;
+  // Env var carrying this platform's session id on the CLI/bash side (e.g. Claude's
+  // CLAUDE_CODE_SESSION_ID), read by resolveSessionId for injection backfill.
+  sessionIdEnv?: string;
+  // Field name carrying the session id in this platform's hook stdin JSON (e.g.
+  // Claude's `session_id`), read by sessionIdFromHookPayload.
+  hookSessionIdField?: string;
 }
 
 export interface ConfigureAgentContext {

@@ -17,8 +17,10 @@ export {
   toDirectoryName,
   PHASE_PLANNING,
   PHASE_EXECUTE,
+  SNAPSHOT_MAX,
   PRODUCT_SLUG,
   PHASE_FINISH,
+  PROMPT_MAX,
 } from './constants.js';
 
 export {
@@ -28,10 +30,12 @@ export {
   WorkflowNodeSchema,
   ArtifactSpecSchema,
   DecisionRecordSchema,
+  ChecklistItemSchema,
   TaskPrioritySchema,
   TaskStatusSchema,
   ProjectRefSchema,
   SwitchNodeSchema,
+  ChecklistSchema,
   DeveloperSchema,
   PositionSchema,
   TaskEventSchema,
@@ -49,14 +53,16 @@ export type {
   ContextConfig,
   ImplementationItem,
   DecisionRecord,
+  ChecklistItem,
+  ProgressView,
   TaskPriority,
   WorkflowNode,
   ArtifactSpec,
   ProjectRef,
   TaskStatus,
   SwitchNode,
+  Checklist,
   Position,
-  ImplementationPlan,
   Developer,
   Approvals,
   SkillNode,
@@ -93,12 +99,18 @@ export {
   writeCurrentTaskPointer,
   clearCurrentTaskPointer,
   readCurrentTaskPointer,
+  sweepPendingInjections,
+  claimPendingInjection,
+  writePendingInjection,
+  readChecklistOrEmpty,
+  writeChecklist,
+  readChecklist,
+  readProgress,
   listKnowledgeFiles,
   writeKnowledgeFile,
   readKnowledgeSource,
   readContextConfig,
   listTaskArtifacts,
-  readImplementation,
   readTaskArtifact,
   listWikiEntries,
   readDeveloper,
@@ -120,16 +132,20 @@ export {
   readTask,
   readGuide,
 } from './store/index.js';
-export type { ListTasksOptions, KnowledgeFile, WikiEntry } from './store/index.js';
+export type { PendingInjection, ListTasksOptions, KnowledgeFile, WikiEntry } from './store/index.js';
 
 export {
   countConsecutiveFailures,
+  removeChecklistItems,
+  editChecklistItem,
   resolveCurrentTask,
   implementationProgress,
+  addChecklistItems,
+  markChecklist,
   archiveTask,
   isStuck,
 } from './task/index.js';
-export type { ArchiveOptions, CurrentTask } from './task/index.js';
+export type { ArchiveOptions, ChecklistEntry, CurrentTask } from './task/index.js';
 
 export {
   approveCurrentNode,
@@ -137,6 +153,7 @@ export {
   describeNext,
   deriveStatus,
   initialState,
+  recordNote,
   nodeById,
   rewindTo,
   skipNode,
@@ -193,10 +210,12 @@ export { serializeToCommand, toSkillAdapterMode, INIT_QUESTIONS } from './agents
 export type { SkillInstallMode, InitQuestion, InitChoice, InitConfig } from './agents/index.js';
 
 export {
+  sessionIdFromHookPayload,
   CANONICAL_SKILL_DIR,
   getInitAgentChoices,
   getProjectSkillDirs,
   getGlobalSkillDirs,
+  resolveSessionId,
   getAgentPlatform,
   AGENT_PLATFORMS,
 } from './agents/index.js';

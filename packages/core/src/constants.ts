@@ -23,6 +23,12 @@ export const DEFAULT_STUCK_THRESHOLD = 3;
 /** Max length a stored event `reason` is truncated to (compact JSONL lines). */
 export const EVENT_REASON_MAX = 200;
 
+/** Max length of a stored session-injection snapshot (session_start.snapshot). */
+export const SNAPSHOT_MAX = 4000;
+
+/** Max length of a recorded user prompt (prompt.text). */
+export const PROMPT_MAX = 500;
+
 /** Bundled skill name for a workflow base name, e.g. `dev` → `withy-dev`. */
 export function getBundledSkillName(baseName: string): string {
   return `${SKILL_NAME_PREFIX}-${toDirectoryName(baseName)}`;

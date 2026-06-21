@@ -1,4 +1,5 @@
 import { resolvePlannedContext } from './context.js';
+import { SNAPSHOT_MAX } from '../constants.js';
 import { resolveCurrentTask } from '../task/index.js';
 import { describeNext, nodeById } from '../workflow/index.js';
 import { readGuide, readDeveloper, readState, readTask, readWorkflow } from '../store/index.js';
@@ -9,6 +10,8 @@ import type { Scope } from '../paths.js';
 export interface SessionStartResult {
   text: string;
   injected: string[];
+  /** Verbatim injection text, truncated to SNAPSHOT_MAX — stored on the session_start event. */
+  snapshot: string;
   /** Non-null only when a concrete active task was resolved (caller writes the session_start event). */
   taskId: string | null;
 }
@@ -70,7 +73,13 @@ export function renderSessionStart(scope: Scope): SessionStartResult {
   const planned = resolvePlannedContext(scope, taskId ?? '', currentNode);
   out.push(...contextLines(planned));
 
-  return { text: out.join('\n') + '\n', injected: planned.map(entry => entry.id), taskId };
+  const text = out.join('\n') + '\n';
+  return { text, injected: planned.map(entry => entry.id), snapshot: truncate(text, SNAPSHOT_MAX), taskId };
+}
+
+// 注入正文快照截断:超 max 截断并加省略号,落库时保持 JSONL 行紧凑。
+function truncate(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
 /**

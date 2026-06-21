@@ -75,6 +75,10 @@ export const GateSchema = z.object({
   artifacts: z.array(ArtifactSpecSchema).optional(),
   checks: z.array(z.string()).optional(),
   approval: z.boolean().optional(),
+  // require a node summary (`withy note`) for the current round before advancing — §note gate.
+  note: z.boolean().optional(),
+  // require a non-empty implementation plan (checklist.json) — §progress gate.
+  progress: z.boolean().optional(),
 });
 export type Gate = z.infer<typeof GateSchema>;
 
@@ -161,13 +165,35 @@ export const TaskEventSchema = z.discriminatedUnion('type', [
     reason: z.string().optional(),
   }),
   z.object({ ts: z.string(), type: z.literal('approval'), node: z.string(), by: z.string().optional() }),
-  z.object({ ts: z.string(), type: z.literal('session_start'), injected: z.array(z.string()) }),
+  // session_start carries the injected entry ids plus an optional verbatim snapshot
+  // of the injection text (truncated to SNAPSHOT_MAX). snapshot is optional so old
+  // rows (no snapshot) still parse.
+  z.object({
+    ts: z.string(),
+    type: z.literal('session_start'),
+    injected: z.array(z.string()),
+    snapshot: z.string().optional(),
+  }),
+  // task birth marker; ts = task.createdAt so the timeline has an explicit origin.
+  z.object({ ts: z.string(), type: z.literal('task_created'), by: z.string().optional() }),
+  // agent-authored node summary (the note gate's evidence).
+  z.object({
+    ts: z.string(),
+    type: z.literal('note'),
+    node: z.string(),
+    summary: z.string(),
+    by: z.string().optional(),
+  }),
+  // verbatim (truncated) user prompt; recorded only while a task is active.
+  z.object({ ts: z.string(), type: z.literal('prompt'), text: z.string() }),
+  // a checklist item flipped to done (implementation progress milestone).
+  z.object({ ts: z.string(), type: z.literal('checkpoint'), id: z.string(), text: z.string() }),
 ]);
 export type TaskEvent = z.infer<typeof TaskEventSchema>;
 
 // ──────────────────────────────────────────────────────────────────────────
-// Implementation plan (tasks/<id>/implement.md) — core.md §4.7
-// Markdown is agent-maintained; these are the best-effort parsed view types.
+// Implementation progress item (id/text/done) — the neutral view shape shared by
+// the dashboard and the archive gate. Sourced from checklist.json.
 // ──────────────────────────────────────────────────────────────────────────
 
 export interface ImplementationItem {
@@ -176,9 +202,34 @@ export interface ImplementationItem {
   done: boolean;
 }
 
-export interface ImplementationPlan {
+// ──────────────────────────────────────────────────────────────────────────
+// Checklist (tasks/<id>/checklist.json) — command-managed implementation plan.
+// The sole implementation-progress source (it replaced implement.md entirely).
+// ──────────────────────────────────────────────────────────────────────────
+
+export const ChecklistItemSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  verify: z.string().optional(),
+  done: z.boolean().default(false),
+});
+export type ChecklistItem = z.infer<typeof ChecklistItemSchema>;
+
+// nextId is a monotonic counter: an item's id is the nextId at allocation time,
+// then nextId increments. Removing an item never renumbers; ids are never reused.
+export const ChecklistSchema = z.object({
+  nextId: z.number().int().positive().default(1),
+  items: z.array(ChecklistItemSchema).default([]),
+});
+export type Checklist = z.infer<typeof ChecklistSchema>;
+
+// Implementation-progress view from checklist.json, feeding the archive gate /
+// dashboard counts and the detail item list — store §readProgress.
+export interface ProgressView {
+  source: 'checklist' | 'none';
   items: ImplementationItem[];
-  unparsed: number;
+  done: number;
+  total: number;
 }
 
 // ──────────────────────────────────────────────────────────────────────────
