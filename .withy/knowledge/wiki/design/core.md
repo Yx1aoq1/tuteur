@@ -16,13 +16,13 @@ updated: 2026-06-21
 > 定位:实施规格级。`@withy/core` 是**唯一**的 `.withy/` 读写层、领域逻辑层与类型/校验事实源。CLI、app、hook 全经它访问数据。
 > 本文是 [cli.md](./cli.md)、[harness.md](./harness.md)、[web.md](./web.md) 的共同底座 —— 双层数据格式、用户模型、InitConfig、归档、数据契约都在此定义。
 > 参考实现:Trellis(`mindfold-ai/Trellis`)的注册表+configurator+shared 三层、归档移目录、身份文件 gitignore 等做法。**关键分歧**:Trellis 不做全局且禁止在 home 运行;我们要做全局,故对全局安装设了安全边界(§2.3)。
-> 状态:**P0 已落地**(types/paths/store/workflow〔engine/interpret/gate/runtime/validate〕/task/context/skills/hook/utils/agents 已实现并接入 CLI;全局 scope、InitConfig、discoverSkills 富化、worktree 等仍为推荐设计)。逐项见 [INDEX §3 实现状态矩阵](./decisions.md#3-实现状态矩阵)。
+> 状态:**P0 已落地**(types/paths/store/workflow〔engine/interpret/gate/runtime/validate〕/task/context/skills/hook/utils/agents 已实现并接入 CLI;全局 scope、InitConfig、discoverSkills 富化、worktree 等仍为推荐设计)。逐项见本页 [§10 代码评价与 TODO](#10-代码评价与-todo)。
 
 ---
 
 ## 1. 为什么要这个包
 
-最初三处各读各的 `.withy/`(cli installation、app summary.ts、旧 py hook),且 app 抄常量,必然漂移。`@withy/core` 已收口为唯一逻辑层(CLI 已全量接入;app 接入待办,见 INDEX §3):
+最初三处各读各的 `.withy/`(cli installation、app summary.ts、旧 py hook),且 app 抄常量,必然漂移。`@withy/core` 已收口为唯一逻辑层(CLI 已全量接入;app 接入待办,见 §10 K7):
 
 ```
         ┌────────────────────────────┐
@@ -628,4 +628,4 @@ withy task archive <id> [--cancelled]  /  web 归档按钮
 
 ## 关联页
 
-- [[cli]] · [[harness]] · [[harness-flow]] · [[web]] · [[knowledge-base]] · [[decisions]] · [[testing-build-conventions]] · [[node-gate-checkers]] · [[task-event-timeline]]
+- [[cli]] · [[harness]] · [[web]] · [[knowledge-base]] · [[decisions]] · [[testing-build-conventions]] · [[node-gate-checkers]] · [[task-event-timeline]]
