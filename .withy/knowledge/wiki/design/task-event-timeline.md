@@ -7,13 +7,14 @@ tags: [withy, events, timeline, session, hook, dashboard]
 summary: events.jsonl 判别联合事件模型与前向兼容、会话注入回填的两侧 session-id 契约、dashboard 时间线本地时区+严格升序+prompt 就地折叠。
 inject: index
 injectByDefault: false
+covers: [packages/core/src/store/events.ts, packages/app/src/appTemplates/Board/components/detail.tsx]
 sources: []
 updated: 2026-06-21
 ---
 
 # 任务事件流与时间线展示
 
-> `tasks/<id>/events.jsonl` 是任务执行的 append-only 真相流;dashboard 时间线是它的只读投影。本页记录几处不查代码就会重新踩的约定。详见 [[harness]](门禁/hook)、[[core]](store)、门禁侧见 [[node-gate-checkers]]。
+> `tasks/<id>/events.jsonl` 是任务执行的 append-only 真相流;dashboard 时间线是它的只读投影。本页记录几处不查代码就会重新踩的约定。详见 [[harness]](门禁/hook)、[[core]](events schema/store §4.4)、写事件的命令(`hook`/`note`/`checklist`/`task start`)见 [[cli]] §3.1、门禁侧见 [[node-gate-checkers]]。
 
 ## 1. 事件模型(判别联合,按 `type` 分立)
 

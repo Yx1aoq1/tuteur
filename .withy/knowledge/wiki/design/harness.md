@@ -7,6 +7,7 @@ tags: [withy, harness, workflow, gate, hook, switch, injection]
 summary: '约束层核心:固定三阶段 workflow、withy next 门禁、switch 靠 agent 判断、advanceWorkflow/rewind、hook 三阶段注入、当前任务定位、用户扩展。'
 inject: index
 injectByDefault: false
+covers: [packages/core/src/workflow/**, packages/cli/src/harness/**]
 updated: 2026-06-20
 ---
 

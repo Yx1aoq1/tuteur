@@ -7,6 +7,7 @@ tags: [withy, web, dashboard, nextjs, canvas, api, sse]
 summary: '多项目+全局 dashboard、浏览器不碰 fs、workflow 自由画布+软泳道、三层进度、事件时间线、知识库管理、API、chokidar+SSE 实时更新。'
 inject: index
 injectByDefault: false
+covers: [packages/app/src/**]
 updated: 2026-06-19
 ---
 

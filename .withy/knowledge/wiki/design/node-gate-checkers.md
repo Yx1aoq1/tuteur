@@ -7,13 +7,14 @@ tags: [withy, gate, checklist, progress, note, workflow]
 summary: 门禁=checker+Gate 字段的扩展范式;note 门禁的「新鲜度 floor」算法;progress 门禁为何用独立 checker 而非 AND-list 产物;checklist.json 为唯一进度源。
 inject: index
 injectByDefault: false
+covers: [packages/core/src/workflow/gate.ts, packages/core/src/store/checklist.ts, packages/core/src/task/checklist.ts]
 sources: []
 updated: 2026-06-21
 ---
 
 # 节点门禁扩展:note / progress 与 checklist 进度源
 
-> 门禁系统(`core/workflow/gate.ts`)是 checker 注册表:**加一种门禁 = 加一个 checker + 一个 `Gate` 字段**,不动引擎/步进策略。IO 经 `GateContext` 注入,保持纯函数可单测。本页记录本轮新增的两种门禁与进度源切换。门禁全貌见 [[harness]];事件侧见 [[task-event-timeline]]。
+> 门禁系统(`core/workflow/gate.ts`)是 checker 注册表:**加一种门禁 = 加一个 checker + 一个 `Gate` 字段**,不动引擎/步进策略。IO 经 `GateContext` 注入,保持纯函数可单测。本页记录本轮新增的两种门禁与进度源切换。门禁全貌见 [[harness]];Gate schema 与 checker 落点见 [[core]] §4.3/§6;`withy note`/`withy checklist` 命令面见 [[cli]] §3.1/§3.3;事件侧见 [[task-event-timeline]]。
 
 ## 1. note 门禁与「新鲜度 floor」(非显然)
 

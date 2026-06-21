@@ -7,6 +7,7 @@ tags: [withy, knowledge, wiki, injection, karpathy]
 summary: '全局/项目同构 knowledge(karpathy LLM Wiki 三层)、条目 frontmatter schema、ingest/query/lint、多级索引、context.json 注入接入、web 管理。'
 inject: index
 injectByDefault: false
+covers: [packages/core/src/knowledge/**, packages/cli/src/commands/knowledge.ts, packages/app/src/server/knowledge.ts, packages/app/src/appTemplates/Knowledge/**]
 updated: 2026-06-19
 ---
 
@@ -79,6 +80,7 @@ tags: [backend, convention]
 summary: REST 命名、错误码、分页规范 # 一行;注入「索引模式」时只注 summary+路径
 inject: full | index # 注入形态(§4.1/§7);缺省 index。full=注正文(短而必读),index=注 summary+路径(长文档按需下钻)
 sources: [sources/rest-rfc.md] # 该页综合自哪些原始源(可追溯)
+covers: [packages/api/src/**] # 该页记录的仓库相对代码 glob(可选,缺省 []);派生 cover 边、供 coverage 查询(§9)
 injectByDefault: false # 是否进默认注入集(§7)
 format: md # 渲染格式;缺省 md。未来可扩展(json 表/图片/pdf),web 按此选渲染器(§10)
 updated: 2026-06-13
@@ -191,15 +193,20 @@ updated: 2026-06-13
 
 ## 9. 检索/维护命令(分 scope)
 
-agent 维护知识库以**直接写文件**为主(karpathy 模型,协议在 `withy-knowledge` skill);命令只固化**维护侧的确定性 bookkeeping**——「目录、图谱、体检」是机械计算,用代码做比让模型做更可靠(准则:确定性优先)。**检索不在命令里**:agent 自带文件工具直接读 `knowledge/` 导航(§6.3),不设 `search` 命令、不内置 RAG/图引擎(karpathy:百页规模 index+链接足够)。
+agent 维护知识库以**直接写文件**为主(karpathy 模型,协议在 `withy-knowledge` skill);命令只固化**维护侧的确定性 bookkeeping**——「目录、图谱、体检」是机械计算,用代码做比让模型做更可靠(准则:确定性优先)。**全文检索不在命令里**:agent 自带文件工具直接读 `knowledge/` 导航(§6.3),不设 `search` 命令、不内置 RAG/图引擎(karpathy:百页规模 index+链接足够)。**关系查询是例外**:`related`/`coverage` 是从派生关系图(`双链`/`covers`)机械算出的确定性 bookkeeping,不是全文/语义检索——它们答「谁连谁、文档↔代码对应」,与「先 index 后下钻」的导航互补。
 
 **核心原则:两级知识库结构完全相同、各自独立;命令永远只作用在一个 scope,`--global` 切换,默认当前项目。** scope 解析复用 `resolveProjectScope`(从 cwd 向上找 `.withy/`),与 `withy init --global` 同语义。
 
 | 命令                                                   | 作用                                                                                                                      | scope                                        |
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `withy knowledge graph [--global] [--merged] [--json]` | 从 `双链`+frontmatter `sources` **派生**文档关系图(节点/边);供 web 图谱视图 + lint                                        | 默认项目;`--global` 全局;`--merged` 全景(下) |
-| `withy knowledge index [--global]`                     | 据各页 frontmatter **确定性重算各级 `index.md`**(根 catalog + 各 `wiki/` 子目录索引);agent ingest 后调,避免多级手维护漏页 | 默认项目;`--global` 全局                     |
-| `withy knowledge lint [--global]`                      | 机械体检:孤儿页(入度 0)、断链(指向不存在的页)、`injectByDefault` 引用悬空                                                 | 默认项目;`--global` 全局                     |
+| `withy knowledge graph [--global] [--merged] [--json]` | 从 `双链`+frontmatter `sources`+`covers` **派生**关系图(节点/边);读 `graph.json` 缓存(指纹失效自动重建,下);供 web 图谱视图 + lint | 默认项目;`--global` 全局;`--merged` 全景(下) |
+| `withy knowledge index [--global]`                     | 据各页 frontmatter **确定性重算各级 `index.md`**(根 catalog + 各 `wiki/` 子目录索引);同时 eager 重写 `graph.json` 缓存 | 默认项目;`--global` 全局                     |
+| `withy knowledge lint [--global]`                      | 机械体检:孤儿页(入度 0)、断链(指向不存在的页)、`injectByDefault` 引用悬空、**悬空 `covers`**(glob 仓库零命中)            | 默认项目;`--global` 全局                     |
+| `withy knowledge related <id> [--global] [--json]`     | **文档→文档**查询:与 `<id>` 有直接 `双链`(出或入)的去重文档 id(1 跳、仅 link 边);未知 id → exit 1                    | 默认项目;`--global` 全局                     |
+| `withy knowledge coverage (--doc <id> \| --path <p>) [--global] [--json]` | **文档↔代码**查询:`--doc` 返该页 `covers` globs 原样(不展开);`--path` 返 `covers` glob 命中该路径的文档 id(单向 `picomatch`);二者择一 | 默认项目;`--global` 全局                     |
+
+- **`covers` 与文档↔代码关系**:页 frontmatter 可声明 `covers: [<仓库相对 glob>]`(§4),指向它记录的代码;派生图为每条 glob 产一条 `cover` 边(文档 → `kind:code` 节点)。`cover` 边/`code` 节点只入**数据与查询**(`coverage` 命令),**不进力导向视图**(视图仅文档节点 + `link` 边,web §3)。`related` 只走 `link` 边,不混 `source`/`cover`。
+- **`graph.json` 派生缓存(gitignore)**:`knowledge/graph.json` = `{ meta:{ generatedAt, maxMtime, pageCount }, nodes, edges }`,落盘缓存关系图。查询/web 读它:`stat` `wiki/**/*.md` 求最大 mtime + 页数,与 `meta` 比对——有页更新、页数变化、文件缺失/损坏 → 重派生并写回;否则用缓存。**失效靠内容指纹,绝不靠时间 TTL**;`index` 命令 eager 重写,查询 lazy 重建,二者并存。它是派生物,任何时刻可删,下次查询/`index` 重建;last-writer-wins、幂等、不上锁。
 
 - **唯一跨 scope 的是 `graph --merged`**(只为 web「全景」):把全局+项目节点画一起,每节点标 `scope: global|project`,跨 scope 边(项目页引用某全局知识 id)单独标。`index`/`lint` 无跨 scope 意义(两份 `index.md` 永不合并)。
 - **id 撞车规则**:全局与项目同 id(如都有 `api-conventions`)时**项目覆盖全局**——与注入合并顺序(全局 `injectByDefault` → 项目 `default` → node,§7)**同一条规则**,保证「看到的图」与「实际注入」一致。
