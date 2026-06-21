@@ -93,6 +93,13 @@ export function knowledgeWikiPath(scope: Scope, id: string): string {
   return resolve(knowledgeDir(scope), 'wiki', `${id}.md`);
 }
 
+// Derived relation-graph cache (`.withy/knowledge/graph.json`, gitignored): the
+// persisted nodes/edges + content fingerprint that `readGraphCached` validates and
+// rebuilds. Deletable at any time — the next query/`index` regenerates it.
+export function knowledgeGraphCachePath(scope: Scope): string {
+  return resolve(knowledgeDir(scope), 'graph.json');
+}
+
 // Project-level transient pointer under `.withy/runtime/` (see runtimeDir): the
 // "current task" cursor that `withy task start`/hook resolve and that
 // clearCurrentTaskPointer drops when the workflow finishes.

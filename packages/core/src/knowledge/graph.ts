@@ -18,11 +18,11 @@ export interface KnowledgeGraphNode {
   outDegree: number;
 }
 
-// 关系图边:link=正文 [[id]] 引用;source=frontmatter 源引用
+// 关系图边:link=正文 [[id]] 引用;source=frontmatter 源引用;cover=文档→代码 glob
 export interface KnowledgeGraphEdge {
   from: string;
   to: string;
-  type: 'link' | 'source';
+  type: 'link' | 'source' | 'cover';
 
   // 合并图中项目页指向仅存在于全局的 id(跨 scope 边)
   crossScope?: boolean;
@@ -86,6 +86,25 @@ function buildGraph(pages: KnowledgePage[]): KnowledgeGraph {
       to.inDegree++;
       if (from) from.outDegree++;
       edges.push({ from: page.id, to: source, type: 'source' });
+    }
+
+    for (const glob of page.covers) {
+      let to = nodes.get(glob);
+      if (!to) {
+        to = {
+          id: glob,
+          title: glob,
+          kind: 'code',
+          path: glob,
+          scope: page.scope,
+          inDegree: 0,
+          outDegree: 0,
+        };
+        nodes.set(glob, to);
+      }
+      to.inDegree++;
+      if (from) from.outDegree++;
+      edges.push({ from: page.id, to: glob, type: 'cover' });
     }
   }
 

@@ -1,6 +1,7 @@
 import { type Scope } from '../paths.js';
 import { writeKnowledgeFile, removeWikiEntry, listWikiEntries, readWikiFile } from '../store/index.js';
 import { listKnowledgePages } from './pages.js';
+import { writeGraphCache } from './cache.js';
 import { posixBase, posixDir } from './frontmatter.js';
 import type { KnowledgePage } from './pages.js';
 
@@ -174,7 +175,8 @@ function renderSubdirIndex(
 }
 
 /**
- * 重算并写回某 scope 各级 index.md(确定性 bookkeeping)。
+ * 重算并写回某 scope 各级 index.md(确定性 bookkeeping),并 eager 刷新派生关系缓存
+ * `graph.json`(与查询的 lazy 刷新并存,见 cache.ts)。
  *
  * @param scope 目标 scope
  * @return 写出的索引文件清单(含正文)
@@ -182,6 +184,7 @@ function renderSubdirIndex(
 export function rebuildKnowledgeIndexes(scope: Scope): KnowledgeIndexFile[] {
   const indexes = buildKnowledgeIndexes(listKnowledgePages(scope));
   for (const file of indexes) writeKnowledgeFile(scope, file.path, file.content);
+  writeGraphCache(scope);
 
   return indexes;
 }

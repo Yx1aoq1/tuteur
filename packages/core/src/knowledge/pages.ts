@@ -31,6 +31,9 @@ export interface KnowledgePage {
   // frontmatter sources:本页综合自哪些原始源(派生 source 边)
   sources: string[];
 
+  // frontmatter covers:本页记录的仓库相对代码 glob(派生 cover 边);缺省 []
+  covers: string[];
+
   // 正文里的 [[id]] 出链(去重)
   links: string[];
 
@@ -58,6 +61,7 @@ function parsePage(file: KnowledgeFile, scope: Scope): KnowledgePage {
     inject: data.inject === 'full' ? 'full' : 'index',
     injectByDefault: data.injectByDefault === true,
     sources: asArray(data.sources),
+    covers: asArray(data.covers),
     links: extractLinks(body),
     wikiRelPath: file.wikiRelPath,
     path: relative(scope.root, resolve(knowledgeDir(scope), 'wiki', file.wikiRelPath)),

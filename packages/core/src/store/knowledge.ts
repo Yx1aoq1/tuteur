@@ -1,7 +1,15 @@
-import { readdirSync, existsSync, rmSync } from 'node:fs';
+import { readdirSync, existsSync, statSync, rmSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
-import { type Scope, knowledgeWikiPath, knowledgeDir } from '../paths.js';
-import { readTextFileIfExists, writeTextFile, readTextFile, isDirectory, ensureDir, moveDir } from '../utils/index.js';
+import { type Scope, knowledgeGraphCachePath, knowledgeWikiPath, knowledgeDir } from '../paths.js';
+import {
+  readTextFileIfExists,
+  writeJsonFile,
+  writeTextFile,
+  readTextFile,
+  isDirectory,
+  ensureDir,
+  moveDir,
+} from '../utils/index.js';
 
 // ── Knowledge entries by id (raw markdown; frontmatter parsed in knowledge/) ──
 
@@ -55,6 +63,63 @@ export function listKnowledgeFiles(scope: Scope): KnowledgeFile[] {
 /** Write text to a path relative to `knowledge/` (creates parents). Backs `withy knowledge index`. */
 export function writeKnowledgeFile(scope: Scope, relPath: string, content: string): void {
   writeTextFile(resolve(knowledgeDir(scope), relPath), content);
+}
+
+// ── Derived graph cache + content fingerprint (knowledge/cache.ts is the consumer) ──
+
+// Content fingerprint of the wiki page set: the max page mtime + page count. Backs the
+// cache invalidation check (rebuild when a page is newer / pages added or removed).
+export interface WikiFingerprint {
+  // Largest mtimeMs across non-index wiki pages (0 when there are none).
+  maxMtimeMs: number;
+
+  // Number of non-index wiki pages.
+  pageCount: number;
+}
+
+/**
+ * Stat every non-index wiki page and fold it into a content fingerprint. Mirrors
+ * {@link listKnowledgeFiles}'s walk but reads only metadata, not contents.
+ *
+ * @param scope target scope
+ * @return max page mtime + page count; `{ maxMtimeMs: 0, pageCount: 0 }` when no wiki dir
+ */
+export function statWikiPages(scope: Scope): WikiFingerprint {
+  const wikiRoot = resolve(knowledgeDir(scope), 'wiki');
+  if (!existsSync(wikiRoot)) return { maxMtimeMs: 0, pageCount: 0 };
+
+  let maxMtimeMs = 0;
+  let pageCount = 0;
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = resolve(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (entry.isFile() && entry.name.endsWith('.md') && entry.name !== 'index.md') {
+        maxMtimeMs = Math.max(maxMtimeMs, statSync(full).mtimeMs);
+        pageCount++;
+      }
+    }
+  };
+
+  walk(wikiRoot);
+  return { maxMtimeMs, pageCount };
+}
+
+/** Read and JSON-parse the graph cache, or null when missing/corrupt (caller rebuilds). */
+export function readGraphCacheFile(scope: Scope): unknown {
+  const raw = readTextFileIfExists(knowledgeGraphCachePath(scope));
+  if (raw === null) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null; // corrupt cache = treat as missing, rebuild (design: 不抛)
+  }
+}
+
+/** Atomically write the derived graph cache to `knowledge/graph.json`. */
+export function writeGraphCacheFile(scope: Scope, value: unknown): void {
+  writeJsonFile(knowledgeGraphCachePath(scope), value);
 }
 
 // ── Wiki entries by path (relative to knowledge/wiki/; callers guard with assertInsideWiki) ──

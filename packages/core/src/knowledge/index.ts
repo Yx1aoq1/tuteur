@@ -16,6 +16,10 @@ export type { KnowledgeIndexFile } from './indexes.js';
 export { deriveKnowledgeGraph, deriveMergedGraph } from './graph.js';
 export type { KnowledgeGraphNode, KnowledgeGraphEdge, KnowledgeGraph } from './graph.js';
 
+export { docsCoveringPath, coverageForDoc, relatedDocs } from './query.js';
+
+export { readGraphCached, writeGraphCache } from './cache.js';
+
 export { lintKnowledge } from './lint.js';
 export type { KnowledgeIssue } from './lint.js';
 

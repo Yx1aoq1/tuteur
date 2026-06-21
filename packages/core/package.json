@@ -22,9 +22,12 @@
   },
   "dependencies": {
     "atomically": "^2.1.1",
+    "fast-glob": "^3.3.3",
+    "picomatch": "^4.0.4",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/picomatch": "^4.0.3",
     "typescript": "^5.8.3",
     "vitest": "^4.1.9"
   }

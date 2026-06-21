@@ -6,6 +6,9 @@ runtime/
 # `withy update` backups (transient)
 backup-update-*/
 
+# Derived knowledge relation cache (rebuilt on demand by `withy knowledge` query/index)
+knowledge/graph.json
+
 # Temporary files
 *.tmp
 *.new

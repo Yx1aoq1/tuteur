@@ -47,4 +47,21 @@ describe('adaptKnowledgeGraph', () => {
       scope: 'project',
     });
   });
+
+  it('drops cover edges and code nodes (data-only) and passes inDegree through', () => {
+    const graph: KnowledgeGraph = {
+      nodes: [
+        { id: 'a', title: 'A', path: '.withy/knowledge/wiki/a.md', scope: 'project', inDegree: 2, outDegree: 1 },
+        { id: 'packages/core/src/**', title: 'packages/core/src/**', kind: 'code', path: 'packages/core/src/**', scope: 'project', inDegree: 1, outDegree: 0 },
+      ],
+      edges: [{ from: 'a', to: 'packages/core/src/**', type: 'cover' }],
+    };
+
+    const view = adaptKnowledgeGraph(graph, 'project');
+
+    expect(view.nodes).toEqual([
+      { id: 'a', label: 'A', kind: undefined, scope: 'project', inDegree: 2, relPath: 'a.md' },
+    ]);
+    expect(view.edges).toEqual([]);
+  });
 });

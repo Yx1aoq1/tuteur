@@ -34,6 +34,9 @@ export interface KnowledgeGraphNodeView {
   kind?: string;
   scope: 'global' | 'project';
 
+  // 入链数(仅 [[link]] 边);力导向视图按此定节点大小。missing/synthesized 节点缺省无
+  inDegree?: number;
+
   // 对应页的 wiki 相对路径(真实页才有;source/missing 节点为空,不可打开)
   relPath?: string;
 }

@@ -32,15 +32,18 @@ export {
 export { listTaskArtifacts, readContextConfig, readTaskArtifact, readDeveloper, readGuide } from './meta.js';
 
 export {
+  writeGraphCacheFile,
+  readGraphCacheFile,
   listKnowledgeFiles,
   writeKnowledgeFile,
   readKnowledgeSource,
   removeWikiEntry,
   listWikiEntries,
+  statWikiPages,
   wikiEntryType,
   writeWikiFile,
   moveWikiEntry,
   readWikiFile,
   makeWikiDir,
 } from './knowledge.js';
-export type { KnowledgeFile, WikiEntry } from './knowledge.js';
+export type { WikiFingerprint, KnowledgeFile, WikiEntry } from './knowledge.js';
