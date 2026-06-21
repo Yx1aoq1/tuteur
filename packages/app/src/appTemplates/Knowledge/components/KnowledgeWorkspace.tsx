@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { FileTree } from './FileTree';
-import { TableOfContents } from './TableOfContents';
 import { KnowledgeGraph } from './KnowledgeGraph';
+import { DocOutline } from '@/components/markdown/DocOutline';
 import type { KnowledgeTreeNode, KnowledgeFileView } from '@/types/knowledge';
 
 // Crepe 触碰 document,必须 client-only 动态导入(ssr:false)。
@@ -103,7 +103,7 @@ export function KnowledgeWorkspace({ tree, project }: KnowledgeWorkspaceProps) {
               )}
             </section>
 
-            <TableOfContents relPath={activeFile?.relPath ?? null} />
+            <DocOutline docKey={activeFile?.relPath ?? null} />
           </>
         )}
       </div>

@@ -10,24 +10,25 @@ interface Heading {
   text: string;
 }
 
-interface TableOfContentsProps {
-  // 当前文件 relPath:切文件时重挂编辑器,据此重扫;空 = 无选中
-  relPath: string | null;
+interface DocOutlineProps {
+  // 当前文档键(知识库 relPath / 产物文件名):切文档时重挂渲染器,据此重扫;空 = 无选中
+  docKey: string | null;
 }
 
-const SCROLL_SELECTOR = '[data-knowledge-scroll]';
+const SCROLL_SELECTOR = '[data-doc-scroll]';
 const HEADING_SELECTOR = '.milkdown :is(h1, h2, h3, h4)';
 const RESCAN_DEBOUNCE_MS = 300;
 
-// 从编辑器渲染出的 heading DOM 直接生成大纲,锚点用 Milkdown 自带的 heading id
+// 共享章节目录:从只读 markdown 渲染出的 heading DOM 直接生成大纲,锚点用 Milkdown 自带的 heading id
 // (自注入 data-* 会被 ProseMirror 重渲染擦除)。点击平滑滚动、IntersectionObserver 滚动高亮。
-export function TableOfContents({ relPath }: TableOfContentsProps) {
-  const t = useTranslations('knowledge');
+// 同一时刻仅一个只读渲染实例(看板 ViewDetail 不挂 Crepe、仅弹窗挂;知识库为独立页),故容器选择器全局查即可。
+export function DocOutline({ docKey }: DocOutlineProps) {
+  const t = useTranslations('doc');
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [activeId, setActiveId] = useState<string>('');
 
-  // 重扫生成大纲项。编辑器为动态(ssr:false)异步挂载,可能晚于本 effect,故轮询等待
-  // scroll 容器出现再挂 MutationObserver(随后用它捕获编辑改动)。setState 收在具名 scan 内。
+  // 重扫生成大纲项。渲染器为动态(ssr:false)异步挂载,可能晚于本 effect,故轮询等待
+  // scroll 容器出现再挂 MutationObserver(随后用它捕获内容改动)。setState 收在具名 scan 内。
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let poll: ReturnType<typeof setInterval> | null = null;
@@ -35,7 +36,7 @@ export function TableOfContents({ relPath }: TableOfContentsProps) {
     let observer: MutationObserver | null = null;
 
     const scan = () => {
-      const scroll = relPath ? document.querySelector<HTMLElement>(SCROLL_SELECTOR) : null;
+      const scroll = docKey ? document.querySelector<HTMLElement>(SCROLL_SELECTOR) : null;
       const nodes = scroll ? Array.from(scroll.querySelectorAll<HTMLElement>(HEADING_SELECTOR)) : [];
       setHeadings(
         nodes
@@ -45,7 +46,7 @@ export function TableOfContents({ relPath }: TableOfContentsProps) {
     };
 
     const attach = (): boolean => {
-      const scroll = relPath ? document.querySelector<HTMLElement>(SCROLL_SELECTOR) : null;
+      const scroll = docKey ? document.querySelector<HTMLElement>(SCROLL_SELECTOR) : null;
       if (!scroll) return false;
 
       scan();
@@ -58,10 +59,10 @@ export function TableOfContents({ relPath }: TableOfContentsProps) {
       return true;
     };
 
-    scan(); // 立即重置(无 relPath/编辑器未挂载时清空)
-    if (relPath && !attach()) {
+    scan(); // 立即重置(无 docKey/渲染器未挂载时清空)
+    if (docKey && !attach()) {
       poll = setInterval(() => attach() && poll && clearInterval(poll), 150);
-      stop = setTimeout(() => poll && clearInterval(poll), 4000); // 4s 仍无编辑器则放弃
+      stop = setTimeout(() => poll && clearInterval(poll), 4000); // 4s 仍无渲染器则放弃
     }
 
     return () => {
@@ -70,7 +71,7 @@ export function TableOfContents({ relPath }: TableOfContentsProps) {
       if (stop) clearTimeout(stop);
       observer?.disconnect();
     };
-  }, [relPath]);
+  }, [docKey]);
 
   // 滚动高亮:观察各 heading,取最靠近顶部的可见项为当前。headings 变化时重挂。
   useEffect(() => {
@@ -112,7 +113,7 @@ export function TableOfContents({ relPath }: TableOfContentsProps) {
   return (
     <aside className="flex w-[200px] shrink-0 flex-col border-l border-line-strong bg-canvas-tint">
       <div className="shrink-0 px-4 py-3 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
-        {t('toc')}
+        {t('outline')}
       </div>
       <nav className="min-h-0 flex-1 overflow-auto px-2 pb-3">
         {headings.map(heading => (

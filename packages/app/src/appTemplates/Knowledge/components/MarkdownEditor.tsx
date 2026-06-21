@@ -6,7 +6,7 @@ import { Crepe } from '@milkdown/crepe';
 import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
-import './milkdown-overrides.css';
+import '@/components/markdown/milkdown-tokens.css';
 import { wikiLink } from './wikilink';
 import { markLocalWrite } from '@/lib/knowledgeEcho';
 import type { KnowledgeFileView } from '@/types/knowledge';
@@ -90,7 +90,7 @@ function CrepeEditor({ file, project }: MarkdownEditorProps) {
         {!file.readonly && <SaveBadge status={status} t={t} />}
         {file.readonly && <span className="text-ink-faint">{t('readonly')}</span>}
       </div>
-      <div className="min-h-0 flex-1 overflow-auto" data-knowledge-scroll>
+      <div className="min-h-0 flex-1 overflow-auto" data-doc-scroll>
         <Milkdown />
       </div>
     </div>

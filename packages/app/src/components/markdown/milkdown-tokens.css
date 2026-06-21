@@ -1,6 +1,7 @@
 /*
- * Crepe 主题 → 砚墨(Ink-stone)设计 token 的覆盖,作用域限知识库编辑区。
- * 仅把 Crepe 的颜色/字体变量映射到 globals.css 的语义 token(单一数据源),不改 Crepe 结构。
+ * Crepe 主题 → 砚墨(Ink-stone)设计 token 的映射,供所有 Milkdown/Crepe 实例共用
+ * (知识库可编辑编辑器 + 任务产物只读渲染)。仅把 Crepe 的颜色/字体变量映射到 globals.css
+ * 的语义 token(单一数据源),不改 Crepe 结构。
  */
 
 .milkdown {

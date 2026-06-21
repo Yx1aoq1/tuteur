@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale } from 'next-intl/server';
 import { PRODUCT_DISPLAY_NAME } from '@/product';
 import { THEME_STORAGE_KEY } from '@/hooks/useTheme';
+import 'overlayscrollbars/overlayscrollbars.css';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
