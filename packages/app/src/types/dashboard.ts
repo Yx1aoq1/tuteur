@@ -20,6 +20,23 @@ export interface ImplementationView {
   items: ImplementationItemView[];
 }
 
+// 执行时间线的单条事件视图模型(对齐 core TaskEvent 的可展示字段)。
+// session_start 无 node(node=null);ok 仅 complete_attempt 有;by 仅 decision/rewind/skip/approval 有。
+export interface TimelineEventView {
+  ts: string; // ISO 时间戳
+  type: string; // 事件类型字面值(complete_attempt/decision/rewind/skip/approval/session_start)
+  node: string | null; // 关联节点;session_start 无节点为 null
+  ok: boolean | null; // 验收结果(仅 complete_attempt),其余为 null
+  reason: string | null; // 事件说明(core 已截断),无则 null
+  by: string | null; // 操作人,无则 null
+}
+
+// 任务产物视图模型:一个产物 md 文件名 + 正文(懒加载,不挂 BoardCard)
+export interface TaskDocView {
+  name: string; // 产物文件名(安全 .md basename)
+  body: string; // markdown 正文(只读)
+}
+
 // 看板卡:一条任务在看板上的展示所需
 export interface BoardCard {
   id: string;
@@ -31,6 +48,7 @@ export interface BoardCard {
   node: string | null;
   stuck: boolean;
   implementation: ImplementationView;
+  timeline: TimelineEventView[]; // 执行时间线(按时间倒序);产物清单不挂此处,详情按需懒加载
 }
 
 export interface BoardData {

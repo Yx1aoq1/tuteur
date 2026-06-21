@@ -12,12 +12,13 @@ import {
   readWorkflow,
   readProjects,
   readState,
+  readEvents,
   listTasks,
   nodeById,
   phaseOf,
   isStuck,
 } from '@withy/core';
-import type { Scope, Task, TaskStatus } from '@withy/core';
+import type { Scope, Task, TaskEvent, TaskStatus } from '@withy/core';
 import type {
   Phase,
   BoardCard,
@@ -30,6 +31,7 @@ import type {
   CanvasWorkflow,
   ArchivedGroup,
   Identity,
+  TimelineEventView,
 } from '@/types/dashboard';
 
 // 画布默认编辑的 workflow id(对齐 init 落地的 default.workflow.json)
@@ -112,7 +114,13 @@ export function getIdentity(): Identity | null {
 export function getBoard(scope: Scope, identity: Identity | null): BoardData {
   const columns: Record<BoardColumn, BoardCard[]> = { todo: [], doing: [], done: [] };
 
-  for (const task of listTasks(scope)) {
+  // 每列卡片按 createdAt 倒序(最新在最上);createdAt 相等时按 id 兜底,保证确定性。
+  // core listTasks 默认按 id 升序,排序在 app 读取层完成(不改 core)。
+  const tasks = listTasks(scope)
+    .slice()
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id));
+
+  for (const task of tasks) {
     const column = COLUMN_BY_STATUS[task.status];
     if (!column) continue;
     columns[column].push(toCard(scope, task, column, identity));
@@ -197,6 +205,30 @@ function toCard(scope: Scope, task: Task, column: BoardColumn, identity: Identit
     node,
     stuck,
     implementation: readImplementationView(scope, task.id),
+    timeline: readTimelineView(scope, task.id),
+  };
+}
+
+// 读执行时间线视图模型:读事件 → 映射可展示字段 → 按时间倒序(最新在上);缺失或损坏降级为空。
+// session_start 无 node(node=null);ok 仅 complete_attempt 有;by 仅 decision/rewind/skip/approval 有。
+function readTimelineView(scope: Scope, id: string): TimelineEventView[] {
+  try {
+    return readEvents(scope, id)
+      .map(toTimelineEvent)
+      .sort((a, b) => b.ts.localeCompare(a.ts));
+  } catch {
+    return [];
+  }
+}
+
+function toTimelineEvent(event: TaskEvent): TimelineEventView {
+  return {
+    ts: event.ts,
+    type: event.type,
+    node: 'node' in event ? event.node : null,
+    ok: event.type === 'complete_attempt' ? event.ok : null,
+    reason: 'reason' in event && typeof event.reason === 'string' ? event.reason : null,
+    by: 'by' in event && typeof event.by === 'string' ? event.by : null,
   };
 }
 
