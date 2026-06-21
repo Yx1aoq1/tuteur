@@ -2,7 +2,9 @@
 
 # design/
 
+- [节点门禁扩展:note / progress 与 checklist 进度源](node-gate-checkers.md) — 门禁=checker+Gate 字段的扩展范式;note 门禁的「新鲜度 floor」算法;progress 门禁为何用独立 checker 而非 AND-list 产物;checklist.json 为唯一进度源。
 - [评审决策与实现状态](decisions.md) — 评审决策史、实现状态矩阵、针对历轮不满的解法、落地优先级、待产品确认与维护约定(自旧 INDEX 提炼,去掉导航地图与概念速查)。
+- [任务事件流与时间线展示](task-event-timeline.md) — events.jsonl 判别联合事件模型与前向兼容、会话注入回填的两侧 session-id 契约、dashboard 时间线本地时区+严格升序+prompt 就地折叠。
 - [知识库设计(Knowledge Base)](knowledge-base.md) — 全局/项目同构 knowledge(karpathy LLM Wiki 三层)、条目 frontmatter schema、ingest/query/lint、多级索引、context.json 注入接入、web 管理。
 - [CLI 设计(@withy/cli)](cli.md) — withy 命令族(init/task/next/approve/rewind/hook/knowledge/dashboard/update/uninstall)、缺省人读+--json、数据注册表+per-agent configurator、模板更新。
 - [Core 设计(@withy/core)](core.md) — 唯一 .withy 读写层与领域/类型事实源:双层模型、用户模型、数据结构、Store API、门禁状态机、数据契约、InitConfig、归档。

@@ -9,3 +9,5 @@
 ## [2026-06-20] ingest | 测试组织与构建配置约定 (wiki: guides/testing-build-conventions; 反链自 core; tests/ 镜像 src + vitest include + tsconfig rootDir 仅 build 两坑; index 重算, lint 0/0)
 
 ## [2026-06-20] update | 推进引导与进度可见性轮 (decisions: 加 2026-06-20 评审轮 + 状态矩阵 hook 行标 UserPromptSubmit 无任务提醒落地; harness: §6.4 skill 节点 Next-Action 改「先 task status 再跑 skill」、§6.5 UserPromptSubmit 落地注记、H12 P2→🟡; testing-build-conventions: §5 Prettier 忽略 .withy/ 与 *.md; index 重算, lint 0/0)
+
+## [2026-06-21] ingest | 任务时间线/门禁扩展/进度源 (wiki: design/task-event-timeline + design/node-gate-checkers; 反链自 harness §2; 含事件 safeParse 前向兼容、会话回填两侧 session-id 契约、时间线本地tz+严格升序+prompt就地折叠、note 新鲜度 floor、progress 独立 checker、checklist 唯一进度源、浅拷贝共享数组坑; index 重算, lint 0/0)
