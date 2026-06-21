@@ -1,0 +1,135 @@
+{
+  "nextId": 24,
+  "items": [
+    {
+      "id": "1",
+      "text": "`detail.tsx` 的 `formatEventTime` 改本地时区(`Intl.DateTimeFormat` + `<time suppressHydrationWarning>`),`archived.ts` 两个格式化同改",
+      "done": true,
+      "verify": "`pnpm --filter @withy/app build`;UTC+8 下 06-20T16:26Z 显示 06-21 00:26"
+    },
+    {
+      "id": "2",
+      "text": "`dashboard.ts` 的 `readTimelineView` 排序改**严格升序** `a.ts.localeCompare(b.ts)` 并更新注释;合成起点仅在无任何 `task_created` 时触发",
+      "done": true,
+      "verify": "`pnpm --filter @withy/app build`;时间线 brainstorm 在顶、finish 在底,回填 session_start 排在 task_created 之上"
+    },
+    {
+      "id": "3",
+      "text": "`core/constants.ts` 加 `SNAPSHOT_MAX`/`PROMPT_MAX`;`core/types.ts` 扩展 `TaskEventSchema`(`task_created`/`note`/`prompt`/`checkpoint`,`session_start` 加 `snapshot?`)— Verify: `pnpm --filter @withy/core build`;新事件 zod 解析单测(含老事件无 snapshot 回退)通过",
+      "done": true
+    },
+    {
+      "id": "4",
+      "text": "core barrel 显式具名导出新增类型(禁 `export *`)— Verify: `pnpm typecheck`",
+      "done": true
+    },
+    {
+      "id": "5",
+      "text": "`core/store` 新增 pending 注入 `writePendingInjection`/`claimPendingInjection`/`sweepPendingInjections`",
+      "done": true,
+      "verify": "单测写/认领(读后删)/按 24h 清扫"
+    },
+    {
+      "id": "6",
+      "text": "`core/agents/registry.ts` 给 `AGENT_PLATFORMS` 加 `sessionIdEnv`/`hookSessionIdField`,新增 `resolveSessionId()`",
+      "done": true,
+      "verify": "单测各平台取值 + 缺失返 null"
+    },
+    {
+      "id": "7",
+      "text": "`core/session/hook.ts` `renderSessionStart` 额外返回 `snapshot`(截断 `SNAPSHOT_MAX`)— Verify: `pnpm --filter @withy/core build`;单测含 snapshot 且截断",
+      "done": true
+    },
+    {
+      "id": "8",
+      "text": "`core/types.ts` 加 `ChecklistSchema`;`core/store` 新增 `readChecklist`/`writeChecklist` + `readProgress`(checklist.json 优先、空 items 即 0/0、否则回退 implement.md;返回 `{items,done,total,unparsed}`)— Verify: 单测双源回退 + 返回 items",
+      "done": true
+    },
+    {
+      "id": "9",
+      "text": "`core/task/service.ts` 归档门禁与 `implementationProgress` 改用 `readProgress`",
+      "done": true,
+      "verify": "单测:checklist.json 未完项拒绝归档;无 checklist.json 回退 implement.md 行为不变"
+    },
+    {
+      "id": "10",
+      "text": "`app/server/dashboard.ts` `readImplementationView` 改读 `readProgress`",
+      "done": true,
+      "verify": "`pnpm --filter @withy/app build`"
+    },
+    {
+      "id": "11",
+      "text": "新增 `withy checklist`:`add`(单条/ stdin 批量,`--json` 返回分配的稳定单调 id)、`done|undone|remove <id...>`(多 id 批量)、`edit`、`list`;`done` 仅对「未完成转完成」的 id append `checkpoint`(已 done 幂等不重复)、坏 id 报错",
+      "done": true,
+      "verify": "单测 add 返回单调 id、批量 add、`done 1 3` 批量落两条 checkpoint、重复 `done` 不再落、add/edit/remove/undone 不落事件、坏 id 报错"
+    },
+    {
+      "id": "12",
+      "text": "改写 `templates/workflow/workflow.json`:规划节点(brainstorm/grill-me)以 `progress:true` 取代列 implement.md,5 个 skill 节点 gate 加 `note:true`",
+      "done": true,
+      "verify": "`withy` 解析 workflow 无错;新任务进度门禁要计划、各节点要 note"
+    },
+    {
+      "id": "13",
+      "text": "改写 `templates/common/skills/{brainstorm,grill-me,dev,check,finish}/SKILL.md`:5 个节点各加「收尾 `withy note`」步骤;brainstorm 用 `withy checklist add` 建清单、dev 用 `done` 勾、finish 读清单;rebuild cli 并重装 `.claude/skills` 与 `.withy/workflows`",
+      "done": true,
+      "verify": "`pnpm --filter @withy/cli build`;新任务每节点 `withy next` 前有 note 步骤、dev 经 `withy checklist` 推进"
+    },
+    {
+      "id": "14",
+      "text": "`cli/commands/hook.ts` session-start 读 stdin `session_id`:有任务写 `session_start{snapshot}`,无任务 `writePendingInjection`;soft-fail",
+      "done": true,
+      "verify": "单测两分支 + stdin 异常退化"
+    },
+    {
+      "id": "15",
+      "text": "`cli/commands/hook.ts` user-prompt-submit:有活跃任务读 stdin prompt 原文 append `prompt{text 截断}`,无任务维持 nudge 不写事件",
+      "done": true,
+      "verify": "单测有/无任务两分支 + 截断"
+    },
+    {
+      "id": "16",
+      "text": "`cli/commands/task.ts` `task start` **新建路径**(非 focus 既有任务路径)append `task_created{ts=createdAt}`;`sweepPendingInjections` + `resolveSessionId` 命中 pending 则以原 ts+snapshot 回填首条 session_start 并删",
+      "done": true,
+      "verify": "单测:有/无 sid、有/无 pending、两 sid 隔离不串、focus 既有任务不重复写 task_created"
+    },
+    {
+      "id": "17",
+      "text": "`core/workflow/gate.ts` 加 `Gate.note`/`Gate.progress` + `noteChecker`/`progressChecker`,`GateContext` 加 `hasNote`/`hasProgress`;`runtime.ts` 绑定(note ts ≥ `nodeEnteredAt`=最近 rewind{node} 与最近 complete_attempt{node,ok:true} 较大值;hasProgress 走 readProgress)— Verify: 单测:无 note 拒绝、有 note 通过、rewind 后旧 note 失效、复访本节点旧 note 失效;progress 双源",
+      "done": true
+    },
+    {
+      "id": "18",
+      "text": "新增 `withy note \"<summary>\"` 为 `currentNode` append `note`(`by`=开发者 slug;空 summary 或 currentNode 为 null 拒绝)— Verify: 单测落事件、节点正确、by 正确、空/无节点拒绝",
+      "done": true
+    },
+    {
+      "id": "19",
+      "text": "`app` `readTimelineView` 严格升序 + 含 `prompt`(与里程碑同列) + 仅无 task_created 时由 `createdAt` 合成置顶",
+      "done": true,
+      "verify": "`pnpm --filter @withy/app build`;时间线含 prompt 行(按时间)、有合成起点、回填 session_start 在 task_created 之上"
+    },
+    {
+      "id": "20",
+      "text": "`TimelineEventView` 扩展 `summary?/text?/snapshot?`;`TimelineRow` 渲染 `task_created`/`note`/`checkpoint`/`prompt`,`session_start` 快照与 `prompt` 正文共用就地折叠",
+      "done": true,
+      "verify": "构建通过;各类型有展示、快照/消息可折叠展开"
+    },
+    {
+      "id": "21",
+      "text": "`app/messages/{zh,en}.json` 增新事件 i18n label(含 `event.prompt`/`promptToggle`)— Verify: 构建无缺键",
+      "done": true
+    },
+    {
+      "id": "22",
+      "text": "全量校验三件套",
+      "done": true,
+      "verify": "`pnpm typecheck` + `pnpm lint`(0 warning)+ 三包 `build` 全绿"
+    },
+    {
+      "id": "23",
+      "text": "手动端到端(agent-browser)— Verify: UTC+8 时间线日期/顺序;新会话建任务回填带快照且排在「任务创建」之上;5 节点未 note 各被拒;prompt 就地折叠于时间线;新任务 checklist 经命令驱动进度与归档逐条勾对;确认 SessionStart `session_id` 与 bash `CLAUDE_CODE_SESSION_ID` 相等(回填命中前提)",
+      "done": true
+    }
+  ]
+}

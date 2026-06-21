@@ -1,0 +1,19 @@
+{
+  "taskId": "06-21-时间线事件追踪-任务创建-会话注入回填-注入快照",
+  "currentNode": null,
+  "completedNodes": [
+    "brainstorm",
+    "grill-me",
+    "dev",
+    "check",
+    "finish"
+  ],
+  "decisions": {},
+  "approvals": {
+    "grill-me": {
+      "approvedAt": "2026-06-21T06:39:02.682Z",
+      "by": "yan"
+    }
+  },
+  "updatedAt": "2026-06-21T09:59:50.747Z"
+}
