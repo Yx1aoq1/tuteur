@@ -25,7 +25,7 @@ export function ViewDetail({ card, project }: ViewDetailProps) {
   const [docsFailedId, setDocsFailedId] = useState<string | null>(null); // 取清单失败的 id(派生失败态)
   const [openDoc, setOpenDoc] = useState<string | null>(null);
 
-  const { done, total, unparsed, items } = card.implementation;
+  const { done, total, items } = card.implementation;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const query = `?project=${encodeURIComponent(project)}`;
   const canArchive = card.column === 'done';
@@ -131,9 +131,6 @@ export function ViewDetail({ card, project }: ViewDetailProps) {
                     ))}
                   </ul>
                 </details>
-              )}
-              {unparsed > 0 && (
-                <p className="mt-2 text-[11px] text-terracotta">{t('implementationUnparsed', { count: unparsed })}</p>
               )}
             </Layer>
 

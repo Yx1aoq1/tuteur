@@ -7,10 +7,10 @@ import {
   resolveGlobalScope,
   discoverSkills,
   readGitStatus,
-  readImplementation,
   readDeveloper,
   readWorkflow,
   readProjects,
+  readProgress,
   readState,
   readEvents,
   listTasks,
@@ -205,20 +205,38 @@ function toCard(scope: Scope, task: Task, column: BoardColumn, identity: Identit
     node,
     stuck,
     implementation: readImplementationView(scope, task.id),
-    timeline: readTimelineView(scope, task.id),
+    timeline: readTimelineView(scope, task),
   };
 }
 
-// 读执行时间线视图模型:读事件 → 映射可展示字段 → 按时间倒序(最新在上);缺失或损坏降级为空。
-// session_start 无 node(node=null);ok 仅 complete_attempt 有;by 仅 decision/rewind/skip/approval 有。
-function readTimelineView(scope: Scope, id: string): TimelineEventView[] {
+// 读执行时间线视图模型:读事件(含 prompt,与里程碑事件按时间同列)→ 映射可展示字段 → 严格按 ts 升序
+// (最早在顶、与阶段条同向);无 task_created 事件时由 createdAt 合成置顶(老任务);缺失或损坏降级为空。
+function readTimelineView(scope: Scope, task: Task): TimelineEventView[] {
   try {
-    return readEvents(scope, id)
-      .map(toTimelineEvent)
-      .sort((a, b) => b.ts.localeCompare(a.ts));
+    const events = readEvents(scope, task.id);
+    const views = events.map(toTimelineEvent);
+    if (!events.some(event => event.type === 'task_created')) {
+      views.push(synthesizedTaskCreated(task.createdAt));
+    }
+    return views.sort((a, b) => a.ts.localeCompare(b.ts));
   } catch {
     return [];
   }
+}
+
+// 老任务无 task_created 事件:用 createdAt 合成一条置顶起点(其余字段中性)。
+function synthesizedTaskCreated(createdAt: string): TimelineEventView {
+  return {
+    ts: createdAt,
+    type: 'task_created',
+    node: null,
+    ok: null,
+    reason: null,
+    by: null,
+    summary: null,
+    text: null,
+    snapshot: null,
+  };
 }
 
 function toTimelineEvent(event: TaskEvent): TimelineEventView {
@@ -229,6 +247,9 @@ function toTimelineEvent(event: TaskEvent): TimelineEventView {
     ok: event.type === 'complete_attempt' ? event.ok : null,
     reason: 'reason' in event && typeof event.reason === 'string' ? event.reason : null,
     by: 'by' in event && typeof event.by === 'string' ? event.by : null,
+    summary: event.type === 'note' ? event.summary : null,
+    text: event.type === 'checkpoint' ? event.text : event.type === 'prompt' ? event.text : null,
+    snapshot: event.type === 'session_start' && typeof event.snapshot === 'string' ? event.snapshot : null,
   };
 }
 
@@ -265,23 +286,14 @@ function readArchivedPhaseNode(scope: Scope, task: Task): { phase: Phase | null;
   }
 }
 
-// 读实施计划视图模型;缺失或损坏降级为空。活跃卡与归档卡共用
+// 读实施计划视图模型(进度源:checklist.json);缺失或损坏降级为空。活跃卡与归档卡共用
 function readImplementationView(scope: Scope, id: string): BoardCard['implementation'] {
   try {
-    const implementation = readImplementation(scope, id);
-    const items = implementation.items.map(item => ({
-      id: item.id,
-      text: item.text,
-      done: item.done,
-    }));
-    return {
-      done: items.filter(item => item.done).length,
-      total: items.length,
-      unparsed: implementation.unparsed,
-      items,
-    };
+    const progress = readProgress(scope, id);
+    const items = progress.items.map(item => ({ id: item.id, text: item.text, done: item.done }));
+    return { done: progress.done, total: progress.total, items };
   } catch {
-    return { done: 0, total: 0, unparsed: 0, items: [] };
+    return { done: 0, total: 0, items: [] };
   }
 }
 

@@ -15,7 +15,7 @@ interface ArchivedDetailProps {
 export function ArchivedDetail({ card }: ArchivedDetailProps) {
   const t = useTranslations('archived');
   const meta = ARCHIVED_STATUS_META[card.finalStatus];
-  const { done, total, unparsed, items } = card.implementation;
+  const { done, total, items } = card.implementation;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
   return (
@@ -71,17 +71,18 @@ export function ArchivedDetail({ card }: ArchivedDetailProps) {
                 ))}
               </ul>
             )}
-            {unparsed > 0 && (
-              <p className="mt-2 text-[11px] text-terracotta">{t('implementationUnparsed', { count: unparsed })}</p>
-            )}
           </Layer>
 
           <div className="mt-1 border-t border-dashed border-line pt-3 text-[11px] text-ink-faint">
-            <p>{t('createdAt', { date: formatArchivedDate(card.createdAt) })}</p>
+            <p suppressHydrationWarning>{t('createdAt', { date: formatArchivedDate(card.createdAt) })}</p>
             {card.completedAt && (
-              <p className="mt-1">{t('completedAt', { date: formatArchivedDate(card.completedAt) })}</p>
+              <p suppressHydrationWarning className="mt-1">
+                {t('completedAt', { date: formatArchivedDate(card.completedAt) })}
+              </p>
             )}
-            <p className="mt-1">{t('archivedAt', { date: formatArchivedDate(card.archivedAt) })}</p>
+            <p suppressHydrationWarning className="mt-1">
+              {t('archivedAt', { date: formatArchivedDate(card.archivedAt) })}
+            </p>
             <p className="mt-1">{t('ownerLine', { owner: card.owner })}</p>
           </div>
         </div>

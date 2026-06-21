@@ -63,7 +63,9 @@ function ArchivedRow({ card, selected, onSelect }: { card: ArchivedCard; selecte
         <span className={`w-3 shrink-0 text-center text-[12px] font-bold ${meta.text}`}>{meta.icon}</span>
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">{card.title}</span>
         <span className="shrink-0 text-[11px] text-ink-faint">{card.owner}</span>
-        <span className="shrink-0 text-[11px] text-ink-faint tabular-nums">{formatArchivedDay(card.archivedAt)}</span>
+        <time suppressHydrationWarning className="shrink-0 text-[11px] text-ink-faint tabular-nums">
+          {formatArchivedDay(card.archivedAt)}
+        </time>
         <span className={`shrink-0 text-[11px] font-semibold ${meta.text}`}>{t(`status.${card.finalStatus}`)}</span>
       </button>
     </li>

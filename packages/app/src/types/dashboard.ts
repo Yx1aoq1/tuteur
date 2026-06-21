@@ -16,19 +16,22 @@ export interface ImplementationItemView {
 export interface ImplementationView {
   done: number;
   total: number;
-  unparsed: number;
   items: ImplementationItemView[];
 }
 
 // 执行时间线的单条事件视图模型(对齐 core TaskEvent 的可展示字段)。
-// session_start 无 node(node=null);ok 仅 complete_attempt 有;by 仅 decision/rewind/skip/approval 有。
+// session_start 无 node(node=null);ok 仅 complete_attempt 有;by 仅 decision/rewind/skip/approval/note/task_created 有。
+// prompt 与里程碑事件同列于时间线,其正文经 text 折叠展示。
 export interface TimelineEventView {
   ts: string; // ISO 时间戳
-  type: string; // 事件类型字面值(complete_attempt/decision/rewind/skip/approval/session_start)
-  node: string | null; // 关联节点;session_start 无节点为 null
+  type: string; // 事件类型字面值(complete_attempt/decision/rewind/skip/approval/session_start/task_created/note/checkpoint/prompt)
+  node: string | null; // 关联节点;session_start/task_created/prompt 无节点为 null
   ok: boolean | null; // 验收结果(仅 complete_attempt),其余为 null
   reason: string | null; // 事件说明(core 已截断),无则 null
   by: string | null; // 操作人,无则 null
+  summary: string | null; // 节点小结正文(仅 note),无则 null
+  text: string | null; // 条目文本(checkpoint 单行 / prompt 折叠正文),无则 null
+  snapshot: string | null; // 注入正文快照(仅 session_start,可展开),无则 null
 }
 
 // 任务产物视图模型:一个产物 md 文件名 + 正文(懒加载,不挂 BoardCard)
@@ -48,7 +51,7 @@ export interface BoardCard {
   node: string | null;
   stuck: boolean;
   implementation: ImplementationView;
-  timeline: TimelineEventView[]; // 执行时间线(按时间倒序);产物清单不挂此处,详情按需懒加载
+  timeline: TimelineEventView[]; // 执行时间线(严格按时间升序,含 prompt);产物清单不挂此处,详情按需懒加载
 }
 
 export interface BoardData {
@@ -111,11 +114,13 @@ export type TaskFilter = 'mine' | 'all';
 // 门禁产物:裸路径(向后兼容)或带展示标题/模板引用的对象(门禁只核 path)
 export type CanvasArtifact = string | { path: string; title?: string; template?: string };
 
-// 节点门禁:产物存在 + 检查命令 + 是否需人工审批(任一可选)
+// 节点门禁:产物存在 + 检查命令 + 人工审批 + 节点小结 + 实施计划(任一可选,与 core Gate 一一对应)
 export interface CanvasGate {
   artifacts?: CanvasArtifact[];
   checks?: string[];
   approval?: boolean;
+  note?: boolean;
+  progress?: boolean;
 }
 
 // 画布坐标(编辑器维护,不参与校验):x 自由;y 为所在泳道内相对带顶的偏移
