@@ -7,7 +7,7 @@ description: Required before any build work — a feature, component, behavior c
 
 Turn the user's request into evidence-backed requirements, a validated technical design, and an actionable implementation plan through focused, one-question-at-a-time dialogue. This is a thinking-and-asking step, not a building step.
 
-The outputs are `prd.md`, `design.md`, and `implement.md` in the active task directory. Do not write or modify production code, scaffold files, or take any other implementation action during this step. Do not advance the workflow until the user has reviewed and approved the proposed solution.
+The outputs are `prd.md` and `design.md` in the active task directory, plus a command-managed implementation checklist (`checklist.json`) built with `withy checklist add`. Do not write or modify production code, scaffold files, or take any other implementation action during this step. Do not advance the workflow until the user has reviewed and approved the proposed solution.
 
 ## This Applies Even When the Task Looks Simple
 
@@ -28,9 +28,9 @@ Every request goes through this step — a one-line utility, a config tweak, a s
 7. Update `prd.md` after each answer so it always reflects the latest shared understanding.
 8. Once the requirements are stable, present two or three viable solution approaches with their trade-offs. Lead with the recommended approach and explain why it best fits the goal and constraints.
 9. Develop the selected approach into `design.md`. Present the design in sections scaled to its complexity and confirm each section with the user before continuing.
-10. Derive `implement.md` from the approved requirements and design. Order the work by dependency, express every step as a Markdown checkbox, and include its verification.
-11. Self-review all three artifacts for contradictions, placeholders, unsupported assumptions, and missing boundaries. Fix issues before presenting the complete plan.
-12. After the user approves the complete plan, run `withy next` and follow the command output.
+10. Build the implementation checklist from the approved requirements and design. Add each step with `withy checklist add "<step>" --verify "<command or observable check>"`, ordered by dependency (prerequisites first). Do not hand-write `implement.md` — the checklist is command-managed in `checklist.json`.
+11. Self-review all artifacts for contradictions, placeholders, unsupported assumptions, and missing boundaries. Fix issues before presenting the complete plan.
+12. After the user approves the complete plan, record a node summary with `withy note "<summary>"`, then run `withy next` and follow the command output.
 
 ## Question Rules
 
@@ -167,22 +167,23 @@ Design units must have one clear responsibility and well-defined interfaces. For
 
 Do not turn the design into a file-by-file implementation script. Include file paths only when they clarify an existing boundary or identify a known integration point.
 
-### `implement.md`
+### Implementation checklist (`checklist.json`)
 
-Write `implement.md` as an ordered execution plan derived from the requirements and design:
+Build the implementation plan as a command-managed checklist — do not hand-write `implement.md`. Add each step with the CLI:
 
-```markdown
-# Implementation Plan
-
-- [ ] <Implementation step> — Verify: `<command or observable check>`
-- [ ] <Implementation step> — Verify: `<command or observable check>`
+```bash
+withy checklist add "<implementation step>" --verify "<command or observable check>"
 ```
 
-Each item must describe one coherent implementation step and how to verify it. Order items so prerequisites come first, keep risky migration or rollback points explicit, and include the tests or manual checks required before the next dependent step begins.
+To add many steps at once, pipe a JSON array on stdin:
 
-Use checkbox bullets for every implementation item because progress is parsed from this file. Avoid other bullet-list syntax in `implement.md`; use paragraphs, headings, or fenced code blocks for supporting notes so non-checkbox bullets are not mistaken for malformed progress items.
+```bash
+echo '[{"text":"<step>","verify":"<check>"},{"text":"<step>","verify":"<check>"}]' | withy checklist add
+```
 
-Do not repeat acceptance criteria verbatim. `prd.md` defines the observable outcomes; `implement.md` describes the work required to achieve and verify them.
+Each step must describe one coherent unit of work and how to verify it. Order steps so prerequisites come first, keep risky migration or rollback points explicit, and include the tests or manual checks required before the next dependent step begins. Progress is tracked by the command (`withy checklist done <id>`), not by Markdown checkboxes.
+
+Do not repeat acceptance criteria verbatim. `prd.md` defines the observable outcomes; the checklist describes the work required to achieve and verify them.
 
 ## Completion Gate
 
@@ -195,8 +196,8 @@ Before asking for approval, verify that:
 - scope exclusions are explicit
 - no material product or scope question remains open
 - the design covers architecture, boundaries, data flow, errors, compatibility, testing, and risks where relevant
-- every implementation item traces to a requirement, design constraint, or identified risk
-- the three artifacts do not contradict one another
+- every checklist step traces to a requirement, design constraint, or identified risk
+- the artifacts do not contradict one another
 - no artifact contains placeholders such as `TBD` or `TODO`
 
-After the user approves, ensure all three artifacts contain the approved plan, then run `withy next`. If the command reports a gate failure, report the exact blocker and remain on this step until it is resolved.
+After the user approves, ensure `prd.md` and `design.md` contain the approved plan and the checklist has its steps, record a node summary with `withy note "<summary>"`, then run `withy next`. If the command reports a gate failure, report the exact blocker and remain on this step until it is resolved.

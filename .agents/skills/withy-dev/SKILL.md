@@ -10,7 +10,8 @@ This is the execute step: turn the active task's approved plan into working code
 ## Read the Approved Plan
 
 1. Run `withy task status --json` to identify the active task and read its `artifacts` array, which lists the planning documents the task actually produced.
-2. Read every file named in `artifacts` from `.withy/tasks/<task-id>/` — typically `prd.md` (required behavior), `design.md` (the chosen approach), and `implement.md` (the ordered, checkbox execution steps). These are the contract. Do not expand scope beyond them.
+2. Read every file named in `artifacts` from `.withy/tasks/<task-id>/` — typically `prd.md` (required behavior) and `design.md` (the chosen approach). These are the contract. Do not expand scope beyond them.
+3. Read the implementation checklist with `withy checklist list --json`. It is the ordered, command-managed step contract: each item has an `id`, `text`, and optional `verify`.
 
 ## Consult the Knowledge Base (before coding)
 
@@ -36,11 +37,11 @@ When project and global define the same `id`, the project page wins — prefer t
 
 ## Implement
 
-- A previous session may have already implemented part of this. First run `git status` / `git diff` and reconcile the working tree against `implement.md` — the code is the source of truth for progress, not memory. Continue from the first step not yet reflected in the code; do not redo work that is already there.
-- Work through `implement.md` in order. Each step carries its own verification — run that check before starting the next dependent step.
+- A previous session may have already implemented part of this. First run `git status` / `git diff` and reconcile the working tree against the checklist (`withy checklist list`) — the code is the source of truth for progress, not memory. Continue from the first step not yet reflected in the code; do not redo work that is already there.
+- Work through the checklist in order. Each step carries its own `verify` — run that check, then mark the step complete with `withy checklist done <id>` before starting the next dependent step. Keep the checklist current with `withy checklist add/edit/remove` if the plan genuinely changes.
 - Match the surrounding code's existing style, naming, and structure, and touch only what the plan requires.
 - If you discover durable, reusable knowledge while implementing, hand it to the knowledge skill instead of burying it in the conversation. Keep this step focused on shipping the approved plan.
 
 ## Finish the Step
 
-Run `withy next` and follow the command output. If it reports a gate failure, report the exact blocker from its output and remain on this step until it is resolved.
+Record a node summary with `withy note "<summary>"`, then run `withy next` and follow the command output. If it reports a gate failure, report the exact blocker from its output and remain on this step until it is resolved.

@@ -3,6 +3,9 @@
 .developer
 runtime/
 
+# `withy update` backups (transient)
+backup-update-*/
+
 # Temporary files
 *.tmp
 *.new

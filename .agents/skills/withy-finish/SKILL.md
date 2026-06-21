@@ -26,11 +26,11 @@ Read what the diff actually does. The diff and the task's own documents — not 
 
 ## Confirm the Implementation Matches the Task's Documents
 
-Before closing out, confirm the change that now exists matches what the task's own documents describe. Read the files named in the `artifacts` array from `withy task status --json` — typically `prd.md` (required behavior and acceptance criteria), `design.md` (the chosen approach), and `implement.md` (the planned steps) when the task produced them — and check the diff against each:
+Before closing out, confirm the change that now exists matches what the task's own documents describe. Read the files named in the `artifacts` array from `withy task status --json` — typically `prd.md` (required behavior and acceptance criteria) and `design.md` (the chosen approach) — and read the implementation checklist with `withy checklist list`. Check the diff against each:
 
 - Every required behavior and acceptance criterion the documents state is actually delivered by the code.
 - The approach the code takes is the one `design.md` describes, not a silently different design.
-- Each `implement.md` step is done, or its omission is intentional and explained.
+- Each checklist step is done, or its omission is intentional and explained.
 
 When the implementation and the documents agree, say so and continue. When they diverge — a stated requirement the code does not meet, behavior the code adds that no document mentions, a design the code departed from, or planned steps left undone — do not close out silently. Tell the user the specific divergence and let them decide how to resolve it: bring the code in line, update the documents to match the real decision, or accept the gap as out of scope.
 
@@ -56,7 +56,7 @@ Follow the knowledge skill for how the base is organized and how to ingest a sou
 
 Give the user a short, plain-language recap of the outcome — what was delivered (or, for a research task, what was concluded), how it was verified, and any known risk or follow-up left open. This is a spoken recap for the user, not a file; this step writes no summary artifact.
 
-Then run `withy next` and follow the command output:
+Then record a node summary with `withy note "<summary>"` and run `withy next`, following the command output:
 
 - This is the final node, so a successful advance returns `node: null` — the task is marked completed, its `completedAt` is recorded, and the active-task pointer is cleared. Report plainly that the workflow is complete.
 - If it reports a gate failure, report the exact blocker from its output and remain on this step until it is resolved. Do not use `--skip` to get past a genuine failure.

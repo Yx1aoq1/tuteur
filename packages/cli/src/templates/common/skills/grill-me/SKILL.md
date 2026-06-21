@@ -57,4 +57,4 @@ Before requesting approval, verify that across the discovered artifacts:
 - out-of-scope behavior is clear
 - no material question, contradiction, `TBD`, or `TODO` remains
 
-After the user approves, run `withy next` and follow the command output. If the command reports a gate failure, report the exact blocker from its `blocked` output and remain on this step until it is resolved.
+After the user approves, record a node summary with `withy note "<summary>"`, then run `withy next` and follow the command output. If the command reports a gate failure, report the exact blocker from its `blocked` output and remain on this step until it is resolved.

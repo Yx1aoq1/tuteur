@@ -60,4 +60,4 @@ State plainly what you found, then fix it directly in the working tree. After fi
 
 ## Finish the Step
 
-Run `withy next` and follow the command output. If it reports a gate failure, the configured checks are still failing — report the exact blocker from its output and remain on this step until it passes. Do not use `--skip` to get past a genuine failure.
+Record a node summary with `withy note "<summary>"`, then run `withy next` and follow the command output. If it reports a gate failure, the configured checks are still failing — report the exact blocker from its output and remain on this step until it passes. Do not use `--skip` to get past a genuine failure.
