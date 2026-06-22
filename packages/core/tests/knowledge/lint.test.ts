@@ -35,9 +35,7 @@ describe('lintKnowledge — dangling covers', () => {
     writeWikiFile(scope, 'a.md', pageRaw('a', 'self [[a]]', ['covers: [packages/ghost/src/**]']));
 
     const dangling = lintKnowledge(scope).filter(issue => issue.kind === 'dangling-cover');
-    expect(dangling).toEqual([
-      expect.objectContaining({ level: 'error', id: 'a', target: 'packages/ghost/src/**' }),
-    ]);
+    expect(dangling).toEqual([expect.objectContaining({ level: 'error', id: 'a', target: 'packages/ghost/src/**' })]);
   });
 
   it('does not report a covers glob that matches a real repo file', () => {

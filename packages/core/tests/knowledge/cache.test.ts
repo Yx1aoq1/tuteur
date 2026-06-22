@@ -66,7 +66,11 @@ describe('readGraphCached', () => {
     writeWikiFile(scope, 'a.md', pageRaw('a', 'see [[b]]'));
     writeWikiFile(scope, 'b.md', pageRaw('b', 'leaf'));
 
-    expect(readGraphCached(scope).nodes.map(n => n.id).sort()).toEqual(['a', 'b']);
+    expect(
+      readGraphCached(scope)
+        .nodes.map(n => n.id)
+        .sort(),
+    ).toEqual(['a', 'b']);
   });
 
   it('rebuilds when the page count changes', () => {

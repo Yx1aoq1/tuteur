@@ -43,7 +43,11 @@ describe('relatedDocs', () => {
 
   it('drops broken links (missing targets) and never returns code/source nodes', () => {
     const scope = createScope();
-    writeWikiFile(scope, 'a.md', pageRaw('a', 'see [[gone]]', ['covers: [packages/core/src/**]', 'sources: [sources/x.md]']));
+    writeWikiFile(
+      scope,
+      'a.md',
+      pageRaw('a', 'see [[gone]]', ['covers: [packages/core/src/**]', 'sources: [sources/x.md]']),
+    );
 
     const graph = deriveKnowledgeGraph(scope);
     expect(relatedDocs(graph, 'a')).toEqual([]);

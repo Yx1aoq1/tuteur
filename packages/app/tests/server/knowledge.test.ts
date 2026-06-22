@@ -52,7 +52,15 @@ describe('adaptKnowledgeGraph', () => {
     const graph: KnowledgeGraph = {
       nodes: [
         { id: 'a', title: 'A', path: '.withy/knowledge/wiki/a.md', scope: 'project', inDegree: 2, outDegree: 1 },
-        { id: 'packages/core/src/**', title: 'packages/core/src/**', kind: 'code', path: 'packages/core/src/**', scope: 'project', inDegree: 1, outDegree: 0 },
+        {
+          id: 'packages/core/src/**',
+          title: 'packages/core/src/**',
+          kind: 'code',
+          path: 'packages/core/src/**',
+          scope: 'project',
+          inDegree: 1,
+          outDegree: 0,
+        },
       ],
       edges: [{ from: 'a', to: 'packages/core/src/**', type: 'cover' }],
     };
