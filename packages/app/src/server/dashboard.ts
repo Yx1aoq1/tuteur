@@ -137,7 +137,8 @@ export function getBoard(scope: Scope, identity: Identity | null): BoardData {
 
 /**
  * 归档视图模型:读归档桶里的任务,按 YYYY-MM 月份分组(月份倒序、组内按归档时间倒序)。
- * 归档后任务目录已移入 archive/,进度数据按 id 不可读,故只带冻结的元信息(标题/负责人/归档时间/终态)。
+ * 归档后任务目录移入 archive/,但 state/progress/events/产物 均经 core 的 taskReadPath 回退按 id 可读,
+ * 故归档卡带与活跃卡同构的冻结进度(阶段/节点/实施/时间线),供归档详情完整回看。
  * @param scope 项目 scope
  * @param identity 本地身份;用于标记 mine 供「我的/全部」过滤
  */
@@ -161,6 +162,7 @@ export function getArchivedBoard(scope: Scope, identity: Identity | null): Archi
       phase,
       node,
       implementation: readImplementationView(scope, task.id),
+      timeline: readTimelineView(scope, task),
     });
     byBucket.set(bucket, cards);
   }

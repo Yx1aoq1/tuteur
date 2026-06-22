@@ -149,7 +149,7 @@ export function BoardView({ board, archived, identityName, project }: BoardViewP
           <EmptyAside title={tDetail('title')} hint={tDetail('detailEmpty')} />
         )
       ) : selectedArchived ? (
-        <ArchivedDetail card={selectedArchived} />
+        <ArchivedDetail card={selectedArchived} project={project} />
       ) : (
         <EmptyAside title={tArchived('detailTitle')} hint={tArchived('detailEmpty')} />
       )}

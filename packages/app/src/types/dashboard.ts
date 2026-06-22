@@ -76,6 +76,7 @@ export interface ArchivedCard {
   phase: Phase | null; // 归档时所在阶段(state.currentNode → phaseOf)
   node: string | null; // 归档时所在节点
   implementation: ImplementationView; // 冻结的实施计划进度(只读)
+  timeline: TimelineEventView[]; // 冻结的执行时间线(归档任务经 taskReadPath 回退仍可读)
 }
 
 // 一个 YYYY-MM 月份桶下的归档任务
