@@ -1,0 +1,41 @@
+{
+  "nextId": 7,
+  "items": [
+    {
+      "id": "1",
+      "text": "调整依赖:packages/app 删 react-force-graph-2d,加 d3-force/d3-selection/d3-zoom/d3-drag 及对应 @types/*,pnpm install",
+      "verify": "pnpm --filter @withy/app install 后 package.json 不含 react-force-graph-2d、含 4 个 d3 包",
+      "done": true
+    },
+    {
+      "id": "2",
+      "text": "移植 upstream renderGraph 进新 ForceGraphSvg.tsx(替换 ForceGraphCanvas):永动力学(alphaTarget≈0.015+noise微扰)、节点(高斯光晕+主圆+按需标签)、曲线弧 path、drag、zoom(filter排节点手势)、hover 邻接表切 dim/highlight、交错入场 animation-delay、click→onOpen;导出 ForceGraphNode/Link 类型",
+      "verify": "pnpm --filter @withy/app typecheck 通过;旧 ForceGraphCanvas.tsx 已删",
+      "done": true
+    },
+    {
+      "id": "3",
+      "text": "移植 upstream graph CSS 进 ForceGraphSvg.module.css:link/.dim/.highlight(dashflow流光+辉光)、node-halo、node-main、node.dim、text(默认隐藏/highlight/big 显)、node-inner nodeIn 入场;色值改砚墨 var(--*);@keyframes dashflow/nodeIn",
+      "verify": "组件 import styles 后 typecheck 通过;类名无 unused",
+      "done": true
+    },
+    {
+      "id": "4",
+      "text": "改 KnowledgeGraph.tsx:删 readPalette/palette state、改普通 import ForceGraphSvg;toGraphData 增 group(=kind)/degree(=inDegree)字段;保留取数/ResizeObserver/空态;暗角 ::after 放容器",
+      "verify": "pnpm --filter @withy/app typecheck + lint(0 warning)通过",
+      "done": true
+    },
+    {
+      "id": "5",
+      "text": "改 KnowledgeWorkspace.tsx:FileTree 仅在 mode!==graph 渲染",
+      "verify": "lint 通过;图模式不渲染 FileTree、文档模式照常",
+      "done": true
+    },
+    {
+      "id": "6",
+      "text": "agent-browser(先 set viewport 1440 900 2)验收 /p/knowledge 图模式:曲线弧/光晕/持续呼吸/交错入场/hover 高亮邻居+连线流光辉光+其余淡化/标签默认隐藏-hover显-枢纽常显/点击开文档/拖点不平移-拖空白平移-滚轮缩放/图模式无文件树/明暗配色一致",
+      "verify": "agent-browser 截图逐项目测通过",
+      "done": true
+    }
+  ]
+}
