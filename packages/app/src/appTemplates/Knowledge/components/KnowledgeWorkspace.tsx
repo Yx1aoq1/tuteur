@@ -87,7 +87,9 @@ export function KnowledgeWorkspace({ tree, project }: KnowledgeWorkspaceProps) {
       </div>
 
       <div className="flex min-h-0 w-full flex-1">
-        <FileTree tree={tree} selected={selected} project={project} onSelect={onSelect} onDeleted={onDeleted} />
+        {mode !== 'graph' && (
+          <FileTree tree={tree} selected={selected} project={project} onSelect={onSelect} onDeleted={onDeleted} />
+        )}
 
         {mode === 'graph' ? (
           <KnowledgeGraph project={project} onOpen={openFromGraph} />

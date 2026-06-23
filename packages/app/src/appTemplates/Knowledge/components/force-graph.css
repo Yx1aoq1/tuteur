@@ -1,0 +1,132 @@
+/*
+ * 知识库关系图样式(移植 lewislulu/llm-wiki-skill web/client/styles.css 的 #graph-svg 部分)。
+ * 色值一律引 globals.css 的砚墨 token,亮暗自动跟随;按 group 用 teal/terracotta/sage 分色。
+ * d3 在 ForceGraphSvg.tsx 里给元素加字面类名,故用 plain scoped CSS(同 canvas.css 惯例)而非 CSS Module。
+ */
+
+.knowledge-graph-svg {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  display: block;
+}
+.knowledge-graph-svg:active {
+  cursor: grabbing;
+}
+
+/* 连线:曲线弧 */
+.knowledge-graph-svg .link {
+  stroke: var(--line-strong);
+  stroke-width: 1.1;
+  fill: none;
+  stroke-opacity: 0.55;
+  transition:
+    stroke 220ms ease,
+    stroke-width 220ms ease,
+    stroke-opacity 220ms ease;
+}
+.knowledge-graph-svg .link.dim {
+  stroke-opacity: 0.06;
+}
+.knowledge-graph-svg .link.highlight {
+  stroke: var(--teal);
+  stroke-width: 2.2;
+  stroke-opacity: 0.92;
+  stroke-dasharray: 8 6;
+  animation: kg-dashflow 22s linear infinite;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--teal) 55%, transparent));
+}
+@keyframes kg-dashflow {
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+
+/* 节点光晕:高斯模糊圆,按 group 着色 */
+.knowledge-graph-svg .node-halo {
+  opacity: 0.2;
+  pointer-events: none;
+}
+.knowledge-graph-svg .node.group-concept .node-halo {
+  fill: var(--teal);
+}
+.knowledge-graph-svg .node.group-entity .node-halo {
+  fill: var(--terracotta);
+}
+.knowledge-graph-svg .node.group-summary .node-halo {
+  fill: var(--sage);
+}
+.knowledge-graph-svg .node.group-other .node-halo {
+  fill: var(--ink-faint);
+}
+
+/* 节点主圆 */
+.knowledge-graph-svg .node-main {
+  stroke: var(--paper);
+  stroke-width: 1.4;
+  transition: stroke-width 220ms ease;
+}
+.knowledge-graph-svg .node.group-concept .node-main {
+  fill: var(--teal);
+}
+.knowledge-graph-svg .node.group-entity .node-main {
+  fill: var(--terracotta);
+}
+.knowledge-graph-svg .node.group-summary .node-main {
+  fill: var(--sage);
+}
+.knowledge-graph-svg .node.group-other .node-main {
+  fill: var(--ink-faint);
+}
+
+/* 节点组:d3 写 translate */
+.knowledge-graph-svg .node {
+  cursor: pointer;
+  transition: opacity 240ms ease;
+}
+.knowledge-graph-svg .node.dim {
+  opacity: 0.18;
+}
+.knowledge-graph-svg .node.highlight .node-main {
+  stroke: var(--ink);
+  stroke-width: 2.6;
+}
+.knowledge-graph-svg .node.highlight .node-halo {
+  opacity: 0.75;
+}
+
+/* 标签:默认隐藏,仅 hover 或枢纽节点显示 */
+.knowledge-graph-svg .node text {
+  fill: var(--ink);
+  font:
+    600 11px var(--font-sans, system-ui),
+    sans-serif;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms ease;
+  paint-order: stroke;
+  stroke: var(--paper);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.knowledge-graph-svg .node.highlight text,
+.knowledge-graph-svg .node.big text {
+  opacity: 1;
+}
+
+/* 交错入场:内层 g 缩放淡入,delay 由 JS 逐节点递增 */
+.knowledge-graph-svg .node-inner {
+  animation: kg-node-in 720ms cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+@keyframes kg-node-in {
+  from {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
