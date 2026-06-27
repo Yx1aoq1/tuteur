@@ -13,7 +13,7 @@ updated: 2026-06-19
 # Withy 产品需求文档(PRD)
 
 > 本文是需求分析文档,回答 **做什么 / 为什么 / 边界在哪 / MVP 验收口径**,不写具体实现。
-> 实现规格(数据结构、命令、API、门禁算法等)见 [`docs/design/`](../design/decisions.md)。两者分工:PRD 定义需求与边界,design 定义如何落地。
+> 实现规格(数据结构、命令、API、门禁算法等)见 [`docs/design/`](../design/index.md)。两者分工:PRD 定义需求与边界,design 定义如何落地。
 
 ---
 
@@ -330,7 +330,7 @@ MVP 完成的判断标准:
 
 ## 14. 关联文档
 
-- 实现总览与导航:[`docs/design/decisions.md`](../design/decisions.md)
+- 实现总览与导航:[`docs/design/`](../design/index.md)
 - 数据与领域模型(事实源):[`docs/design/core.md`](../design/core.md)
 - CLI 与初始化、适配:[`docs/design/cli.md`](../design/cli.md)
 - Harness:工作流、门禁、上下文、任务定位:[`docs/design/harness.md`](../design/harness.md)
@@ -341,4 +341,4 @@ MVP 完成的判断标准:
 
 ## 关联页
 
-- [[decisions]] · [[core]] · [[harness]] · [[knowledge-base]] · [[web]]
+- [[core]] · [[harness]] · [[knowledge-base]] · [[web]]

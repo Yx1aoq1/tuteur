@@ -17,3 +17,4 @@
 ## [2026-06-22] lint | 规整知识库:合并 harness-flow→harness §10、瘦身 decisions (删 design/harness-flow.md, 端到端 mermaid+异常恢复表并入 harness §10 并修 implement.md→checklist.json; decisions 删 §3 实现状态矩阵+§5 落地优先级〔与各页 TODO 重复〕、重编号、补 2026-06-21 评审轮、retitle 评审决策史与待确认项; 修反链 core/cli 的 harness-flow 引用与 core 的 INDEX§3 锚点; 前端通用指南与两踩坑页按用户决定保留; design 10→9 页, index 重算, lint 0/0)
 ## [2026-06-22] ingest | Crepe 暗色 token 陷阱 + 滚动条视觉对齐 Scroller    (touched: scroll-readonly-markdown)
 ## [2026-06-22] ingest | CodeMirror One Dark 不随主题 + DocOutline nav 滚动条    (touched: scroll-readonly-markdown)
+## [2026-06-22] lint | wiki 分类整理(知识库三层结构):testing-build→rules/、已落地 design 页加 status:stable、通用前端页注待迁全局 standards/;index 重算含 rules/, lint 0/0

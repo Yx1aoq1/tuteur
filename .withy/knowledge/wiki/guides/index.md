@@ -2,8 +2,5 @@
 
 # guides/
 
-- [测试组织与构建配置约定](testing-build-conventions.md) — 三包统一 vitest;测试放 tests/ 镜像 src/;vitest include 锁 tests/;tsconfig 不在 typecheck 配置设 rootDir(避 TS6059),rootDir 只留 build 配置以保 dist 无测试;Prettier 忽略 .withy/ 与 *.md(数据/文稿非源码,且会重排 CJK 表格)。
-
-## Subdirectories
-
-- [frontend/](frontend/) — 4 entries
+- [滚动条策略与只读 Markdown 展示组件](scroll-readonly-markdown.md) — OverlayScrollbars Scroller 悬浮滚动消重排;markdown 正文区刻意保留原生 .doc-scroll(否则破坏 TOC 的 IntersectionObserver root/scrollIntoView);只读渲染面 MarkdownView + 章节目录 DocOutline + milkdown-tokens.css 为共享展示三件套。
+- [Milkdown/Crepe 双链序列化陷阱与自研插件](milkdown-wikilink.md) — 裸 Crepe 序列化会把双链转义破坏关系图;自研 remark+$node+$inputRule 三件套插件让双链往返逐字保真。
