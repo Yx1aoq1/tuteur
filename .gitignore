@@ -6,3 +6,5 @@ coverage/
 *.tsbuildinfo
 *.log
 .temp/
+.DS_Store
+recordings/
