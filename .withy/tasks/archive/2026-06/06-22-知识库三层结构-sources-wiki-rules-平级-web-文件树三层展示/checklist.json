@@ -1,0 +1,53 @@
+{
+  "nextId": 9,
+  "items": [
+    {
+      "id": "1",
+      "text": "core: 加 assertInsideKnowledge + isWikiRelPath + knowledgeEntryPath + listKnowledgeEntries(扫 knowledge/ 根、跳 graph.json、index.md/根log.md 标 readonly)",
+      "verify": "pnpm --filter @withy/core test 跑新增 listing/guard 单测通过",
+      "done": true
+    },
+    {
+      "id": "2",
+      "text": "core: edit.ts CRUD 改 knowledge-相对;create-page 在 wiki/ 写 frontmatter+重算 index,非 wiki 写纯 md 不重算;rename/delete/create-folder 按 isWikiRelPath 决定重算;保护根生成物",
+      "verify": "pnpm --filter @withy/core test 覆盖 wiki/非wiki 分支通过",
+      "done": true
+    },
+    {
+      "id": "3",
+      "text": "app: getKnowledgeTree 改用 listKnowledgeEntries;adaptKnowledgeGraph 节点 relPath 带 wiki/ 前缀;getKnowledgeFile 透传 knowledge-相对",
+      "verify": "pnpm --filter @withy/app test(buildKnowledgeTree/adaptKnowledgeGraph 单测)通过",
+      "done": true
+    },
+    {
+      "id": "4",
+      "text": "app: FileTree 工具按钮默认目标目录改 wiki;Workspace/route 全程 knowledge-相对;非 wiki 页可编辑(带最小 frontmatter)、wiki 只读标记不回归",
+      "verify": "pnpm --filter @withy/app build 通过 + 端到端手验(agent-browser):项目知识页根层显示 sources/wiki + 根 index.md/log.md(只读)、不显示 graph.json,展开 wiki 见子目录,sources 下建页与 wiki 页改名/删除正常",
+      "done": true
+    },
+    {
+      "id": "5",
+      "text": "cli: seedKnowledgeBase 改 (withyDir,isGlobal,createdPaths);global 额外建 knowledge/user/ + .gitkeep;initGlobal/initProject 传对应 scope",
+      "verify": "临时目录 runInit project/global 各跑一次,断言 global 多 user/、project 无",
+      "done": true
+    },
+    {
+      "id": "6",
+      "text": "schema: 优化 templates/common/skills/knowledge/SKILL.md(补 user/ 层、项目推荐子目录分类、status 字段、通用根模型)",
+      "verify": "人工核对含 user/ + design/rules/guides/domain + status 说明,且不与 design.md 矛盾",
+      "done": true
+    },
+    {
+      "id": "7",
+      "text": "内容: 整理当前 .withy/knowledge/wiki/ — design/ 加 status:stable、新建 rules/ 收 testing-build、guides 保留踩坑、通用页注待迁全局",
+      "verify": "withy knowledge index 与 withy knowledge lint 跑通 0 断链/0 孤儿误报",
+      "done": true
+    },
+    {
+      "id": "8",
+      "text": "全量校验:typecheck + lint(0 warning)+ 三包 build",
+      "verify": "pnpm typecheck && pnpm lint && pnpm -r build 全过",
+      "done": true
+    }
+  ]
+}

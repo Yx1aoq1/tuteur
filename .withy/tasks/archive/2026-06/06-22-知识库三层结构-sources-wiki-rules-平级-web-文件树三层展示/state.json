@@ -1,0 +1,19 @@
+{
+  "taskId": "06-22-知识库三层结构-sources-wiki-rules-平级-web-文件树三层展示",
+  "currentNode": null,
+  "completedNodes": [
+    "brainstorm",
+    "grill-me",
+    "dev",
+    "check",
+    "finish"
+  ],
+  "decisions": {},
+  "approvals": {
+    "grill-me": {
+      "approvedAt": "2026-06-22T14:17:19.637Z",
+      "by": "yan"
+    }
+  },
+  "updatedAt": "2026-06-27T15:16:26.955Z"
+}
