@@ -10,6 +10,7 @@ injectByDefault: false
 covers: [packages/core/src/store/events.ts, packages/app/src/appTemplates/Board/components/detail.tsx]
 sources: []
 updated: 2026-06-21
+status: stable
 ---
 
 # 任务事件流与时间线展示

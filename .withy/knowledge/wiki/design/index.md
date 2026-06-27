@@ -3,9 +3,9 @@
 # design/
 
 - [节点门禁扩展:note / progress 与 checklist 进度源](node-gate-checkers.md) — 门禁=checker+Gate 字段的扩展范式;note 门禁的「新鲜度 floor」算法;progress 门禁为何用独立 checker 而非 AND-list 产物;checklist.json 为唯一进度源。
-- [评审决策史与待确认项](decisions.md) — 评审决策史(各轮评审定论)、针对历轮不满的解法索引、待产品确认项与维护约定;实现状态/落地优先级已下放各设计页 TODO。
 - [任务事件流与时间线展示](task-event-timeline.md) — events.jsonl 判别联合事件模型与前向兼容、会话注入回填的两侧 session-id 契约、dashboard 时间线本地时区+严格升序+prompt 就地折叠。
-- [知识库设计(Knowledge Base)](knowledge-base.md) — 全局/项目同构 knowledge(karpathy LLM Wiki 三层)、条目 frontmatter schema、ingest/query/lint、多级索引、context.json 注入接入、web 管理。
+- [实现状态(已完成 / 未完成)](status.md) — Withy 各域(core/cli/harness/web)的实现状态清单:已完成 ✅ / 进行中 🟡 / 未完成(❌·P0–P2)。设计页只述核心设计与规划,落地状态集中在此一页,避免双份漂移。
+- [知识库设计(Knowledge Base)](knowledge-base.md) — generic-root knowledge:wiki/ 是机器托管特殊层(frontmatter/index/graph/注入),sources/user 等为普通文件夹;项目 wiki 分 design/rules/guides/domain、全局多 user/;条目 schema、ingest/query/lint、多级索引、context.json 注入、web 管理。
 - [CLI 设计(@withy/cli)](cli.md) — withy 命令族(init/task/next/approve/rewind/note/checklist/hook/knowledge/dashboard/update/uninstall)、缺省人读+--json、数据注册表+per-agent configurator、模板更新。
 - [Core 设计(@withy/core)](core.md) — 唯一 .withy 读写层与领域/类型事实源:双层模型、用户模型、数据结构、Store API、门禁状态机(含 note/progress checker)、checklist 进度源、事件流、数据契约、InitConfig、归档。
 - [Harness 设计(状态机/门禁/hook)](harness.md) — 约束层核心:固定三阶段 workflow、withy next 门禁、switch 靠 agent 判断、advanceWorkflow/rewind、hook 三阶段注入、当前任务定位、用户扩展。
