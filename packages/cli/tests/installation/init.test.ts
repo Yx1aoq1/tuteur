@@ -2,7 +2,7 @@ import { readlinkSync, readdirSync, existsSync, mkdtempSync, lstatSync, rmSync }
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { initProject } from '../../src/installation/init.js';
+import { initProject, seedKnowledgeBase } from '../../src/installation/init.js';
 
 const temporaryRoots: string[] = [];
 
@@ -43,5 +43,34 @@ describe('initProject agent skills', () => {
       expect(lstatSync(claudeSkill).isSymbolicLink()).toBe(true);
       expect(readlinkSync(claudeSkill)).toBe(`../../.agents/skills/${skillName}`);
     }
+  });
+});
+
+describe('initProject knowledge base', () => {
+  it('seeds sources/ + wiki/ + root index.md/log.md but no user/ (user/ is global-only)', async () => {
+    const root = mkdtempSync(resolve(tmpdir(), 'withy-init-'));
+    temporaryRoots.push(root);
+
+    await initProject({ projectRoot: root, agents: [], skillAdapterMode: 'symlink' });
+
+    const knowledge = resolve(root, '.withy/knowledge');
+    expect(existsSync(resolve(knowledge, 'sources'))).toBe(true);
+    expect(existsSync(resolve(knowledge, 'wiki'))).toBe(true);
+    expect(existsSync(resolve(knowledge, 'index.md'))).toBe(true);
+    expect(existsSync(resolve(knowledge, 'log.md'))).toBe(true);
+    expect(existsSync(resolve(knowledge, 'user'))).toBe(false); // user/ 仅全局库
+  });
+
+  it('global seed adds user/ on top of the shared sources/wiki layout', () => {
+    const withyDir = mkdtempSync(resolve(tmpdir(), 'withy-kn-global-'));
+    temporaryRoots.push(withyDir);
+
+    seedKnowledgeBase(withyDir, true, []);
+
+    const knowledge = resolve(withyDir, 'knowledge');
+    expect(existsSync(resolve(knowledge, 'sources'))).toBe(true);
+    expect(existsSync(resolve(knowledge, 'wiki'))).toBe(true);
+    expect(existsSync(resolve(knowledge, 'user'))).toBe(true); // 全局多一层 user/
+    expect(existsSync(resolve(knowledge, 'user/.gitkeep'))).toBe(true);
   });
 });

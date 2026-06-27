@@ -9,30 +9,34 @@ This skill maintains a durable, compounding wiki so that what a project and a us
 
 ## Pick the Base: Project or Global
 
-There are two bases with identical layout, differing only in where they live and who they serve:
+There are two bases that share the `sources/` + `wiki/` shape, differing in where they live, who they serve, and one extra layer on the global base:
 
-- **Project** — `.withy/knowledge/` in this repository: its architecture, domain model, conventions, and pitfalls. Committed and team-shared.
-- **Global** — `~/.withy/knowledge/` on this machine: your cross-project knowledge — personal standards, preferences, general references. Never committed.
+- **Project** — `.withy/knowledge/` in this repository: its architecture, domain model, conventions, and pitfalls, grouped into `wiki/{design,rules,guides,domain}`. Committed and team-shared.
+- **Global** — `~/.withy/knowledge/` on this machine: your cross-project knowledge — personal standards, references — plus a `user/` folder for your preferences, profile, and working style. Never committed.
 
 Default to the project base. Write to the global base only when the user explicitly says to record it globally or personally. The deciding question: would this knowledge still hold in a different project? If yes, it is global; if it only means something in this repository, it is project. Every command below operates on one base at a time — the project base by default, the global base with `--global`.
 
 ## Layout
 
-Both bases share this shape under their `knowledge/` root:
+A base lives under its `knowledge/` root. `wiki/` is the one machine-managed layer — its pages carry frontmatter and are what `index`, the relation graph, and session injection consume. Every other top-level folder (`sources/`, and on the global base `user/`) is a plain browsable/editable folder the tooling does not index.
 
 ```text
 knowledge/
-  sources/        # raw source material — read-only; never edit a source
-  wiki/           # the maintained pages
-    <id>.md       #   a page, with frontmatter (see below)
-    <topic>/      #   a sub-directory, opened only when one area outgrows the flat root
-      index.md    #     that directory's index
-      <id>.md
+  sources/        # raw source material — read-only; never edit a source. Thin or empty for a code project (the code itself is the source of truth); use it only to pin external material you did not write (an RFC, a spec, a transcript).
+  wiki/           # the maintained pages, grouped into a few maintenance-oriented sub-dirs:
+    design/       #   architecture and design specs (freeze a landed one with status: stable)
+    rules/        #   project-specific code conventions (the delta from generic best practice)
+    guides/       #   how-tos and hard-won pitfalls
+    domain/       #   business / domain-model knowledge (open it only once there are pages)
+    <topic>/index.md   # each sub-dir's generated index
+  user/           # GLOBAL BASE ONLY: your preferences, profile, working style. A plain folder, not indexed.
   index.md        # the root catalog — the navigation entry point
   log.md          # an append-only timeline of ingest / query / lint actions
 ```
 
-Keep `wiki/` flat by default. Open a `wiki/<topic>/` sub-directory only when one area has grown too large to scan from the root index — do not pre-partition.
+The `design/ rules/ guides/ domain/` split is a recommendation for a project base that has grown — a small base may stay flat in `wiki/`, and `domain/` need not exist until it has pages. Do not pre-create empty sub-dirs. A page's frontmatter `id` is stable, so moving it between these sub-dirs never breaks a `[[link]]` or an injection.
+
+A page can carry `status: stable` to mark it landed and frozen — a convention that says "do not keep re-editing this," distinct from how often it changes. It does not alter indexing or injection.
 
 ## Page Frontmatter
 
@@ -47,6 +51,7 @@ tags: [backend, convention]
 summary: REST naming, error codes, pagination rules.   # one line; what the index and index-mode injection show
 inject: index                # index (default) injects title + summary + path; full injects the whole body
 injectByDefault: false       # whether it joins the default injection set
+status: stable               # optional; marks a landed page as frozen ("stop re-editing"). Convention only — no effect on indexing or injection
 sources: [sources/rest-rfc.md]   # which raw sources this page synthesizes (traceable)
 covers: [packages/api/src/**]    # optional: repo-relative globs of the code this page documents (powers `coverage`)
 updated: 2026-06-19

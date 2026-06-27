@@ -112,6 +112,7 @@ export {
   readContextConfig,
   listTaskArtifacts,
   readTaskArtifact,
+  listKnowledgeEntries,
   listWikiEntries,
   readDeveloper,
   findProjectByName,
@@ -132,7 +133,7 @@ export {
   readTask,
   readGuide,
 } from './store/index.js';
-export type { PendingInjection, ListTasksOptions, KnowledgeFile, WikiEntry } from './store/index.js';
+export type { PendingInjection, ListTasksOptions, KnowledgeTreeEntry, KnowledgeFile, WikiEntry } from './store/index.js';
 
 export {
   countConsecutiveFailures,

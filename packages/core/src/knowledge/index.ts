@@ -30,6 +30,6 @@ export {
   deleteKnowledgeEntry,
   renameKnowledgeEntry,
   createKnowledgePage,
-  assertInsideWiki,
+  assertInsideKnowledge,
 } from './edit.js';
 export type { KnowledgePageContent } from './edit.js';

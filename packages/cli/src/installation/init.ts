@@ -115,7 +115,7 @@ export async function initGlobal(config: InitConfig): Promise<InitResult> {
 
   ensureDir(scope.withyDir, createdPaths);
   ensureDir(resolve(scope.withyDir, 'workflows'), createdPaths);
-  seedKnowledgeBase(scope.withyDir, createdPaths);
+  seedKnowledgeBase(scope.withyDir, true, createdPaths);
 
   writeTextIfMissing(globalConfigPath(scope), buildGlobalConfigYaml(config.skills), createdPaths);
 
@@ -154,7 +154,7 @@ export async function initProject(options: InitProjectOptions): Promise<InitProj
   ensureDir(resolve(projectDir, 'tasks'), createdPaths);
   ensureDir(resolve(projectDir, 'runtime'), createdPaths);
   ensureDir(resolve(projectDir, 'workspace'), createdPaths);
-  seedKnowledgeBase(projectDir, createdPaths);
+  seedKnowledgeBase(projectDir, false, createdPaths);
 
   writeTextIfMissing(
     resolve(projectDir, '.gitignore'),
@@ -248,9 +248,16 @@ function mirrorTemplateTree(srcDir: string, targetDir: string, createdPaths: str
 
 // Scaffold the knowledge base under `<withyDir>/knowledge/` by mirroring
 // templates/knowledge/ (sources/ + wiki/ dirs and root index.md/log.md). Shared
-// by project and global init — both levels share the same layout (knowledge.md §2/§12).
-function seedKnowledgeBase(withyDir: string, createdPaths: string[]): void {
+// by project and global init. Global additionally seeds a `user/` dir (preferences /
+// profile) — a global-only layer that has no place in a team-shared project base
+// (knowledge.md §2; brainstorm 定案:全局特殊层 user/)。
+export function seedKnowledgeBase(withyDir: string, isGlobal: boolean, createdPaths: string[]): void {
   mirrorTemplateTree(resolve(TEMPLATES_ROOT, 'knowledge'), resolve(withyDir, 'knowledge'), createdPaths);
+  if (isGlobal) {
+    const userDir = resolve(withyDir, 'knowledge', 'user');
+    ensureDir(userDir, createdPaths);
+    writeTextIfMissing(resolve(userDir, '.gitkeep'), '', createdPaths);
+  }
 }
 
 function writeProjectUser(projectDir: string, name: string, createdPaths: string[]): ProjectUser {

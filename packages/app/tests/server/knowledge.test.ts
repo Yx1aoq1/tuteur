@@ -1,32 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import { buildKnowledgeTree, adaptKnowledgeGraph } from '../../src/server/knowledge';
-import type { WikiEntry, KnowledgeGraph } from '@withy/core';
+import type { KnowledgeTreeEntry, KnowledgeGraph } from '@withy/core';
 
 describe('buildKnowledgeTree', () => {
-  it('nests dirs and files, keeps empty dirs, marks index.md readonly, labels without .md', () => {
-    const entries: WikiEntry[] = [
-      { relPath: 'design', type: 'dir' },
-      { relPath: 'design/core.md', type: 'file' },
-      { relPath: 'design/index.md', type: 'file' },
-      { relPath: 'empty', type: 'dir' }, // 空目录也要保留
-      { relPath: 'top.md', type: 'file' },
+  it('nests dirs and files, keeps empty dirs, marks index.md / root log.md readonly, labels without .md', () => {
+    const entries: KnowledgeTreeEntry[] = [
+      { relPath: 'wiki', type: 'dir' },
+      { relPath: 'wiki/core.md', type: 'file' },
+      { relPath: 'wiki/index.md', type: 'file' },
+      { relPath: 'sources', type: 'dir' }, // 非 wiki 顶层目录也要保留
+      { relPath: 'index.md', type: 'file' },
+      { relPath: 'log.md', type: 'file' },
     ];
 
     const tree = buildKnowledgeTree(entries);
 
-    // 目录在前(design, empty),文件在后(top)
-    expect(tree.map(n => n.relPath)).toEqual(['design', 'empty', 'top.md']);
+    // 目录在前(sources, wiki),文件在后(index, log)
+    expect(tree.map(n => n.relPath)).toEqual(['sources', 'wiki', 'index.md', 'log.md']);
 
-    const empty = tree.find(n => n.relPath === 'empty');
-    expect(empty?.children).toEqual([]); // 空目录可见且 children 为空
+    const sources = tree.find(n => n.relPath === 'sources');
+    expect(sources?.children).toEqual([]); // 空目录可见且 children 为空
 
-    const design = tree.find(n => n.relPath === 'design');
-    expect(design?.children?.map(c => ({ name: c.name, readonly: c.readonly }))).toEqual([
+    // 根 index.md / log.md 为生成物 → 只读
+    expect(tree.find(n => n.relPath === 'index.md')?.readonly).toBe(true);
+    expect(tree.find(n => n.relPath === 'log.md')?.readonly).toBe(true);
+
+    const wiki = tree.find(n => n.relPath === 'wiki');
+    expect(wiki?.children?.map(c => ({ name: c.name, readonly: c.readonly }))).toEqual([
       { name: 'core', readonly: false }, // 去 .md 标签
       { name: 'index', readonly: true }, // index.md 只读
     ]);
-
-    expect(tree.find(n => n.relPath === 'top.md')?.name).toBe('top');
   });
 });
 
@@ -68,7 +71,7 @@ describe('adaptKnowledgeGraph', () => {
     const view = adaptKnowledgeGraph(graph, 'project');
 
     expect(view.nodes).toEqual([
-      { id: 'a', label: 'A', kind: undefined, scope: 'project', inDegree: 2, relPath: 'a.md' },
+      { id: 'a', label: 'A', kind: undefined, scope: 'project', inDegree: 2, relPath: 'wiki/a.md' },
     ]);
     expect(view.edges).toEqual([]);
   });

@@ -122,7 +122,7 @@ export function writeGraphCacheFile(scope: Scope, value: unknown): void {
   writeJsonFile(knowledgeGraphCachePath(scope), value);
 }
 
-// ── Wiki entries by path (relative to knowledge/wiki/; callers guard with assertInsideWiki) ──
+// ── Wiki entries by path (relative to knowledge/wiki/; callers guard with assertInsideKnowledge) ──
 // These are the by-path carry-disk primitives backing the knowledge module's CRUD. Unlike the
 // by-id readers above, they address files/dirs directly under wiki/ and never interpret frontmatter.
 
@@ -201,5 +201,82 @@ export function listWikiEntries(scope: Scope): WikiEntry[] {
   };
 
   walk(wikiRoot);
+  return entries;
+}
+
+// ── Knowledge entries by path (relative to knowledge/; callers guard with assertInsideKnowledge) ──
+// Generalize the wiki-only by-path layer to the whole knowledge/ root, so non-wiki folders
+// (sources/, user/, …) are browsable and editable too. wiki/ stays the only machine-managed
+// subtree (index/graph/injection); these primitives are format-agnostic and never interpret
+// frontmatter. The derived `graph.json` cache is omitted (not content).
+
+// One node in the knowledge/ directory tree (file or empty/non-empty dir).
+export interface KnowledgeTreeEntry {
+  // Path relative to knowledge/, posix separators (e.g. "wiki", "wiki/api.md", "sources", "index.md").
+  relPath: string;
+
+  // Whether the entry is a directory or a file.
+  type: 'file' | 'dir';
+}
+
+function knowledgeEntryPath(scope: Scope, relPath: string): string {
+  return resolve(knowledgeDir(scope), relPath);
+}
+
+/** Read a knowledge file by its knowledge-relative path, or null when absent. */
+export function readKnowledgeEntryFile(scope: Scope, relPath: string): string | null {
+  return readTextFileIfExists(knowledgeEntryPath(scope, relPath));
+}
+
+/** Classify a knowledge-relative path as a dir, a file, or absent. */
+export function knowledgeEntryType(scope: Scope, relPath: string): 'file' | 'dir' | null {
+  const full = knowledgeEntryPath(scope, relPath);
+  if (!existsSync(full)) return null;
+  return isDirectory(full) ? 'dir' : 'file';
+}
+
+/** Create an (empty) knowledge directory by its knowledge-relative path. */
+export function makeKnowledgeDir(scope: Scope, relPath: string): void {
+  ensureDir(knowledgeEntryPath(scope, relPath), []);
+}
+
+/** Move/rename a knowledge entry (file or dir) within knowledge/; creates the target's parent. */
+export function moveKnowledgeEntry(scope: Scope, fromRelPath: string, toRelPath: string): void {
+  moveDir(knowledgeEntryPath(scope, fromRelPath), knowledgeEntryPath(scope, toRelPath));
+}
+
+/** Remove a knowledge entry (file, or directory recursively). No-op when already absent. */
+export function removeKnowledgeEntry(scope: Scope, relPath: string): void {
+  rmSync(knowledgeEntryPath(scope, relPath), { recursive: true, force: true });
+}
+
+/**
+ * Walk `knowledge/` and list every directory (including empty ones) and file as
+ * knowledge-relative entries, skipping the derived `graph.json` cache. Unlike
+ * {@link listWikiEntries} this spans the whole base (sources/, wiki/, user/, root
+ * index.md/log.md, …) so the tree view shows every layer, not just wiki/.
+ *
+ * @param scope target scope
+ * @return flat entry list (dirs + files); empty when there is no knowledge dir
+ */
+export function listKnowledgeEntries(scope: Scope): KnowledgeTreeEntry[] {
+  const root = knowledgeDir(scope);
+  if (!existsSync(root)) return [];
+
+  const entries: KnowledgeTreeEntry[] = [];
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = resolve(dir, entry.name);
+      const rel = relative(root, full).split(/[\\/]/).join('/');
+      if (entry.isDirectory()) {
+        entries.push({ relPath: rel, type: 'dir' });
+        walk(full);
+      } else if (entry.isFile() && entry.name !== 'graph.json') {
+        entries.push({ relPath: rel, type: 'file' });
+      }
+    }
+  };
+
+  walk(root);
   return entries;
 }

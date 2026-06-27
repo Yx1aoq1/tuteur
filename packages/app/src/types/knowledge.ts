@@ -6,7 +6,7 @@ export interface KnowledgeTreeNode {
   // 展示标签:目录名 / 去 .md 的文件名
   name: string;
 
-  // 相对 wiki/ 的 posix 路径
+  // 相对 knowledge/ 的 posix 路径(如 wiki/api.md、sources/rfc.md)
   relPath: string;
 
   type: 'file' | 'dir';
