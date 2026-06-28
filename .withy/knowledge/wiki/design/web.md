@@ -101,8 +101,10 @@ web 表单与 CLI 交互**同源**:都读 `INIT_QUESTIONS`、产出同一个 `In
     ├ 实施计划(checklist.json):只读渲染进度 done/total(§3.4、core §4.7)
     └ artifact 查看(md 渲染 / json 表格)
   /p/knowledge     知识库管理(全局+项目两区:条目 CRUD/tag/frontmatter + md 正文渲染 + 图谱视图[全局/项目/合并],knowledge-base.md §10;含**产物模板** `kind:template` 的编辑)
-  /p/context       注入编排器:按 default/node 勾选注入哪些知识 id、标必读/可选/禁用、实时预览注入块
-  /p/workflow      workflow 画布编辑(skill 节点 + 分支节点,可编辑,§3.3)
+  /p/context       注入管理页(2026-06-28 重构,§3.6):外层保留(project 栏 + 顶部 different-tool 切换),内层=功能导航(context/agents/…)+ 内容区
+                     ├ context  → 编辑 .withy/guide.md(复用知识库 md 编辑器)
+                     └ agents   → 子 agent 角色 CRUD(落 canonical `.agents/agents/<role>.md` + 经 core `deployAgents` 投递到各工具目录,显示各工具投递态)
+  /p/workflow      workflow 画布编辑(skill 节点 + 分支节点,可编辑,§3.3;skill 节点配置面板新增**可选 agent 选择器**=discoverAgents 结果 + 无,写节点 `agent` 字段,悬空 warning 不拦)
   /p/members       成员名册(读 workspace/<slug>/)+ 按人过滤(可选)
 ```
 
@@ -199,6 +201,24 @@ web 表单与 CLI 交互**同源**:都读 `INIT_QUESTIONS`、产出同一个 `In
 - 展示设计:按 `archivedAt.slice(0,7)` 的 **YYYY-MM 月份桶**分组(月份倒序、组内按归档时间倒序),每行=终态图标 + 标题 + 负责人 + 归档日(MM-DD)+ 终态文案,远比活跃卡片紧凑——行只给索引,细节进右侧详情。
 - **只读详情(回看执行历史)**:复用活跃详情的三层展示但只读——主体阶段步进器、归档时所在节点、实施计划(只读)+ 完成度,再加生命周期(创建/完成/归档时间)与负责人;无勾选、无归档按钮。这要求按 id 能读到归档任务的 state/进度:**core 的 `readTask/readState/readProgress/readEvents` 在 live 路径缺失时回退遍历 `archive/YYYY-MM/` 桶(写入不回退,杜绝写归档),workflow 不归档故 `phaseOf` 始终可读**。完整事件时间线(events.jsonl)仍属任务详情页 W4 范畴,不塞进 336px 侧栏。
 - 终态色复用语义 token:`completed`=✓ `teal`、`cancelled`=✗ `terracotta`、`planning/in_progress`(CLI 不标 cancelled 直接归档的边角态)=○ 中性。
+
+### 3.6 注入管理页(2026-06-28 重构 `/p/context`)
+
+把原「注入编排器」扩成一个带**内层功能面板**的管理页。**外层保留**现有布局(左 project 栏 + 顶部 different-tool 切换);**内层** = 功能导航(左)+ 内容区(右):
+
+```text
+┌ 顶部:different-tool 切换(codex / claude / …)──────────────┐
+├ project 栏 ┬ 内层导航        内层内容区                       │
+│ (复用)     │ [context] ───►  编辑 .withy/guide.md             │
+│            │ [agents]  ───►  子 agent 角色 CRUD + 软链状态     │
+│            │  …other                                          │
+└────────────┴─────────────────────────────────────────────────┘
+```
+
+- **context 功能**:编辑 `.withy/guide.md`(session-start 注全文的会话开场)。**复用 `/p/knowledge` 的 md 编辑界面**;读写 `GET|PUT /api/guide?project`(core `readGuide`/`writeGuide`)。
+- **agents 功能**:管理子 agent 角色(harness §7.2)。列出 `discoverAgents` 的角色(名称/描述/各工具投递态);新建或编辑角色定义正文(md+frontmatter)保存到 canonical `.agents/agents/<role>.md` 并**经 core `deployAgents` 投递**(Claude 软链 / Codex 生成 toml);删除角色经 `removeAgentDelivery` + `removeAgentDefinition` 解除投递并删 canonical。`GET /api/agents?project`、`GET|PUT|DELETE /api/agents/:role?project`(**投递经 core,web 不碰 cli configurator**)。
+- **different-tool 顶部切换**:展示该工具识别到的 agents / 投递态(linked / generated / stale / missing,`getAgentDeliveryStatus`)。
+- 旧「注入编排器(按 default/node 勾选)」随 context.json 取消而废弃(core §4.5);派遣必读改由 `tasks/<id>/dispatch.json`(扁平 `read` 清单,子 agent 直接 Read)承载(任务详情侧展示,非本页)。
 
 ---
 

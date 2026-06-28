@@ -37,6 +37,7 @@ updated: 2026-06-22
 | K14 | `checklist.json` + `withy checklist` 托管 + `readProgress` 唯一进度源(取代 implement.md) | ✅ 已实现                                       |
 | K15 | 注入形态:`inject:full\|index` + `resolvePlannedContext` 返回带形态正文                    | ✅ 已实现                                       |
 | K16 | `knowledge`:`covers`/`cover` 边 + `graph.json` 派生缓存 + 关系查询 + lint 悬空 covers     | ✅ 已实现                                       |
+| K17 | 子 agent 派遣(2026-06-28):节点 `agent` 字段 schema/validate(`agentExists`)+ `discoverAgents`/`resolveAgentRef` + **扁平** `dispatch.json` schema/种壳+幂等懒补 + relay `dispatch` 块(`role/activeTask/curated/action`,无 `--role`)+ 可选 `gate.curated` 门禁 + 移除 context.json(`resolvePlannedContext` 重构为 `injectByDefault` 聚合)+ `writeGuide` | ✅ 已实现(task 06-28)            |
 
 ## CLI(@withy/cli)
 
@@ -56,6 +57,7 @@ updated: 2026-06-22
 | C12 | `discoverSkills` 富化(按 agent 细分 tag)                                             | 🟡 基础版已实现                             |
 | C13 | workflow 类 skill 正文 + `withy-knowledge`                                            | ✅ 已落地                                   |
 | C14 | `task start --worktree`(已后置)                                                      | P2                                         |
+| C15 | 子 agent 投递(2026-06-28):**core** `deployAgents`(format handler 注册表:md 文件级软链 / toml 生成,幂等)+ registry claude/codex 各加 `agentDef{target,format}` + `installCanonicalWorkflowAgents` 铺 canonical `.agents/agents/<role>.md` + `templates/common/agents/{implement,review,research}.md` + init 不再写 context.json | ✅ 已实现(task 06-28)            |
 
 ## Harness(状态机/门禁/hook)
 
@@ -77,6 +79,7 @@ updated: 2026-06-22
 | H13 | `renderSessionStart` 分 section + `<current-state>` git 块 + 接通 `.withy/guide.md` | ✅ 已实现                                      |
 | H14 | `resolvePlannedContext` 返回 `PlannedEntry[]`(带 mode)+ 按形态注入              | ✅ 已实现                                      |
 | H15 | session-start 走到声明 `template` 的节点时注模板正文                            | P1                                            |
+| H16 | 子 agent 节点级派遣(2026-06-28):派遣提示词规范 + 回传契约写进 dev/check skill + 三角色定义;接力 JSON 带 `agent`;(可选)curation 门禁 checker | ❌ P1(规划完,见 task 06-28)            |
 
 ## Web(@withy/app)
 
@@ -88,7 +91,7 @@ updated: 2026-06-22
 | W4  | 事件时间线页 + 注入对比                                             | 🟡 P1     |
 | W5  | 全局配置页(`/settings`)                                            | 🟡 P1     |
 | W6  | approval 面板                                                      | 🟡 P1     |
-| W7  | 注入编排器页(`/p/context`,default/node + 实时预览)                | 🟡 P1     |
+| W7  | ~~注入编排器页(`/p/context`,default/node + 实时预览)~~ → 由 W18 注入管理页取代       | ✅ 见 W18  |
 | W7b | 知识库管理页(全局+项目两区 CRUD + md 渲染)                        | ✅ 已实现 |
 | W7c | 知识库图谱视图(全局/项目/合并三档)                               | 🟡 P2     |
 | W8  | 推进按钮(next)→ 复用 core                                          | 🟡 P1     |
@@ -101,6 +104,7 @@ updated: 2026-06-22
 | W15 | artifact 查看器 / members 页                                       | P2        |
 | W16 | 任务详情三层进度(phase/gate/checklist)+ 实施计划只读渲染          | ✅ 已实现 |
 | W17 | session-start 预览 + 画布节点产物清单/模板引用                      | P2        |
+| W18 | 注入管理页(2026-06-28):内层 context(编辑 guide.md,`/api/guide`)+ agents(角色 CRUD + 投递态,`/api/agents[/role]`,经 core deploy);画布 skill 节点 agent 选择器 + workflow PUT 校验补 `agentExists` | ✅ 已实现(task 06-28) |
 
 ---
 

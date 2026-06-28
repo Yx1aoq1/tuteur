@@ -183,11 +183,14 @@ updated: 2026-06-13
 
 ---
 
-## 7. 注入接入(context.json 分层 + 注索引)
+## 7. 注入接入(injectByDefault + 派遣必读;2026-06-28 取消 context.json)
 
-知识库是「有什么」,`context.json`(core §4)是「注什么、按哪步」,二者分离。注入按**知识 id** 引用(不写文件路径,文件改名不破),`context.json` 分两层:
+> **本轮变更**:旧 `context.json`(default/node 注入集)取消,三关注点拆分——session-start 可配文案 → `.withy/guide.md`(web 编辑);**全局常驻标准 → 知识条目 `injectByDefault`**(本节,本轮新建消费方);**每任务派遣必读 → `tasks/<id>/dispatch.json`(扁平 `read` 清单,子 agent 直接 `Read`,无 `--role`)**(core §4.5、harness §7.2)。知识库本身只管「有什么 + 哪些常驻注入」;「派遣时该读哪些」不再写进知识库或 context.json,而落在派遣清单(per-task)。context.json 的悬空-id lint 也随之移除。
+
+知识库是「有什么」;**常驻注入「注什么」由条目 `injectByDefault` 决定**(全局/项目两级),按**知识 id** 引用(不写路径,改名不破)。下文旧的 `context.json` 分层模型已废弃,保留示例仅作历史对照:
 
 ```jsonc
+// 已废弃(2026-06-28);历史对照,不再生成 context.json
 {
   "default": { "required": ["api-conventions"], "optional": ["db-schema"], "disabled": [] },
   "nodes": { "dev": { "required": ["api-conventions", "test-policy"] } }, // 按节点差异化
