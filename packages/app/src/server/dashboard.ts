@@ -6,6 +6,7 @@ import {
   resolveProjectScope,
   resolveGlobalScope,
   discoverSkills,
+  discoverAgents,
   readGitStatus,
   readDeveloper,
   readWorkflow,
@@ -319,5 +320,7 @@ export function getCanvas(scope: Scope): CanvasData | null {
     source: skill.source,
   }));
 
-  return { workflow, skills };
+  const agents = discoverAgents(scope).map(agent => agent.name);
+
+  return { workflow, skills, agents };
 }

@@ -155,6 +155,9 @@
     "switch": "Switch",
     "skillNode": "Skill node",
     "skill": "Skill",
+    "agent": "Subagent (optional)",
+    "agentNone": "None — main session runs it",
+    "agentDangling": "(not found)",
     "artifacts": "Artifacts (path)",
     "artifactPlaceholder": "e.g. design.md",
     "checks": "Checks (command)",
@@ -187,6 +190,17 @@
     "knowledgeHint": "Global/project entry management, body rendering and the relation graph are pending.",
     "contextTitle": "Injection orchestrator",
     "contextHint": "Configure which knowledge entries get injected per default/node, with live preview — pending."
+  },
+  "inject": {
+    "context": "Context",
+    "agents": "Agents",
+    "contextHint": "Edit .withy/guide.md — the tool intro injected at session start.",
+    "newRole": "New role",
+    "newRolePrompt": "Role name (lowercase, e.g. reviewer)",
+    "noRoles": "No agent roles yet.",
+    "selectRole": "Select a role to edit, or create one.",
+    "deleteRole": "Delete",
+    "deleteRoleConfirm": "Delete role \"{role}\" and its delivered copies?"
   },
   "addProject": {
     "title": "Add project",

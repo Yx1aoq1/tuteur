@@ -1,5 +1,9 @@
 import { ContextPage } from '@/appTemplates/Context';
 
-export default function Page() {
-  return <ContextPage />;
+interface PageProps {
+  params: Promise<{ project: string }>;
+}
+
+export default function Page({ params }: PageProps) {
+  return <ContextPage params={params} />;
 }

@@ -8,6 +8,7 @@ import type { DragPayload } from './model';
 
 interface CanvasPanelProps {
   skills: CanvasSkill[];
+  agents: string[];
   selectedNode: CanvasNode | null;
   onChange: (next: CanvasNode) => void;
   onDelete: () => void;
@@ -16,7 +17,7 @@ interface CanvasPanelProps {
 
 // 右侧固定面板(宽度对齐看板详情):未选中=可拖入的节点列表(分支 + 各 skill);
 // 选中=该节点的配置表单,顶部「← 返回」回到列表。
-export function CanvasPanel({ skills, selectedNode, onChange, onDelete, onBack }: CanvasPanelProps) {
+export function CanvasPanel({ skills, agents, selectedNode, onChange, onDelete, onBack }: CanvasPanelProps) {
   const t = useTranslations('canvas');
 
   return (
@@ -37,7 +38,7 @@ export function CanvasPanel({ skills, selectedNode, onChange, onDelete, onBack }
             <span className="truncate font-mono text-[11px] text-ink-faint">{selectedNode.id}</span>
           </button>
           <div className="flex-1 overflow-y-auto pt-3.5">
-            <NodeForm node={selectedNode} onChange={onChange} onDelete={onDelete} />
+            <NodeForm node={selectedNode} agents={agents} onChange={onChange} onDelete={onDelete} />
           </div>
         </>
       ) : (

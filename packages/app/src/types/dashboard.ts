@@ -135,6 +135,8 @@ export interface CanvasSkillNode {
   id: string;
   type: 'skill';
   skill: string;
+  // 可选:声明本步由该角色子 agent 执行(对齐 core SkillNode.agent)— design §1.1。
+  agent?: string;
   next: string | null;
   phase?: string | null;
   pos?: CanvasPos;
@@ -184,8 +186,10 @@ export interface CanvasSkill {
   source: 'project' | 'global';
 }
 
-// 画布页数据:待编辑的 workflow + 可拖拽的 skill 列表
+// 画布页数据:待编辑的 workflow + 可拖拽的 skill 列表 + 可选的子 agent 角色列表
 export interface CanvasData {
   workflow: CanvasWorkflow;
   skills: CanvasSkill[];
+  // 已发现的子 agent 角色名(skill 节点 agent 选择器的下拉来源)— design §6.4
+  agents: string[];
 }

@@ -288,6 +288,7 @@ function CanvasInner({ data, project }: CanvasViewProps) {
 
       <CanvasPanel
         skills={data.skills}
+        agents={data.agents}
         selectedNode={selectedNode}
         onChange={changeNode}
         onDelete={deleteNode}

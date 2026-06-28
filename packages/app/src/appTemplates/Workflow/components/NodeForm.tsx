@@ -13,19 +13,20 @@ import type {
 
 interface NodeFormProps {
   node: CanvasNode;
+  agents: string[];
   onChange: (next: CanvasNode) => void;
   onDelete: () => void;
 }
 
-// 选中节点的配置表单(渲染在右侧面板,非悬浮):skill 编 gate(产物/检查/审批);switch 编各分支 label/criteria/default。
+// 选中节点的配置表单(渲染在右侧面板,非悬浮):skill 编 agent(可选派遣)/gate(产物/检查/审批);switch 编各分支 label/criteria/default。
 // skill 名称在建节点时已固定,这里只读展示;出口目标(next / branch.next)在画布上从出口连接点拉线设定。
-export function NodeForm({ node, onChange, onDelete }: NodeFormProps) {
+export function NodeForm({ node, agents, onChange, onDelete }: NodeFormProps) {
   const t = useTranslations('canvas');
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-5">
       {node.type === 'skill' ? (
-        <SkillFields node={node} onChange={onChange} />
+        <SkillFields node={node} agents={agents} onChange={onChange} />
       ) : (
         <SwitchFields node={node} onChange={onChange} />
       )}
@@ -43,7 +44,15 @@ export function NodeForm({ node, onChange, onDelete }: NodeFormProps) {
 
 // ── skill 节点字段 ────────────────────────────────────────────────────────────
 
-function SkillFields({ node, onChange }: { node: CanvasSkillNode; onChange: (next: CanvasNode) => void }) {
+function SkillFields({
+  node,
+  agents,
+  onChange,
+}: {
+  node: CanvasSkillNode;
+  agents: string[];
+  onChange: (next: CanvasNode) => void;
+}) {
   const t = useTranslations('canvas');
   const gate = node.gate ?? {};
   const artifacts = gate.artifacts ?? [];
@@ -52,12 +61,42 @@ function SkillFields({ node, onChange }: { node: CanvasSkillNode; onChange: (nex
   const setGate = (patch: Partial<CanvasGate>): void =>
     onChange({ ...node, gate: normalizeGate({ ...gate, ...patch }) });
 
+  // 选空 = 主会话自己干(去掉 agent 字段);选某角色 = 派该子 agent。悬空角色保存时 core 出 warning 不拦。
+  const setAgent = (value: string): void => {
+    if (value) {
+      onChange({ ...node, agent: value });
+      return;
+    }
+    const next = { ...node };
+    delete next.agent;
+    onChange(next);
+  };
+
+  // 当前 agent 不在已发现列表(悬空)时,补一个占位项让它仍可见、可保留。
+  const agentOptions = node.agent && !agents.includes(node.agent) ? [node.agent, ...agents] : agents;
+
   return (
     <>
       <Field label={t('skill')}>
         <div className="rounded-[8px] border border-line bg-paper-sunken px-2 py-1 font-mono text-[12.5px] text-ink">
           {node.skill}
         </div>
+      </Field>
+
+      <Field label={t('agent')}>
+        <select
+          value={node.agent ?? ''}
+          onChange={event => setAgent(event.target.value)}
+          className={inputClass}
+        >
+          <option value="">{t('agentNone')}</option>
+          {agentOptions.map(role => (
+            <option key={role} value={role}>
+              {role}
+              {!agents.includes(role) ? ` ${t('agentDangling')}` : ''}
+            </option>
+          ))}
+        </select>
       </Field>
 
       <Field label={t('artifacts')}>

@@ -3,6 +3,7 @@ import {
   validateWorkflow,
   writeWorkflow,
   readWorkflow,
+  agentExists,
   skillExists,
   WorkflowSchema,
 } from '@withy/core';
@@ -57,7 +58,10 @@ export async function PUT(req: Request, { params }: Ctx): Promise<Response> {
 
   // URL 里的 id 是写入文件名的权威来源;对齐 body.id,避免画布改名后写错文件。
   const workflow = { ...parsed.data, id };
-  const issues = validateWorkflow(workflow, { skillExists: name => skillExists(scope, name) });
+  const issues = validateWorkflow(workflow, {
+    skillExists: name => skillExists(scope, name),
+    agentExists: name => agentExists(scope, name),
+  });
   if (issues.some(issue => issue.level === 'error')) {
     return Response.json({ ok: false, issues }, { status: 422 });
   }

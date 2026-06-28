@@ -155,6 +155,9 @@
     "switch": "分支",
     "skillNode": "skill 节点",
     "skill": "技能",
+    "agent": "子 agent(可选)",
+    "agentNone": "无 —— 主会话自己干",
+    "agentDangling": "(未找到)",
     "artifacts": "产物(路径)",
     "artifactPlaceholder": "如 design.md",
     "checks": "检查(命令)",
@@ -187,6 +190,17 @@
     "knowledgeHint": "全局/项目两区条目管理、正文渲染与关系图谱待实现。",
     "contextTitle": "注入编排器",
     "contextHint": "按 default/node 配置会话注入哪些知识条目,并实时预览注入块,待实现。"
+  },
+  "inject": {
+    "context": "上下文",
+    "agents": "子 agent",
+    "contextHint": "编辑 .withy/guide.md —— session 开始时注入的工具引语。",
+    "newRole": "新建角色",
+    "newRolePrompt": "角色名(小写,如 reviewer)",
+    "noRoles": "暂无子 agent 角色。",
+    "selectRole": "选一个角色编辑,或新建一个。",
+    "deleteRole": "删除",
+    "deleteRoleConfirm": "删除角色「{role}」及其各工具投递副本?"
   },
   "addProject": {
     "title": "加项目",
