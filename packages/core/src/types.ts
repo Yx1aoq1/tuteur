@@ -79,6 +79,9 @@ export const GateSchema = z.object({
   note: z.boolean().optional(),
   // require a non-empty implementation plan (checklist.json) — §progress gate.
   progress: z.boolean().optional(),
+  // require a curated dispatch.json (≥1 real `read` entry) before advancing an
+  // agent node — opt-in curation gate (design §5). Only meaningful on agent nodes.
+  curated: z.boolean().optional(),
 });
 export type Gate = z.infer<typeof GateSchema>;
 
@@ -86,6 +89,9 @@ export const SkillNodeSchema = z.object({
   id: z.string(),
   type: z.literal('skill'),
   skill: z.string(),
+  // 可选:声明本步由该角色的子 agent 执行(对应 canonical .agents/agents/<role>.md)。
+  // 省略=主会话自己干,行为不变;仅 skill 节点适用,switch 节点无此字段 — core §4.3。
+  agent: z.string().optional(),
   next: z.string().nullable(),
   phase: z.string().nullable().optional(),
   pos: PositionSchema.optional(),
@@ -233,20 +239,23 @@ export interface ProgressView {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// Context config (context.json) — core.md §4.5
+// Dispatch config (tasks/<id>/dispatch.json) — the flat, role-agnostic curated
+// reading list every dispatched subagent reads directly. core.md §4.5, design §1.2.
 // ──────────────────────────────────────────────────────────────────────────
 
-const ContextSetSchema = z.object({
-  required: z.array(z.string()).default([]),
-  optional: z.array(z.string()).default([]),
-  disabled: z.array(z.string()).default([]),
-});
+// 一条派遣必读项:引用知识条目 id 或任务产物名,description 是文档梗概(子 agent 据此自判细读)。
+export const DispatchReadEntrySchema = z.union([
+  z.object({ id: z.string(), description: z.string() }),
+  z.object({ artifact: z.string(), description: z.string() }),
+]);
+export type DispatchReadEntry = z.infer<typeof DispatchReadEntrySchema>;
 
-export const ContextConfigSchema = z.object({
-  default: ContextSetSchema.default({ required: [], optional: [], disabled: [] }),
-  nodes: z.record(ContextSetSchema).default({}),
+// dispatch.json:扁平 read 清单 + `_help` 填写指引。种壳时只有 `_help`,read 默认空。
+export const DispatchConfigSchema = z.object({
+  read: z.array(DispatchReadEntrySchema).default([]),
+  _help: z.string().optional(),
 });
-export type ContextConfig = z.infer<typeof ContextConfigSchema>;
+export type DispatchConfig = z.infer<typeof DispatchConfigSchema>;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Local developer identity (.developer) — core.md §3

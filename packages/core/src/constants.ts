@@ -29,6 +29,13 @@ export const SNAPSHOT_MAX = 4000;
 /** Max length of a recorded user prompt (prompt.text). */
 export const PROMPT_MAX = 500;
 
+// dispatch.json 种壳/正文里的填写指引(`_help` 键)。讲清填什么、描述写梗概、别放代码路径 — design §1.2。
+export const DISPATCH_HELP =
+  'Fill read:[{id|artifact, description}]; description is a one-line gist of the doc/knowledge, ' +
+  'and the subagent decides from it whether to read in full. List only knowledge ids and task ' +
+  'artifacts — never code paths (the subagent reads code itself). Run `withy knowledge index` to ' +
+  'see available knowledge ids.';
+
 /** Bundled skill name for a workflow base name, e.g. `dev` → `withy-dev`. */
 export function getBundledSkillName(baseName: string): string {
   return `${SKILL_NAME_PREFIX}-${toDirectoryName(baseName)}`;

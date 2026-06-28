@@ -26,7 +26,7 @@ export {
 export {
   ProjectsRegistrySchema,
   ApprovalRecordSchema,
-  ContextConfigSchema,
+  DispatchConfigSchema,
   WorkflowNodeSchema,
   ArtifactSpecSchema,
   DecisionRecordSchema,
@@ -50,7 +50,8 @@ export {
 } from './types.js';
 export type {
   ProjectsRegistry,
-  ContextConfig,
+  DispatchReadEntry,
+  DispatchConfig,
   ImplementationItem,
   DecisionRecord,
   ChecklistItem,
@@ -109,11 +110,13 @@ export {
   listKnowledgeFiles,
   writeKnowledgeFile,
   readKnowledgeSource,
-  readContextConfig,
   listTaskArtifacts,
   readTaskArtifact,
   listKnowledgeEntries,
   listWikiEntries,
+  dispatchExists,
+  writeDispatch,
+  readDispatch,
   readDeveloper,
   findProjectByName,
   removeProject,
@@ -131,6 +134,7 @@ export {
   writeTask,
   listTasks,
   readTask,
+  writeGuide,
   readGuide,
 } from './store/index.js';
 export type { PendingInjection, ListTasksOptions, KnowledgeTreeEntry, KnowledgeFile, WikiEntry } from './store/index.js';
@@ -150,11 +154,16 @@ export type { ArchiveOptions, ChecklistEntry, CurrentTask } from './task/index.j
 
 export {
   approveCurrentNode,
+  seedDispatchShell,
+  isDispatchCurated,
   validateWorkflow,
+  dispatchBlock,
+  hasAgentNode,
   describeNext,
   deriveStatus,
   initialState,
   recordNote,
+  relayNext,
   nodeById,
   rewindTo,
   skipNode,
@@ -163,6 +172,7 @@ export {
 } from './workflow/index.js';
 export type {
   ValidateContext,
+  DispatchBlock,
   WorkflowIssue,
   BranchView,
   NextOptions,
@@ -209,6 +219,20 @@ export type {
 export { logicalSkillName, resolveSkillRef, discoverSkills, skillExists } from './agents/index.js';
 export type { DiscoveredSkill, ResolvedSkill } from './agents/index.js';
 
+export {
+  removeAgentDefinition,
+  writeAgentDefinition,
+  readAgentDefinition,
+  canonicalAgentPath,
+  resolveAgentRef,
+  discoverAgents,
+  agentExists,
+} from './agents/index.js';
+export type { DiscoveredAgent, ResolvedAgent } from './agents/index.js';
+
+export { getAgentDeliveryStatus, removeAgentDelivery, deployAgents } from './agents/index.js';
+export type { AgentDeliveryStatus, AgentDeliveryState } from './agents/index.js';
+
 export { renderUserPromptSubmit, renderSessionStart } from './session/index.js';
 export type { SessionStartResult } from './session/index.js';
 
@@ -217,7 +241,10 @@ export type { SkillInstallMode, InitQuestion, InitChoice, InitConfig } from './a
 
 export {
   sessionIdFromHookPayload,
+  getProjectAgentDirs,
+  getGlobalAgentDirs,
   CANONICAL_SKILL_DIR,
+  CANONICAL_AGENT_DIR,
   getInitAgentChoices,
   getProjectSkillDirs,
   getGlobalSkillDirs,
@@ -233,6 +260,8 @@ export type {
   AgentPlatformConfig,
   SkillAdapterMode,
   TemplateContext,
+  AgentFormat,
+  AgentDef,
   AgentTool,
 } from './agents/index.js';
 

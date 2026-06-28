@@ -62,6 +62,11 @@ export function taskPath(scope: Scope, id: string, rel: string): string {
   return resolve(taskDir(scope, id), rel);
 }
 
+// 任务级派遣必读清单 `.withy/tasks/<id>/dispatch.json`(随任务提交):被派子 agent 直接 Read 的扁平清单。
+export function dispatchPath(scope: Scope, id: string): string {
+  return taskPath(scope, id, 'dispatch.json');
+}
+
 export function workflowsDir(scope: Scope): string {
   return resolve(scope.withyDir, 'workflows');
 }

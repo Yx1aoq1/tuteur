@@ -19,6 +19,7 @@ export const AGENT_PLATFORMS = defineAgentPlatforms({
       project: ['.agents/skills'],
       global: ['.agents/skills'],
     },
+    agentDef: { target: '.codex/agents', format: 'toml' },
     templateContext: {
       cmdRefPrefix: '$',
       userActionLabel: 'Skills',
@@ -33,6 +34,7 @@ export const AGENT_PLATFORMS = defineAgentPlatforms({
     defaultChecked: true,
     skillTarget: '.claude/skills',
     skillDirs: { project: ['.claude/skills'], global: ['.claude/skills'] },
+    agentDef: { target: '.claude/agents', format: 'markdown' },
     sessionIdEnv: 'CLAUDE_CODE_SESSION_ID',
     hookSessionIdField: 'session_id',
     templateContext: {
@@ -86,6 +88,9 @@ export function getInitAgentChoices(): RegisteredAgentPlatformConfig[] {
 /** Canonical (cross-agent) skill directory, relative to the project root. */
 export const CANONICAL_SKILL_DIR = '.agents/skills';
 
+/** Canonical (cross-agent) agent-definition directory, relative to the project root. */
+export const CANONICAL_AGENT_DIR = '.agents/agents';
+
 /** Project-relative skill dirs to scan, deduped across all platforms + canonical. */
 export function getProjectSkillDirs(): string[] {
   return unique([CANONICAL_SKILL_DIR, ...Object.values(AGENT_PLATFORMS).flatMap(p => p.skillDirs.project)]);
@@ -94,6 +99,23 @@ export function getProjectSkillDirs(): string[] {
 /** Home-relative skill dirs to scan, deduped across all platforms. */
 export function getGlobalSkillDirs(): string[] {
   return unique(Object.values(AGENT_PLATFORMS).flatMap(p => p.skillDirs.global));
+}
+
+// Every platform's declared agent target dir (delivery destinations) — the seed
+// for discovery's markdown scan. Codex's toml target yields no `.md`, so scanning
+// it is harmless; canonical + the Claude symlink dedupe by role name.
+function agentTargets(): string[] {
+  return Object.values(AGENT_PLATFORMS).flatMap(p => (p.agentDef ? [p.agentDef.target] : []));
+}
+
+/** Project-relative agent dirs to scan for canonical `*.md`, deduped — core §5.1. */
+export function getProjectAgentDirs(): string[] {
+  return unique([CANONICAL_AGENT_DIR, ...agentTargets()]);
+}
+
+/** Home-relative agent dirs to scan, deduped across canonical + platform targets. */
+export function getGlobalAgentDirs(): string[] {
+  return unique([CANONICAL_AGENT_DIR, ...agentTargets()]);
 }
 
 function unique(values: string[]): string[] {

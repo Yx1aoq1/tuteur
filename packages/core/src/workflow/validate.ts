@@ -14,6 +14,9 @@ export interface WorkflowIssue {
 export interface ValidateContext {
   skillExists?: (name: string) => boolean;
   templateExists?: (id: string) => boolean;
+  // Resolve a node's `agent` to a canonical role definition. A miss is a warning
+  // (not a block), mirroring skillExists — core §4.3, design §1.1.
+  agentExists?: (name: string) => boolean;
 }
 
 /**
@@ -61,6 +64,16 @@ export function validateWorkflow(wf: Workflow, ctx: ValidateContext = {}): Workf
         level: 'warning',
         node: node.id,
         message: `skill "${node.skill}" not found in project skill dirs`,
+      });
+    }
+
+    // Dangling node agent: a declared role that resolves to no canonical definition
+    // is a warning (the role may be added later), not a block — design §1.1.
+    if (node.type === 'skill' && node.agent && ctx.agentExists && !ctx.agentExists(node.agent)) {
+      issues.push({
+        level: 'warning',
+        node: node.id,
+        message: `agent "${node.agent}" not found in agent definitions`,
       });
     }
 
