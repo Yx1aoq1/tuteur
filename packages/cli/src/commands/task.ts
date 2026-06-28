@@ -1,8 +1,9 @@
 import {
   archiveTask,
-  describeNext,
+  relayNext,
   deriveStatus,
   initialState,
+  seedDispatchShell,
   listTasks,
   readDeveloper,
   readGitStatus,
@@ -15,6 +16,7 @@ import {
   readTask,
   readWorkflow,
   appendEvent,
+  agentExists,
   skillExists,
   taskExists,
   validateWorkflow,
@@ -86,6 +88,7 @@ function runStart(titleOrId: string, options: StartOptions): void {
   // skill/template refs as warnings (they may resolve later). harness §3/H10.
   const issues = validateWorkflow(workflow, {
     skillExists: name => skillExists(scope, name),
+    agentExists: name => agentExists(scope, name),
     templateExists: templateId => readKnowledgeEntry(scope, templateId) !== null,
   });
   const errors = issues.filter(issue => issue.level === 'error');
@@ -118,6 +121,10 @@ function runStart(titleOrId: string, options: StartOptions): void {
   writeTask(scope, task);
   writeState(scope, state);
   writeCurrentTaskPointer(scope, id);
+
+  // Seed the `_help`-only dispatch.json shell when the workflow has any agent node
+  // (core has the whole graph here) — design §1.2. Idempotent + no-op otherwise.
+  seedDispatchShell(scope, id, workflow);
 
   // Timeline origin: an explicit task_created event stamped at creation time.
   appendEvent(scope, id, { ts: now, type: 'task_created', by: creator });
@@ -173,7 +180,7 @@ function runStatus(taskArg: string | undefined): void {
   const id = resolveTaskId(scope, taskArg);
   const task = readTask(scope, id);
   const state = readState(scope, id);
-  const next = describeNext(readWorkflow(scope, task.workflow), state);
+  const next = relayNext(scope, id, readWorkflow(scope, task.workflow), state);
   const git = readGitStatus(scope.root);
   emit({
     ok: true,
@@ -183,6 +190,8 @@ function runStatus(taskArg: string | undefined): void {
     node: state.currentNode,
     phase: next.phase ?? null,
     skill: next.skill,
+    agent: next.agent,
+    dispatch: next.dispatch,
     completed: state.completedNodes,
     decisions: state.decisions,
     artifacts: listTaskArtifacts(scope, id),

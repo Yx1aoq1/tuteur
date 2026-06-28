@@ -22,9 +22,14 @@ export interface ResolvedSkillTemplate {
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const templateRoot = resolve(currentDir, '../templates');
 const canonicalSkillsDir = '.agents/skills';
+const canonicalAgentsDir = '.agents/agents';
 
 export function getCanonicalSkillsDir(projectRoot: string): string {
   return resolve(projectRoot, canonicalSkillsDir);
+}
+
+export function getCanonicalAgentsDir(projectRoot: string): string {
+  return resolve(projectRoot, canonicalAgentsDir);
 }
 
 export function installCanonicalWorkflowSkills(input: { projectRoot: string; createdPaths: string[] }): string[] {
@@ -37,6 +42,39 @@ export function installCanonicalWorkflowSkills(input: { projectRoot: string; cre
     }),
     createdPaths: input.createdPaths,
   });
+}
+
+/**
+ * Copy the bundled canonical role definitions (`templates/common/agents/*.md`) into
+ * the project's `.agents/agents/` — the cross-tool source the core deploy layer
+ * symlinks/generates from. Single Markdown files, copy-if-missing (idempotent re-init).
+ */
+export function installCanonicalWorkflowAgents(input: { projectRoot: string; createdPaths: string[] }): string[] {
+  const sourceRoot = resolve(templateRoot, 'common/agents');
+  const targetRoot = getCanonicalAgentsDir(input.projectRoot);
+  const writtenPaths: string[] = [];
+  if (!existsSync(sourceRoot)) {
+    return writtenPaths;
+  }
+
+  ensureDir(targetRoot, input.createdPaths, writtenPaths);
+
+  for (const entry of readdirSync(sourceRoot, { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.md')) {
+      continue;
+    }
+
+    const to = resolve(targetRoot, entry.name);
+    if (existsSync(to)) {
+      continue;
+    }
+
+    writeFileSync(to, readFileSync(resolve(sourceRoot, entry.name), 'utf8'), 'utf8');
+    input.createdPaths.push(to);
+    writtenPaths.push(to);
+  }
+
+  return writtenPaths;
 }
 
 export function installAgentSkills(context: ConfigureAgentContext, skillTarget: string | null): string[] {

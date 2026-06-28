@@ -8,16 +8,19 @@ import {
   writeTextIfMissing,
   globalConfigPath,
   upsertProject,
+  deployAgents,
   readTextFile,
   workflowPath,
   dirExists,
   ensureDir,
   writeText,
   slugify,
+  type Scope,
 } from '@withy/core';
 import {
-  configureAgentPlatform,
+  installCanonicalWorkflowAgents,
   installCanonicalWorkflowSkills,
+  configureAgentPlatform,
   type AgentTool,
   type SkillAdapterMode,
 } from '../configurators/index.js';
@@ -181,24 +184,16 @@ export async function initProject(options: InitProjectOptions): Promise<InitProj
     createdPaths,
   );
 
-  writeJsonFileIfMissing(
-    resolve(projectDir, 'context.json'),
-    {
-      default: {
-        required: [],
-        optional: [],
-        disabled: [],
-      },
-      nodes: {},
-    },
-    createdPaths,
-  );
-
   writeJsonFileIfMissing(resolve(projectDir, 'workflows/default.workflow.json'), DEFAULT_WORKFLOW, createdPaths);
 
   writeTextIfMissing(resolve(projectDir, 'guide.md'), GUIDE_TEMPLATE, createdPaths);
 
   installCanonicalWorkflowSkills({
+    projectRoot: options.projectRoot,
+    createdPaths,
+  });
+
+  installCanonicalWorkflowAgents({
     projectRoot: options.projectRoot,
     createdPaths,
   });
@@ -217,6 +212,12 @@ export async function initProject(options: InitProjectOptions): Promise<InitProj
       installedAgents.push(agent);
     }
   }
+
+  // Deliver canonical roles into each configured tool's format (Claude symlink /
+  // Codex toml). Runs after the platform loop so every tool's configDir exists —
+  // design §4.2. Tracked for installer rollback.
+  const scope: Scope = { kind: 'project', root: options.projectRoot, withyDir: projectDir };
+  createdPaths.push(...deployAgents(scope).map(rel => resolve(options.projectRoot, rel)));
 
   recordCurrentTemplateHashes(options.projectRoot, getInstalledManagedTemplates(options.projectRoot), createdPaths);
 
