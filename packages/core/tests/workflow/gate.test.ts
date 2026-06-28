@@ -14,6 +14,7 @@ function ctx(overrides: Partial<GateContext> = {}): GateContext {
     isApproved: () => true,
     hasNote: () => true,
     hasProgress: () => true,
+    hasCuratedDispatch: () => true,
     ...overrides,
   };
 }
@@ -43,5 +44,18 @@ describe('progress gate', () => {
 
   it('passes when a plan exists', () => {
     expect(evaluateGate(node({ progress: true }), ctx({ hasProgress: () => true })).ok).toBe(true);
+  });
+});
+
+describe('curated gate (opt-in)', () => {
+  it('blocks when gate.curated and dispatch.json has no real read entry', () => {
+    const { ok, reasons } = evaluateGate(node({ curated: true }), ctx({ hasCuratedDispatch: () => false }));
+    expect(ok).toBe(false);
+    expect(reasons.join(' ')).toMatch(/curate the dispatch reading list/);
+  });
+
+  it('passes when curated, and is a no-op when the gate flag is absent', () => {
+    expect(evaluateGate(node({ curated: true }), ctx({ hasCuratedDispatch: () => true })).ok).toBe(true);
+    expect(evaluateGate(node({}), ctx({ hasCuratedDispatch: () => false })).ok).toBe(true);
   });
 });

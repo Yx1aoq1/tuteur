@@ -3,6 +3,7 @@ import { logicalSkillName } from '../agents/skills.js';
 import { nowIso } from '../utils/index.js';
 import { rewind, send } from './engine.js';
 import type { Cursor, GuardReport, MachineDef } from './engine.js';
+import type { DispatchBlock } from './dispatch.js';
 import type { ArtifactSpec, State, TaskEvent, TaskStatus, Workflow, WorkflowNode } from '../types.js';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -94,6 +95,10 @@ export interface NextStep {
   node: string | null;
   type?: 'skill' | 'switch';
   skill?: string;
+  // 节点声明的子 agent 角色(skill 节点 + 配了 agent 时);供 relay 渲染 dispatch 块 — design §2.1。
+  agent?: string;
+  // 派遣块(由 IO 层 relayNext 现读 dispatch.json 补上;纯 describeNext 不带)。
+  dispatch?: DispatchBlock;
   phase?: string | null;
   branches?: BranchView[];
   message?: string;
@@ -236,6 +241,7 @@ export function describeNext(wf: Workflow, state: State): NextStep {
     node: node.id,
     type: 'skill',
     skill: getBundledSkillName(logicalSkillName(node.skill)),
+    agent: node.agent,
     phase: node.phase ?? null,
   };
 }

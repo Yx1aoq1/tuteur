@@ -5,11 +5,14 @@
 // Only the host-facing surface is re-exported; engine/compile internals stay in
 // the directory. Explicit named re-exports only (CLAUDE.md).
 
-export { approveCurrentNode, recordNote, nextNode, rewindTo, skipNode } from './runtime.js';
+export { approveCurrentNode, recordNote, relayNext, nextNode, rewindTo, skipNode } from './runtime.js';
 export type { NextOptions, NextResult } from './runtime.js';
 
 export { describeNext, deriveStatus, initialState, nodeById, phaseOf } from './interpret.js';
 export type { NextStep, BranchView } from './interpret.js';
+
+export { seedDispatchShell, isDispatchCurated, dispatchBlock, hasAgentNode } from './dispatch.js';
+export type { DispatchBlock } from './dispatch.js';
 
 export { validateWorkflow } from './validate.js';
 export type { ValidateContext, WorkflowIssue } from './validate.js';

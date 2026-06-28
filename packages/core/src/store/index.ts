@@ -29,7 +29,9 @@ export {
   readProjects,
 } from './projects.js';
 
-export { listTaskArtifacts, readContextConfig, readTaskArtifact, readDeveloper, readGuide } from './meta.js';
+export { listTaskArtifacts, readTaskArtifact, readDeveloper, writeGuide, readGuide } from './meta.js';
+
+export { dispatchExists, writeDispatch, readDispatch } from './dispatch.js';
 
 export {
   removeKnowledgeEntry,

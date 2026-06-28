@@ -19,6 +19,8 @@ export interface GateContext {
   hasNote(): boolean;
   // Does a non-empty implementation plan exist (checklist.json)?
   hasProgress(): boolean;
+  // Does the task's dispatch.json have ≥1 real `read` entry (curation gate)?
+  hasCuratedDispatch(): boolean;
 }
 
 type GateChecker = (gate: Gate, ctx: GateContext) => string[];
@@ -44,7 +46,19 @@ const noteChecker: GateChecker = (gate, ctx) =>
 const progressChecker: GateChecker = (gate, ctx) =>
   gate.progress && !ctx.hasProgress() ? ['missing implementation plan: run "withy checklist add \\"<step>\\""'] : [];
 
-const CHECKERS: GateChecker[] = [artifactsChecker, checksChecker, approvalChecker, noteChecker, progressChecker];
+const curatedChecker: GateChecker = (gate, ctx) =>
+  gate.curated && !ctx.hasCuratedDispatch()
+    ? ['curate the dispatch reading list: fill dispatch.json\'s `read` (knowledge ids / artifacts)']
+    : [];
+
+const CHECKERS: GateChecker[] = [
+  artifactsChecker,
+  checksChecker,
+  approvalChecker,
+  noteChecker,
+  progressChecker,
+  curatedChecker,
+];
 
 /** Evaluate a skill node's gate. Empty `reasons` = pass; reasons block the step. */
 export function evaluateGate(node: SkillNode, ctx: GateContext): { ok: boolean; reasons: string[] } {

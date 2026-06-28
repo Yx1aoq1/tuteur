@@ -22,6 +22,7 @@ import {
   stepWorkflow,
   nodeById,
 } from './interpret.js';
+import { dispatchBlock, isDispatchCurated } from './dispatch.js';
 import { evaluateGate } from './gate.js';
 import type { StepResult, NextStep, WorkflowAction } from './interpret.js';
 import type { GateContext } from './gate.js';
@@ -61,6 +62,22 @@ export interface NextOptions {
 }
 
 /**
+ * Render the agent-facing relay for a task's current node, attaching the dispatch
+ * block when that node carries an `agent` (the IO `describeNext` can't: it needs
+ * scope + taskId to read dispatch.json for `curated`, and lazily seeds the shell).
+ * design §2.1 — the dispatch block is composed on the relay, not inside the pure
+ * `describeNext`. Both `withy next` and `task status` go through here.
+ */
+export function relayNext(scope: Scope, taskId: string, wf: Workflow, state: State): NextStep {
+  const next = describeNext(wf, state);
+  const node = state.currentNode ? nodeById(wf, state.currentNode) : null;
+  if (node?.type === 'skill' && node.agent) {
+    next.dispatch = dispatchBlock(scope, taskId, wf, node);
+  }
+  return next;
+}
+
+/**
  * The sole agent-facing advance gate (`withy next`). Reads `state.currentNode` —
  * the caller never names a node. For a skill node we evaluate its gate (fs/checks/
  * approval) into a guard report and hand it to the pure `stepWorkflow`; switch
@@ -71,7 +88,7 @@ export function nextNode(scope: Scope, taskId: string, opts: NextOptions = {}): 
   const wf = readWorkflow(scope, task.workflow);
   const state = readState(scope, taskId);
 
-  if (state.currentNode === null) return { ok: true, exitCode: 0, node: null, next: describeNext(wf, state) };
+  if (state.currentNode === null) return { ok: true, exitCode: 0, node: null, next: relayNext(scope, taskId, wf, state) };
 
   const node = nodeById(wf, state.currentNode);
   const action: WorkflowAction = opts.branch
@@ -88,7 +105,7 @@ export function skipNode(scope: Scope, taskId: string, by: string | undefined, r
   const wf = readWorkflow(scope, task.workflow);
   const state = readState(scope, taskId);
 
-  if (state.currentNode === null) return { ok: true, exitCode: 0, node: null, next: describeNext(wf, state) };
+  if (state.currentNode === null) return { ok: true, exitCode: 0, node: null, next: relayNext(scope, taskId, wf, state) };
 
   return persist(scope, taskId, task, wf, stepWorkflow(wf, state, { kind: 'skip', by, reason }));
 }
@@ -102,6 +119,7 @@ function skillGuards(scope: Scope, taskId: string, node: SkillNode): GuardReport
     isApproved: () => isApproved(scope, taskId, node.id),
     hasNote: () => hasFreshNote(events, node.id),
     hasProgress: () => readProgress(scope, taskId).source !== 'none',
+    hasCuratedDispatch: () => isDispatchCurated(scope, taskId),
   };
   return { [gateGuardId(node.id)]: evaluateGate(node, ctx) };
 }
@@ -134,7 +152,7 @@ function persist(scope: Scope, taskId: string, task: Task, wf: Workflow, result:
       exitCode: 0,
       node: result.node,
       done: result.done,
-      next: describeNext(wf, result.state),
+      next: relayNext(scope, taskId, wf, result.state),
       state: result.state,
     };
   }
