@@ -1,0 +1,19 @@
+{
+  "taskId": "06-28-重设计注入页-agents-卡片列表-详情弹窗",
+  "currentNode": null,
+  "completedNodes": [
+    "brainstorm",
+    "grill-me",
+    "dev",
+    "check",
+    "finish"
+  ],
+  "decisions": {},
+  "approvals": {
+    "grill-me": {
+      "approvedAt": "2026-06-28T10:53:26.642Z",
+      "by": "yan"
+    }
+  },
+  "updatedAt": "2026-06-29T07:17:50.192Z"
+}

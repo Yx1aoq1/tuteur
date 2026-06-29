@@ -1,0 +1,47 @@
+{
+  "nextId": 8,
+  "items": [
+    {
+      "id": "1",
+      "text": "InjectionManager 内层导航宽度 180px 提到 230px,与知识库文件列表一致",
+      "verify": "grep w-[230px] 命中内层 nav",
+      "done": true
+    },
+    {
+      "id": "2",
+      "text": "inject i18n 增补弹窗所需文案到 zh/en",
+      "verify": "node 校验 zh.json/en.json inject 新键存在",
+      "done": true
+    },
+    {
+      "id": "3",
+      "text": "新增 AgentDetailModal.tsx:镜像 TaskDocsModal 遮罩外壳,内嵌可保存 MarkdownEditor 与删除按钮,按 name 拉详情",
+      "verify": "文件存在且 typecheck 通过",
+      "done": true
+    },
+    {
+      "id": "4",
+      "text": "AgentsPanel 改造:去掉 220px 列表列,内容区改卡片网格(新建卡片+角色卡片),管理 openName 与 refresh/create",
+      "verify": "grep 确认无 w-[220px],渲染卡片",
+      "done": true
+    },
+    {
+      "id": "5",
+      "text": "AgentCard 小组件:名称+两行截断描述+投递态徽章行",
+      "verify": "grep line-clamp-2 命中卡片",
+      "done": true
+    },
+    {
+      "id": "6",
+      "text": "静态校验:typecheck + lint + app build",
+      "verify": "pnpm typecheck 与 pnpm lint 与 app build 通过",
+      "done": true
+    },
+    {
+      "id": "7",
+      "text": "agent-browser 手动走查:新建/弹窗/编辑保存/删除/三种关闭/宽度/截断/徽章",
+      "verify": "agent-browser 实测通过",
+      "done": true
+    }
+  ]
+}
