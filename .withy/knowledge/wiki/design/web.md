@@ -215,8 +215,10 @@ web 表单与 CLI 交互**同源**:都读 `INIT_QUESTIONS`、产出同一个 `In
 └────────────┴─────────────────────────────────────────────────┘
 ```
 
-- **context 功能**:编辑 `.withy/guide.md`(session-start 注全文的会话开场)。**复用 `/p/knowledge` 的 md 编辑界面**;读写 `GET|PUT /api/guide?project`(core `readGuide`/`writeGuide`)。
+- **context 功能**:编辑 `.withy/guide.md`(session-start 注全文的会话开场)。**复用 `/p/knowledge` 的 md 编辑界面**;读写 `GET|PUT /api/guide?project`(core `readGuide`/`writeGuide`)。背景对齐知识库:内层导航 `bg-canvas-tint`、context 编辑区 `bg-paper`。
 - **agents 功能**:管理子 agent 角色(harness §7.2)。列出 `discoverAgents` 的角色(名称/描述/各工具投递态);新建或编辑角色定义正文(md+frontmatter)保存到 canonical `.agents/agents/<role>.md` 并**经 core `deployAgents` 投递**(Claude 软链 / Codex 生成 toml);删除角色经 `removeAgentDelivery` + `removeAgentDefinition` 解除投递并删 canonical。`GET /api/agents?project`、`GET|PUT|DELETE /api/agents/:role?project`(**投递经 core,web 不碰 cli configurator**)。
+  - 展示:角色为**横向工卡网格**(确定性像素 identicon 头像骑在彩色条与白区交界处 + 姓名 + 描述摘要 + 右下角平台圆标),**悬停 3D 翻转**看正文摘要(列表项 `excerpt`=剥 frontmatter/标题后的正文开头)。平台圆标为自绘几何字形(非官方商标复刻)。
+  - 交互:新建走卡片**内联输入**(Enter 提交 / Esc 取消,失败行内报错);点击卡片打开**详情弹窗**(复用看板 `TaskDocsModal` 遮罩 + Esc/点背景/✕ 关闭,内嵌自动保存 `MarkdownEditor` + **行内二次删除确认**)。不再用 `window.prompt/confirm/alert`。
 - **different-tool 顶部切换**:展示该工具识别到的 agents / 投递态(linked / generated / stale / missing,`getAgentDeliveryStatus`)。
 - 旧「注入编排器(按 default/node 勾选)」随 context.json 取消而废弃(core §4.5);派遣必读改由 `tasks/<id>/dispatch.json`(扁平 `read` 清单,子 agent 直接 Read)承载(任务详情侧展示,非本页)。
 
