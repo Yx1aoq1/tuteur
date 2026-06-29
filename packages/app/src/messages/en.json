@@ -197,10 +197,16 @@
     "contextHint": "Edit .withy/guide.md — the tool intro injected at session start.",
     "newRole": "New role",
     "newRolePrompt": "Role name (lowercase, e.g. reviewer)",
+    "createFailed": "Create failed",
     "noRoles": "No agent roles yet.",
-    "selectRole": "Select a role to edit, or create one.",
     "deleteRole": "Delete",
-    "deleteRoleConfirm": "Delete role \"{role}\" and its delivered copies?"
+    "deleteConfirm": "Delete this role and its delivered copies?",
+    "confirmDelete": "Confirm delete",
+    "cancel": "Cancel",
+    "close": "Close",
+    "loadFailed": "Failed to load this role",
+    "profile": "Profile",
+    "noDescription": "No description"
   },
   "addProject": {
     "title": "Add project",

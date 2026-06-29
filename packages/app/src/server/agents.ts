@@ -14,11 +14,31 @@ function deliveryOf(scope: Scope, role: string): AgentDeliveryView[] {
   }));
 }
 
+// canonical 正文摘要:剥前置 frontmatter 块与 markdown 标题行,折叠空白后取开头片段(卡片背面预览)。
+function bodyExcerpt(scope: Scope, role: string): string | undefined {
+  const raw = readAgentDefinition(scope, role);
+  if (!raw) return undefined;
+
+  let body = raw;
+  if (body.startsWith('---')) {
+    const close = body.indexOf('\n---', 3);
+    if (close !== -1) {
+      const nl = body.indexOf('\n', close + 1);
+      body = nl !== -1 ? body.slice(nl + 1) : '';
+    }
+  }
+
+  const text = body.replace(/^#.*$/gm, '').replace(/\s+/g, ' ').trim();
+
+  return text.slice(0, 200) || undefined;
+}
+
 /** 列出全部角色 + 各工具投递态(注入管理页 agents 功能)。 */
 export function listAgents(scope: Scope): AgentSummaryView[] {
   return discoverAgents(scope).map(agent => ({
     name: agent.name,
     description: agent.description,
+    excerpt: bodyExcerpt(scope, agent.name),
     source: agent.source,
     delivery: deliveryOf(scope, agent.name),
   }));

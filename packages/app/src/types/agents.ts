@@ -11,10 +11,13 @@ export interface AgentDeliveryView {
   target: string;
 }
 
-// 列表项:角色名 + 描述 + 各工具投递态。
+// 列表项:角色名 + 描述 + 正文摘要 + 各工具投递态。
 export interface AgentSummaryView {
   name: string;
   description?: string;
+
+  // canonical 正文摘要(剥 frontmatter 与标题后的开头片段),供卡片背面预览。
+  excerpt?: string;
   source: 'project' | 'global';
   delivery: AgentDeliveryView[];
 }
