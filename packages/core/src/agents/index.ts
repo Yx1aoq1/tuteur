@@ -1,5 +1,6 @@
 export {
   sessionIdFromHookPayload,
+  resolveCurrentPlatform,
   getProjectAgentDirs,
   getGlobalAgentDirs,
   CANONICAL_SKILL_DIR,
@@ -28,10 +29,12 @@ export { logicalSkillName, resolveSkillRef, discoverSkills, skillExists } from '
 export type { DiscoveredSkill, ResolvedSkill } from './skills.js';
 
 export {
+  enginePlatformAvailable,
   removeAgentDefinition,
   writeAgentDefinition,
   readAgentDefinition,
   canonicalAgentPath,
+  resolveAgentEngine,
   resolveAgentRef,
   discoverAgents,
   agentExists,

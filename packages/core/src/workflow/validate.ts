@@ -17,6 +17,14 @@ export interface ValidateContext {
   // Resolve a node's `agent` to a canonical role definition. A miss is a warning
   // (not a block), mirroring skillExists — core §4.3, design §1.1.
   agentExists?: (name: string) => boolean;
+  // Resolve a node's `agent` role to its declared `engine` (undefined = the role
+  // doesn't resolve, or resolves but declares no engine/inherit). Split from
+  // agentExists because engine isn't on the node itself — it's locked inside the
+  // role file's frontmatter, which this pure validator can't read directly —
+  // cross-tool-dispatch design §Components.
+  resolveAgentEngine?: (role: string) => string | undefined;
+  // Whether a resolved engine id is a known, configured platform.
+  enginePlatformAvailable?: (engine: string) => boolean;
 }
 
 /**
@@ -75,6 +83,20 @@ export function validateWorkflow(wf: Workflow, ctx: ValidateContext = {}): Workf
         node: node.id,
         message: `agent "${node.agent}" not found in agent definitions`,
       });
+    }
+
+    // Engine unknown/uninstalled: the role declares an engine that isn't a
+    // registered+configured platform — warning, not a block. A role with no engine
+    // (inherit) never triggers this — cross-tool-dispatch design §Components.
+    if (node.type === 'skill' && node.agent && ctx.resolveAgentEngine) {
+      const engine = ctx.resolveAgentEngine(node.agent);
+      if (engine && ctx.enginePlatformAvailable && !ctx.enginePlatformAvailable(engine)) {
+        issues.push({
+          level: 'warning',
+          node: node.id,
+          message: `agent "${node.agent}"'s engine "${engine}" is not a registered/configured platform`,
+        });
+      }
     }
 
     // Edge targets: exist + phase-monotonic (a branch may jump phases forward).

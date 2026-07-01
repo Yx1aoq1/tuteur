@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sessionIdFromHookPayload, resolveSessionId } from '../../src/agents/index.js';
+import { sessionIdFromHookPayload, resolveCurrentPlatform, resolveSessionId } from '../../src/agents/index.js';
 
 describe('resolveSessionId', () => {
   it('reads the Claude env var', () => {
@@ -8,6 +8,20 @@ describe('resolveSessionId', () => {
 
   it('returns null when no platform env var is set', () => {
     expect(resolveSessionId({})).toBeNull();
+  });
+});
+
+describe('resolveCurrentPlatform', () => {
+  it('returns claude when its session env var is set', () => {
+    expect(resolveCurrentPlatform({ CLAUDE_CODE_SESSION_ID: 'sid-9' })).toBe('claude');
+  });
+
+  it('returns null when no platform declares a matching env var', () => {
+    expect(resolveCurrentPlatform({})).toBeNull();
+  });
+
+  it('returns null for codex/opencode — neither ships a session env var yet', () => {
+    expect(resolveCurrentPlatform({ SOME_UNRELATED_VAR: 'x' })).toBeNull();
   });
 });
 

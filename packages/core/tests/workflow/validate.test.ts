@@ -57,3 +57,44 @@ describe('validateWorkflow — agentExists', () => {
     expect(issues.some(i => i.message.includes('agent'))).toBe(false);
   });
 });
+
+describe('validateWorkflow — engine warning', () => {
+  const wf: Workflow = {
+    id: 'test',
+    entry: 'dev',
+    phases: [{ id: 'execute' }],
+    nodes: [
+      { id: 'dev', type: 'skill', skill: 'withy-dev', agent: 'implement', phase: 'execute', next: 'check' },
+      { id: 'check', type: 'skill', skill: 'withy-check', agent: 'review', phase: 'execute', next: 'inherit' },
+      { id: 'inherit', type: 'skill', skill: 'withy-finish', agent: 'plan', phase: 'execute', next: null },
+    ],
+  };
+  // implement→claude (available), review→foo (unknown), plan→undefined (no engine, inherit).
+  const engineByRole: Record<string, string> = { implement: 'claude', review: 'foo' };
+  const resolveAgentEngine = (role: string): string | undefined => engineByRole[role];
+  const enginePlatformAvailable = (engine: string): boolean => engine === 'claude';
+
+  it('warns exactly once, naming role and engine, when the engine is unknown/unconfigured', () => {
+    const issues = validateWorkflow(wf, { resolveAgentEngine, enginePlatformAvailable });
+    const engineIssues = issues.filter(i => i.message.includes('engine'));
+    expect(engineIssues).toEqual([
+      {
+        level: 'warning',
+        node: 'check',
+        message: 'agent "review"\'s engine "foo" is not a registered/configured platform',
+      },
+    ]);
+  });
+
+  it('does not warn when the engine is available, or when the role declares none', () => {
+    const issues = validateWorkflow(wf, { resolveAgentEngine, enginePlatformAvailable });
+    expect(issues.some(i => i.node === 'dev' && i.message.includes('engine'))).toBe(false);
+    expect(issues.some(i => i.node === 'inherit' && i.message.includes('engine'))).toBe(false);
+  });
+
+  it('skips the engine check when either resolver is not injected', () => {
+    expect(validateWorkflow(wf, { resolveAgentEngine }).some(i => i.message.includes('engine'))).toBe(false);
+    expect(validateWorkflow(wf, { enginePlatformAvailable }).some(i => i.message.includes('engine'))).toBe(false);
+    expect(validateWorkflow(wf).some(i => i.message.includes('engine'))).toBe(false);
+  });
+});

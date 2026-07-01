@@ -11,8 +11,8 @@ export type { NextOptions, NextResult } from './runtime.js';
 export { describeNext, deriveStatus, initialState, nodeById, phaseOf } from './interpret.js';
 export type { NextStep, BranchView } from './interpret.js';
 
-export { seedDispatchShell, isDispatchCurated, dispatchBlock, hasAgentNode } from './dispatch.js';
-export type { DispatchBlock } from './dispatch.js';
+export { seedDispatchShell, isDispatchCurated, dispatchBlock, hasAgentNode, routeAgent } from './dispatch.js';
+export type { DispatchBlock, RouteResult } from './dispatch.js';
 
 export { validateWorkflow } from './validate.js';
 export type { ValidateContext, WorkflowIssue } from './validate.js';

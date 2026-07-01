@@ -15,6 +15,11 @@ export interface ScannedAgent {
 
   // `description:` from the frontmatter, when present.
   description?: string;
+
+  // `engine:` from the frontmatter, when present — raw and unvalidated (like
+  // `description`; not narrowed to `AgentTool`). Route/validate decide what to do
+  // with an unknown value — cross-tool-dispatch design §Components.
+  engine?: string;
 }
 
 /**
@@ -38,7 +43,12 @@ export function scanAgentDirs(baseDir: string, rels: string[]): ScannedAgent[] {
       if (!entry.name.endsWith('.md')) continue;
       const file = resolve(root, entry.name);
       if (!existsSync(file)) continue;
-      found.push({ name: entry.name.slice(0, -'.md'.length), file, description: readDescription(file) });
+      found.push({
+        name: entry.name.slice(0, -'.md'.length),
+        file,
+        description: readDescription(file),
+        engine: readEngine(file),
+      });
     }
   }
   return found;
@@ -67,6 +77,23 @@ function readDescription(file: string): string | undefined {
   try {
     const match = readTextFile(file).match(/^description:\s*(.+)$/m);
     return match?.[1]?.trim();
+  } catch {
+    return undefined;
+  }
+}
+
+// Parse the `engine:` line out of a role definition's frontmatter (same scan as
+// `description`, not a legal-platform-id check — cross-tool-dispatch design
+// §Components). Uses `[ \t]*` rather than `description`'s `\s*`: `\s` matches `\n`,
+// so a blank value (`engine:   ` then a newline) would otherwise let the regex cross
+// into the next frontmatter line and capture it instead of an empty string — this
+// field's blank case actually matters downstream (routing), unlike `description`'s.
+// A whitespace-only value trims to '' and is treated as omitted.
+export function readEngine(file: string): string | undefined {
+  try {
+    const match = readTextFile(file).match(/^engine:[ \t]*(.+)$/m);
+    const value = match?.[1]?.trim();
+    return value || undefined;
   } catch {
     return undefined;
   }

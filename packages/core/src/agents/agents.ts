@@ -1,10 +1,11 @@
 import { homedir } from 'node:os';
-import { mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, rmSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { getGlobalAgentDirs, getProjectAgentDirs, CANONICAL_AGENT_DIR } from './registry.js';
-import { scanAgentDirs, findAgentFile } from '../store/agents.js';
+import { getGlobalAgentDirs, getProjectAgentDirs, CANONICAL_AGENT_DIR, AGENT_PLATFORMS } from './registry.js';
+import { scanAgentDirs, findAgentFile, readEngine } from '../store/agents.js';
 import { writeTextFile, readTextFileIfExists } from '../utils/index.js';
 import type { ScannedAgent } from '../store/agents.js';
+import type { AgentTool } from './registry.js';
 import type { Scope } from '../paths.js';
 
 // 角色名安全校验:单段 kebab(字母数字 + 连字符),拒绝路径分隔符与 . / ..,防越界写。
@@ -14,6 +15,8 @@ const SAFE_ROLE = /^[a-z0-9][a-z0-9-]*$/i;
 export interface DiscoveredAgent {
   name: string; // 角色名(canonical .md 的 basename,如 `review`)
   description?: string;
+  // 声明的 engine(原始字符串,未校验;缺省=inherit)—— cross-tool-dispatch design §Components。
+  engine?: string;
   source: 'project' | 'global';
   /** 该角色被发现的文件路径(canonical + 已投递的工具目录副本)。 */
   paths: string[];
@@ -38,8 +41,15 @@ export function discoverAgents(scope: Scope): DiscoveredAgent[] {
       if (existing) {
         existing.paths.push(agent.file);
         if (!existing.description && agent.description) existing.description = agent.description;
+        if (!existing.engine && agent.engine) existing.engine = agent.engine;
       } else {
-        byName.set(agent.name, { name: agent.name, description: agent.description, source, paths: [agent.file] });
+        byName.set(agent.name, {
+          name: agent.name,
+          description: agent.description,
+          engine: agent.engine,
+          source,
+          paths: [agent.file],
+        });
       }
     }
   };
@@ -74,6 +84,29 @@ export function agentExists(scope: Scope, role: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Resolve a role's declared `engine` (raw, unvalidated string) — undefined when the
+ * role doesn't resolve, or resolves but declares no engine (inherit). Backs
+ * `routeAgent`/`validateWorkflow`'s engine warning — cross-tool-dispatch design §Components.
+ */
+export function resolveAgentEngine(scope: Scope, role: string): string | undefined {
+  const file = findAgentFile(scope.root, getProjectAgentDirs(), [role]);
+  return file ? readEngine(file) : undefined;
+}
+
+/**
+ * Whether `id` is a registered platform with its `configDir` present in the project
+ * (i.e. `withy init` has set it up) — the same "configured" test `deployAgents` uses
+ * (agents/deploy.ts). An unregistered id and a known-but-unconfigured one both
+ * collapse to `false`; the engine warning message doesn't need to distinguish them.
+ * Backs `validateWorkflow`'s engine warning ctx injection.
+ */
+export function enginePlatformAvailable(scope: Scope, id: string): boolean {
+  if (!(id in AGENT_PLATFORMS)) return false;
+  const platform = AGENT_PLATFORMS[id as AgentTool];
+  return existsSync(resolve(scope.root, platform.configDir));
 }
 
 // ── Canonical role definition read/write (.agents/agents/<role>.md) — web CRUD ──

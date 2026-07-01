@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { AGENT_PLATFORMS } from './agents/registry.js';
+import type { AgentTool } from './agents/registry.js';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Task (tasks/<id>/task.json) — core.md §4.1
@@ -256,6 +258,46 @@ export const DispatchConfigSchema = z.object({
   _help: z.string().optional(),
 });
 export type DispatchConfig = z.infer<typeof DispatchConfigSchema>;
+
+// ──────────────────────────────────────────────────────────────────────────
+// RunRecord / handback — phase-one shape contract only (no store read/write, no
+// runs/ path, no gate wiring yet;阶段二再落地). cross-tool-dispatch design §Components.
+// ──────────────────────────────────────────────────────────────────────────
+
+// 派给哪个工具执行,派生自 registry 键(单一数据源,不在本文件手写平台清单)。
+export const AgentToolSchema = z.enum(Object.keys(AGENT_PLATFORMS) as [AgentTool, ...AgentTool[]]);
+
+export const RunStatusSchema = z.enum(['running', 'completed', 'error', 'timeout']);
+export type RunStatus = z.infer<typeof RunStatusSchema>;
+
+// 一次跨工具子代理运行的记录(阶段二读写落 runs/<node>-<n>.json)。
+export const RunRecordSchema = z.object({
+  runId: z.string(),
+  node: z.string(),
+  executor: AgentToolSchema,
+  cwd: z.string(),
+  sessionId: z.string().optional(),
+  status: RunStatusSchema, // 来自退出码,不抓 PTY 猜测
+  exitCode: z.number().int().optional(),
+  startedAt: z.string(),
+  endedAt: z.string().optional(),
+  log: z.string().optional(),
+});
+export type RunRecord = z.infer<typeof RunRecordSchema>;
+
+export const HandbackStatusSchema = z.enum(['ok', 'blocked', 'failed']);
+export type HandbackStatus = z.infer<typeof HandbackStatusSchema>;
+
+// 跨工具交接契约,沿用同工具 subagent 回执的形状(node/status/summary + touched/blockers)。
+export const HandbackSchema = z.object({
+  node: z.string(),
+  status: HandbackStatusSchema,
+  summary: z.string(),
+  touched: z.array(z.string()).default([]),
+  blockers: z.array(z.string()).default([]),
+  needsInput: z.string().nullable().default(null),
+});
+export type Handback = z.infer<typeof HandbackSchema>;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Local developer identity (.developer) — core.md §3
