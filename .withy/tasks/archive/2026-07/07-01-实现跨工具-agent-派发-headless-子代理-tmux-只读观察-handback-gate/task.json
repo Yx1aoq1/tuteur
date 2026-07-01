@@ -1,0 +1,13 @@
+{
+  "id": "07-01-实现跨工具-agent-派发-headless-子代理-tmux-只读观察-handback-gate",
+  "title": "实现跨工具 agent 派发(headless 子代理 + tmux 只读观察 + handback gate)",
+  "workflow": "default",
+  "status": "completed",
+  "creator": "yan",
+  "assignee": "yan",
+  "priority": "normal",
+  "tags": [],
+  "createdAt": "2026-07-01T07:13:38.050Z",
+  "completedAt": "2026-07-01T12:46:02.976Z",
+  "archivedAt": "2026-07-01T12:55:03.732Z"
+}

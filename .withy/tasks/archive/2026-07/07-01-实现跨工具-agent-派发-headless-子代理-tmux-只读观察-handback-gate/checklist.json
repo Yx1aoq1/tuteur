@@ -1,0 +1,53 @@
+{
+  "nextId": 9,
+  "items": [
+    {
+      "id": "1",
+      "text": "registry 新增 opencode 平台条目并导出 resolveCurrentPlatform(env);修复 defineAgentPlatforms 的跨包声明类型坍缩(发现即修,见 design.md 风险3)——参数/返回改为直接用 TPlatforms,不再重新派生 mapped type,新增 platformList() helper 供内部遍历",
+      "verify": "packages/core/tests/agents/registry.test.ts 与 session-id.test.ts 用例通过(三平台 Object.keys 断言 + resolveCurrentPlatform 场景);额外实测验证:core build 后临时移除 cli 的 PLATFORM_CONFIGURATORS.opencode 条目,pnpm --filter @withy/cli typecheck 必须报 TS2741 缺 opencode(已验证,现已恢复)",
+      "done": true
+    },
+    {
+      "id": "2",
+      "text": "store/agents.ts + agents/agents.ts 解析角色 frontmatter 的可选 engine 字段(string|undefined,空白值规整为 undefined),新增 resolveAgentEngine(scope, role) 读取口",
+      "verify": "agents.test.ts 新增用例:engine: codex 的角色解析出 engine==='codex';无 engine→undefined;仅空白(engine:   )trim 后规整为 undefined;非法值(如 engine: foo)在解析层不拒绝(宽松);resolveAgentEngine 对不存在的角色返回 undefined",
+      "done": true
+    },
+    {
+      "id": "3",
+      "text": "workflow/dispatch.ts 新增纯函数 routeAgent({ engine }, currentPlatform)",
+      "verify": "dispatch.test.ts 新增 routeAgent 矩阵用例:currentPlatform∈{claude,codex,opencode,null}×engine∈{缺省,同,异} 全部按 design §Components 判据断言",
+      "done": true
+    },
+    {
+      "id": "4",
+      "text": "DispatchBlock 扩展 mode/engine 字段,dispatchBlock() 接入 resolveCurrentPlatform + 角色 engine + routeAgent",
+      "verify": "dispatch.test.ts:无 engine 节点的 dispatchBlock 输出与现状逐字一致(回归);有 engine 且 !=currentPlatform → mode===cross 且 action 含「跨工具执行未落地」字样",
+      "done": true
+    },
+    {
+      "id": "5",
+      "text": "validateWorkflow 新增 engine 未知/未装告警——ValidateContext 加 resolveAgentEngine/enginePlatformAvailable 两个谓词,并在 cli/commands/task.ts 与 app/api/workflows/[id]/route.ts 两处既有 validateWorkflow 调用点各自补上注入(两处都已注入 agentExists,照同一范式加两行)",
+      "verify": "validate.test.ts 新增用例:两谓词都注入且 engine 未知/未装→恰一条 level:'warning' 且 message 同时含 role 与 engine 名;engine 合法已装或角色未声明 engine→无告警;任一谓词未注入→跳过检查。cli/app 两处的新注入行由 pnpm typecheck 覆盖(与现有 agentExists 注入同等严格度,不强制新增集成测试)",
+      "done": true
+    },
+    {
+      "id": "6",
+      "text": "types.ts 新增 RunRecordSchema / HandbackSchema(含 RunStatusSchema/HandbackStatusSchema)纯 zod 契约;AgentToolSchema 从 agents/registry.ts 的 AGENT_PLATFORMS 键派生,不在 types.ts 手写字面量清单",
+      "verify": "新增测试:合法 RunRecord/handback 对象 parse 通过;缺必填字段或非法 status 枚举被拒;handback 的 touched/blockers/needsInput 默认值生效;AgentToolSchema 新增 opencode 后自动包含三平台(无需手改 types.ts)",
+      "done": true
+    },
+    {
+      "id": "7",
+      "text": "新增 opencode CLI configurator(templates/opencode/agents/.gitkeep + configureOpencode + PLATFORM_CONFIGURATORS 登记;不需要 skills/.gitkeep,installAgentSkills 统一读 common/skills/)",
+      "verify": "新增 packages/cli/tests/configurators/opencode.test.ts(比照 claude.test.ts)通过;PLATFORM_CONFIGURATORS 穷举 Record 补全后 pnpm typecheck 不再因缺 opencode 报错",
+      "done": true
+    },
+    {
+      "id": "8",
+      "text": "全量校验:typecheck / lint / core build / 相关 vitest 套件",
+      "verify": "pnpm typecheck && pnpm lint(0 warning)&& @withy/core build 全部通过;packages/core 与 packages/cli 相关新增/改动测试全绿",
+      "done": true
+    }
+  ]
+}
