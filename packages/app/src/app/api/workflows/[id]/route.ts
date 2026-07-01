@@ -1,6 +1,8 @@
 import {
   resolveProjectScope,
+  enginePlatformAvailable,
   validateWorkflow,
+  resolveAgentEngine,
   writeWorkflow,
   readWorkflow,
   agentExists,
@@ -61,6 +63,8 @@ export async function PUT(req: Request, { params }: Ctx): Promise<Response> {
   const issues = validateWorkflow(workflow, {
     skillExists: name => skillExists(scope, name),
     agentExists: name => agentExists(scope, name),
+    resolveAgentEngine: role => resolveAgentEngine(scope, role),
+    enginePlatformAvailable: engine => enginePlatformAvailable(scope, engine),
   });
   if (issues.some(issue => issue.level === 'error')) {
     return Response.json({ ok: false, issues }, { status: 422 });
