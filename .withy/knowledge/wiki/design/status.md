@@ -7,7 +7,7 @@ tags: [withy, status, roadmap]
 summary: 'Withy 各域(core/cli/harness/web)的实现状态清单:已完成 ✅ / 进行中 🟡 / 未完成(❌·P0–P2)。设计页只述核心设计与规划,落地状态集中在此一页,避免双份漂移。'
 inject: index
 injectByDefault: false
-updated: 2026-06-22
+updated: 2026-07-01
 ---
 
 # 实现状态(已完成 / 未完成)
@@ -38,6 +38,8 @@ updated: 2026-06-22
 | K15 | 注入形态:`inject:full\|index` + `resolvePlannedContext` 返回带形态正文                    | ✅ 已实现                                       |
 | K16 | `knowledge`:`covers`/`cover` 边 + `graph.json` 派生缓存 + 关系查询 + lint 悬空 covers     | ✅ 已实现                                       |
 | K17 | 子 agent 派遣(2026-06-28):节点 `agent` 字段 schema/validate(`agentExists`)+ `discoverAgents`/`resolveAgentRef` + **扁平** `dispatch.json` schema/种壳+幂等懒补 + relay `dispatch` 块(`role/activeTask/curated/action`,无 `--role`)+ 可选 `gate.curated` 门禁 + 移除 context.json(`resolvePlannedContext` 重构为 `injectByDefault` 聚合)+ `writeGuide` | ✅ 已实现(task 06-28)            |
+| K18 | 跨工具 agent 派发阶段一(2026-07-01,[[cross-tool-dispatch]]):角色 frontmatter 可选 `engine` 字段(`resolveAgentEngine`)+ `resolveCurrentPlatform`(通用机制,codex/opencode 暂返回 null,见风险)+ 纯函数 `routeAgent` + `DispatchBlock` 加 `mode`/`engine`(cross 时诚实标注跨工具执行未落地)+ `validateWorkflow` 新增 engine 未知/未装告警(`resolveAgentEngine`/`enginePlatformAvailable` 两谓词,cli/app 两处调用点均已接线)+ `RunRecordSchema`/`HandbackSchema` 纯 zod 契约(`AgentToolSchema` 从 registry 派生)+ opencode 注册为完整 install 平台(`configDir:'.opencode'`,`defaultChecked:false`)。**不 spawn**,阶段二再落地 `runs/` 读写、handback ingest、真正的 `withy dispatch` | ✅ 已实现(task 07-01)            |
+| K19 | `defineAgentPlatforms` 的 id/cliFlag↔key 编译期一致性核对未覆盖(简化修复跨包类型坍缩坑的副作用,详见 [[core]] §5.1 坑记录;写错某条目的 `id` 不会报错,当前数据本身正确,只是少一道编译期保险) | ❌ P2(2026-07-01 记录) |
 
 ## CLI(@withy/cli)
 
@@ -58,6 +60,7 @@ updated: 2026-06-22
 | C13 | workflow 类 skill 正文 + `withy-knowledge`                                            | ✅ 已落地                                   |
 | C14 | `task start --worktree`(已后置)                                                      | P2                                         |
 | C15 | 子 agent 投递(2026-06-28):**core** `deployAgents`(format handler 注册表:md 文件级软链 / toml 生成,幂等)+ registry claude/codex 各加 `agentDef{target,format}` + `installCanonicalWorkflowAgents` 铺 canonical `.agents/agents/<role>.md` + `templates/common/agents/{implement,review,research}.md` + init 不再写 context.json | ✅ 已实现(task 06-28)            |
+| C16 | opencode configurator(2026-07-01,[[cross-tool-dispatch]]):`configureOpencode`(照 `configureClaude` 同构:`copyAgentTemplates` + `installAgentSkills`)+ `templates/opencode/agents/.gitkeep` + `PLATFORM_CONFIGURATORS` 补全三平台。真机核实前 `defaultChecked:false`,不默认推给 `withy init` 用户 | ✅ 已实现(task 07-01)            |
 
 ## Harness(状态机/门禁/hook)
 

@@ -8,7 +8,7 @@ summary: '唯一 .withy 读写层与领域/类型事实源:双层模型、用户
 inject: index
 injectByDefault: false
 covers: [packages/core/src/**]
-updated: 2026-06-21
+updated: 2026-07-01
 status: stable
 ---
 
@@ -515,6 +515,8 @@ export function resolveSkillRef(scope: Scope, skill: string): { name: string; pa
 > 富化项(待补,P1):每条按 `agent`(canonical/codex/claude)再细分 tag,供 web 画布按工具分组——当前基础版只给 `source` + 合并的 `paths`。
 
 **目录来源是单一数据源**:由 `agents/registry.ts` 的 `getProjectSkillDirs()`/`getGlobalSkillDirs()` 从 `AGENT_PLATFORMS.skillDirs` 派生,不在 skills.ts 再抄一份。project 组相对项目根解析,global 组相对用户 home 解析。扫描 + 解析 frontmatter 的逻辑落在 **core(`skills.ts`)**,不在 configurator(cli.md §6.2)。
+
+**坑(2026-07-01 实测发现并修复):`AGENT_PLATFORMS` 的声明类型不能靠「参数与返回都重新构造 mapped type」维持窄联合**——`agents/registry.ts` 原来的 `defineAgentPlatforms<const TPlatforms extends ...>(platforms: {[K in keyof TPlatforms]: ...}): {[K in keyof TPlatforms]: ...}` 写法,在 `@withy/core` 自身编译内没问题(`registry.test.ts` 之类的测试全绿),但 `tsc -p tsconfig.build.json` 出的 `.d.ts` 会把这个 mapped-type 返回值坍缩成 `{ [x: string]: AgentPlatformConfig<string> }` 索引签名——`AgentTool = keyof typeof AGENT_PLATFORMS` 因此在 **core 之外**(cli、app)退化成普通 `string`,任何依赖 `Record<AgentTool, X>` 穷举检查的地方(如 cli 的 `PLATFORM_CONFIGURATORS`)漏一个平台条目也不再报错——已用「临时删掉一个平台条目 + 重跑 `pnpm --filter @withy/cli typecheck`」实测复现,并在修复后反向验证确实会报 `TS2741`。**修复**:改成参数与返回都直接是 `TPlatforms` 本身,不重新派生 mapped type;副作用是各条目不再自动获得 `AgentPlatformConfig` 的统一可选字段访问,改用一个内部 `platformList()` helper(转型为 `AgentPlatformConfig[]`)供需要按通用形状遍历所有平台的调用点用,`getInitAgentChoices` 仍用 `Object.values(AGENT_PLATFORMS)` 保留精确联合类型。**通用教训**:任何「用泛型 helper 包一层 const 对象、返回类型再重新构造一次 mapped type」的写法,只在同包内编译时安全,一旦要跨包声明文件消费(`.d.ts` 生成),都可能悄悄坍缩丢精度——检验一个 registry 式单一数据源是否真的跨包生效,要拿 **build 后的 `.d.ts`** 去看,不能只看同包内 `tsc --noEmit` 是否通过。另附带发现:该函数注释曾声称「id/cliFlag 与 key 的一致性在编译期核对」,实测同样没有真正生效(故意写错 id 不报错)——这条本次未修,收益小于本任务范围,见下方 K18 行待补记录。
 
 **按真实安装名去重展示(所见即所存)**:`discoverSkills` 直接用 skill 的真实目录名(`withy-dev`、`composition-patterns` 等),不再剥 `withy-` 前缀。同一 skill 在多工具目录铺多份时,名字相同就折叠成一条、保留多来源 `paths`(画布下拉显示真实名 + 来源 tag)。**workflow 节点的 `skill` 字段也存真实安装名**(画布所见即所存),消除了「逻辑名 ↔ 安装名」两套命名的转换层与由此产生的错配。`logicalSkillName`(剥前缀)仅保留给 relay 的幂等归一兜底。
 

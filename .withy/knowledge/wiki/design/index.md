@@ -3,6 +3,7 @@
 # design/
 
 - [节点门禁扩展:note / progress 与 checklist 进度源](node-gate-checkers.md) — 门禁=checker+Gate 字段的扩展范式;note 门禁的「新鲜度 floor」算法;progress 门禁为何用独立 checker 而非 AND-list 产物;checklist.json 为唯一进度源。
+- [跨工具 agent 派发:架构选型(活 agent 编排 + headless 子代理 + tmux 只读观察)](cross-tool-dispatch.md) — 跨不同 agent CLI(Codex/opencode 等)派发的架构决策:主编排是活 AI agent(Claude Code 本体,原生 TUI),Withy 是护栏不是总指挥;子代理走 headless exec 开进 tmux 面板「只读看」,完成=进程退出;明确不做交互式子代理。派发路由由角色 frontmatter 的 engine 字段定(缺省=inherit 走原生,指定别的=拓展派发)。参考目标 = CodeMachine-CLI(TS、借其引擎适配器写法),CAO 仅作反面对照。
 - [任务事件流与时间线展示](task-event-timeline.md) — events.jsonl 判别联合事件模型与前向兼容、会话注入回填的两侧 session-id 契约、dashboard 时间线本地时区+严格升序+prompt 就地折叠。
 - [实现状态(已完成 / 未完成)](status.md) — Withy 各域(core/cli/harness/web)的实现状态清单:已完成 ✅ / 进行中 🟡 / 未完成(❌·P0–P2)。设计页只述核心设计与规划,落地状态集中在此一页,避免双份漂移。
 - [知识库设计(Knowledge Base)](knowledge-base.md) — generic-root knowledge:wiki/ 是机器托管特殊层(frontmatter/index/graph/注入),sources/user 等为普通文件夹;项目 wiki 分 design/rules/guides/domain、全局多 user/;条目 schema、ingest/query/lint、多级索引、context.json 注入、web 管理。
