@@ -8,6 +8,7 @@ import {
   type PlatformConfigurator,
   type RegisteredAgentPlatformConfig,
 } from '@withy/core';
+import { configureOpencode } from './opencode.js';
 import { configureClaude } from './claude.js';
 import { configureCodex } from './codex.js';
 
@@ -16,6 +17,7 @@ import { configureCodex } from './codex.js';
 const PLATFORM_CONFIGURATORS: Record<AgentTool, PlatformConfigurator> = {
   codex: configureCodex,
   claude: configureClaude,
+  opencode: configureOpencode,
 };
 
 export function configureAgentPlatform(

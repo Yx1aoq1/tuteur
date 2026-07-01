@@ -16,6 +16,8 @@ import {
   readTask,
   readWorkflow,
   appendEvent,
+  enginePlatformAvailable,
+  resolveAgentEngine,
   agentExists,
   skillExists,
   taskExists,
@@ -89,6 +91,8 @@ function runStart(titleOrId: string, options: StartOptions): void {
   const issues = validateWorkflow(workflow, {
     skillExists: name => skillExists(scope, name),
     agentExists: name => agentExists(scope, name),
+    resolveAgentEngine: role => resolveAgentEngine(scope, role),
+    enginePlatformAvailable: engine => enginePlatformAvailable(scope, engine),
     templateExists: templateId => readKnowledgeEntry(scope, templateId) !== null,
   });
   const errors = issues.filter(issue => issue.level === 'error');
